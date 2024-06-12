@@ -1,5 +1,6 @@
 import os
 from abc import ABC, abstractmethod
+from PIL import Image as PILImage
 
 import pydicom
 
@@ -26,10 +27,15 @@ class Image(ABC):
         logger.info(f"Width: {self.width}")
         logger.info(f"Height: {self.height}")
 
+    @abstractmethod
+    def to_png(self, output_path):
+        """Abstract method to convert the image to PNG format."""
+        pass
+
 
 class DicomImage(Image):
     def __init__(self, file_path):
-        if  os.path.splitext(self.file_path)[1].lower() != ".dcm":
+        if os.path.splitext(self.file_path)[1].lower() != ".dcm":
             raise RuntimeError("Only .dcm-files are supported")
 
         super().__init__(file_path)
@@ -41,11 +47,19 @@ class DicomImage(Image):
         self.width = self.dicom_data.Columns
         self.height = self.dicom_data.Rows
 
-    def display_info(self):
-        """Method to display DICOM image information."""
-        super().display_info()
-        logger.info(f"Patient ID: {self.patient_id}")
-        logger.info(f"Patient Name: {self.patient_name}")
-        logger.info(f"Study ID: {self.study_id}")
-        logger.info(f"Series ID: {self.series_id}")
-        logger.info(f"Modality: {self.modality}")
+    def to_png(self, output_path):
+        """Convert DICOM image to PNG format."""
+        if not self.pixel_data:
+            raise RuntimeError("No pixel data loaded. Cannot convert to PNG.")
+
+        try:
+            # Convert pixel data to PIL Image format
+            img = PILImage.fromarray(self.pixel_data)
+
+            # Save as PNG
+            png_path = os.path.join(output_path, "converted_image.png")
+            img.save(png_path)
+            logger.info(f"Converted image saved to {png_path}")
+
+        except Exception as e:
+            logger.error(f"Error converting image to PNG: {e}")
