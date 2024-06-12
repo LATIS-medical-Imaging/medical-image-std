@@ -3,6 +3,8 @@ from abc import ABC, abstractmethod
 
 import pydicom
 
+from log_manager import logger
+
 
 class Image(ABC):
     def __init__(self, file_path):
@@ -20,9 +22,9 @@ class Image(ABC):
 
     def display_info(self):
         """Display basic information about the image."""
-        print(f"File Path: {self.file_path}")
-        print(f"Width: {self.width}")
-        print(f"Height: {self.height}")
+        logger.info(f"File Path: {self.file_path}")
+        logger.info(f"Width: {self.width}")
+        logger.info(f"Height: {self.height}")
 
 
 class DicomImage(Image):
@@ -42,8 +44,8 @@ class DicomImage(Image):
     def display_info(self):
         """Method to display DICOM image information."""
         super().display_info()
-        print(f"Patient ID: {self.patient_id}")
-        print(f"Patient Name: {self.patient_name}")
-        print(f"Study ID: {self.study_id}")
-        print(f"Series ID: {self.series_id}")
-        print(f"Modality: {self.modality}")
+        logger.info(f"Patient ID: {self.patient_id}")
+        logger.info(f"Patient Name: {self.patient_name}")
+        logger.info(f"Study ID: {self.study_id}")
+        logger.info(f"Series ID: {self.series_id}")
+        logger.info(f"Modality: {self.modality}")
