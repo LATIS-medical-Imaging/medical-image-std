@@ -1,9 +1,12 @@
+import os
+from abc import ABC, abstractmethod
+
 import pydicom
 
 
 class Image(ABC):
     def __init__(self, file_path):
-        if not os.path.exists(img_path):
+        if not os.path.exists(file_path):
             raise FileNotFoundError(f"unable to locate file_path at {file_path}")
         self.file_path = file_path
         self.width = None
@@ -24,11 +27,14 @@ class Image(ABC):
 
 class DicomImage(Image):
     def __init__(self, file_path):
+        if  os.path.splitext(self.file_path)[1].lower() != ".dcm":
+            raise RuntimeError("Only .dcm-files are supported")
+
         super().__init__(file_path)
         self.dicom_data = None
 
     def load(self):
-        self.dicom_data = pydicom.dcmread(file_path)
+        self.dicom_data = pydicom.dcmread(self.file_path)
         self.pixel_data = self.dicom_data.pixel_array
         self.width = self.dicom_data.Columns
         self.height = self.dicom_data.Rows
