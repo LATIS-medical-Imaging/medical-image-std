@@ -14,3 +14,11 @@ console_handler.setFormatter(formatter)
 
 # Add the console handler to the logger
 logger.addHandler(console_handler)
+
+# Create a file handler and set level and formatter
+file_handler = logging.FileHandler("file.log")
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(formatter)
+
+# Add the file handler to the logger
+logger.addHandler(file_handler)
