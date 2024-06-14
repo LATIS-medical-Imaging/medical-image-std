@@ -7,7 +7,8 @@ from PIL import Image as PILImage
 import pydicom
 
 from log_manager import logger
-T = TypeVar('T')
+
+T = TypeVar("T")
 
 
 class Image(ABC):
