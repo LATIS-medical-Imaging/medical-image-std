@@ -37,6 +37,8 @@ class Image(ABC):
         pass
 
 
+# TODO: - Implement Plotting method
+#       - Implement similar to threshold, apply_filter method
 class DicomImage(Image):
     def __init__(self, file_path):
 

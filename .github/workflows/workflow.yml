@@ -25,7 +25,7 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Run tests
-      run: pytest DocumentAI_std/tests/test_dicom.py
+      run: pytest dicom_image/tests/test_dicom.py
 
     - name: Check code formatting
       run: black --check .
