@@ -23,7 +23,6 @@ class TestDicom:
         original_pixel_data = (
             dicom_image.pixel_data.copy()
         )  # Make a copy for comparison
-        # Threshold.otsu_threshold(dicom_image.pixel_data)
         dicom_image.apply_threshold(Threshold.otsu_threshold)
         # Check that the pixel data has been modified
         assert not np.array_equal(dicom_image.pixel_data, original_pixel_data)
