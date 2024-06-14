@@ -44,81 +44,49 @@ class Threshold:
         return binary_image.astype(np.uint8) * 255
 
     @staticmethod
-    def integral_image(image: np.ndarray) -> np.ndarray:
+    def sauvola_threshold(image, window_size=10, k=0.5, r=128):
         """
-        Computes the integral image of the given image data.
-
-        The integral image is a data structure used for quick and efficient computation of sum queries over image subregions.
-        Each element at (x, y) in the integral image is the sum of all pixels above and to the left of (x, y), inclusive.
+        Applies Sauvola thresholding to a grayscale image.
 
         Args:
-            image (np.ndarray): The input image data as a NumPy array.
+            image: A 2D grayscale image as a NumPy array.
+            window_size: The size of the local neighborhood window (odd integer).
+            k: The weighting factor for the standard deviation.
+            r: The dynamic range parameter.
 
         Returns:
-            np.ndarray: The integral image as a NumPy array.
+            A 2D binary image (0s and 1s) as a NumPy array.
         """
-        return np.cumsum(np.cumsum(image, axis=0), axis=1)
 
-    @staticmethod
-    def sauvola_threshold(
-        image_data: np.ndarray, window_size: int = 25, k: float = 0.2
-    ) -> np.ndarray:
-        """
-        Applies Sauvola's thresholding method to the given image data.
+        # Check for odd window size
+        if window_size % 2 == 0:
+            raise ValueError("Window size must be an odd integer.")
 
-        Sauvola's method calculates a dynamic threshold for each pixel based on the mean and standard deviation
-        of pixel intensities in a local neighborhood around the pixel. This method is particularly effective for images
-        with varying illumination conditions.
+        # Pad the image to handle borders
+        pad_width = window_size // 2
+        image_padded = np.pad(image, pad_width, mode="edge")
 
-        Args:
-            image_data (np.ndarray): The input image data as a NumPy array with pixel values ranging from 0 to 4095.
-            window_size (int, optional): The size of the local neighborhood window. Default is 25.
-            k (float, optional): The parameter k that determines the sensitivity of the threshold to variance. Default is 0.2.
+        # Initialize output image
+        thresh_image = np.zeros_like(image)
 
-        Returns:
-            np.ndarray: The binary thresholded image where pixel values are either 0 or 255.
-        """
-        # Padding to handle borders
-        pad_size = window_size // 2
-        padded_image = np.pad(image_data, pad_size, mode="reflect")
+        # Iterate through each pixel (avoiding padded borders)
+        for i in range(pad_width, image.shape[0] + pad_width):
+            for j in range(pad_width, image.shape[1] + pad_width):
+                # Extract local window
+                window = image_padded[
+                    i - pad_width : i + pad_width + 1, j - pad_width : j + pad_width + 1
+                ]
 
-        # Compute integral images
-        integral_image = Threshold.integral_image(padded_image)
-        integral_sq_image = Threshold.integral_image(padded_image**2)
+                # Calculate local mean and standard deviation
+                mean = np.mean(window)
+                std = np.std(window)
 
-        # Compute local mean and variance using integral images
-        rows, cols = padded_image.shape
-        local_mean = np.zeros_like(image_data, dtype=np.float32)
-        local_variance = np.zeros_like(image_data, dtype=np.float32)
+                # Apply Sauvola formula
+                threshold = mean * (1 + k * (std / r - 1))
 
-        for i in range(pad_size, rows - pad_size):
-            for j in range(pad_size, cols - pad_size):
-                x1, x2 = i - pad_size, i + pad_size + 1
-                y1, y2 = j - pad_size, j + pad_size + 1
-
-                area = (x2 - x1) * (y2 - y1)
-
-                sum_ = (
-                    integral_image[x2, y2]
-                    - integral_image[x1, y2]
-                    - integral_image[x2, y1]
-                    + integral_image[x1, y1]
-                )
-                sq_sum_ = (
-                    integral_sq_image[x2, y2]
-                    - integral_sq_image[x1, y2]
-                    - integral_sq_image[x2, y1]
-                    + integral_sq_image[x1, y1]
+                # Apply threshold
+                thresh_image[i - pad_width, j - pad_width] = (
+                    255 if image[i - pad_width, j - pad_width] > threshold else 0
                 )
 
-                local_mean[i - pad_size, j - pad_size] = sum_ / area
-                local_variance[i - pad_size, j - pad_size] = (sq_sum_ / area) - (
-                    local_mean[i - pad_size, j - pad_size] ** 2
-                )
-
-        # Compute Sauvola threshold
-        sauvola_threshold = local_mean * (1 + k * (np.sqrt(local_variance) / 2048 - 1))
-
-        # Apply threshold
-        binary_image = image_data > sauvola_threshold
-        return binary_image.astype(np.uint8) * 255
+        return thresh_image

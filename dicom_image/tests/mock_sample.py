@@ -16,11 +16,7 @@ def mock_sauvola_threshold():
     mock_dicom()
     dicom_image = DicomImage("dummy_data/sample.dcm")
     dicom_image.load()
-    return [
-        (dicom_image, 25, 0.2),
-        (dicom_image, 30, 0.3),
-        (dicom_image, 20, 0.1)
-    ]
+    return [(dicom_image, 15, 0.2), (dicom_image, 35, 0.3), (dicom_image, 25, 0.1)]
 
 
 def mock_dicom():
