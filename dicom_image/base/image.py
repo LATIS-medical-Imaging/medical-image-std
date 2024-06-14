@@ -39,10 +39,10 @@ class Image(ABC):
 
 class DicomImage(Image):
     def __init__(self, file_path):
-        if os.path.splitext(self.file_path)[1].lower() != ".dcm":
-            raise RuntimeError("Only .dcm-files are supported")
 
         super().__init__(file_path)
+        if os.path.splitext(self.file_path)[1].lower() != ".dcm":
+            raise RuntimeError("Only .dcm-files are supported")
         self.dicom_data = None
 
     def load(self):
@@ -53,7 +53,7 @@ class DicomImage(Image):
 
     def to_png(self, output_path):
         """Convert DICOM image to PNG format."""
-        if not self.pixel_data:
+        if self.pixel_data is None:
             raise RuntimeError("No pixel data loaded. Cannot convert to PNG.")
 
         try:

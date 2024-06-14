@@ -9,7 +9,7 @@ def mock_dicom_image():
     mock_dicom()
     dicom_image = DicomImage("dummy_data/sample.dcm")
     dicom_image.load()
-    return dicom_image
+    return [dicom_image]
 
 def mock_dicom():
     img_dir = os.path.join("dummy_data")

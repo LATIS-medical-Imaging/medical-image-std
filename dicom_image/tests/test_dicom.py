@@ -1,18 +1,15 @@
-import unittest
-
 import pytest
+
+from dicom_image.tests.mock_sample import *
+import os
 
 
 class TestDicom:
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_dicom_image(self, dicom_image):
+        dicom_image.to_png("dummy_data/")
+        assert dicom_image.pixel_data is not None
+        assert dicom_image.width == 512
+        assert dicom_image.height == 512
+        assert os.path.splitext("dummy_data/converted_image.png")[1].lower() == ".png"
 
-    @pytest.mark.parametrize("s1, s2, expected_distance", mock_levenshtien())
-    def test_levenshtein_distance(self, s1, s2, expected_distance):
-        # Create DocElement instances
-        doc_element1 = DocElement(0, 0, 0, 0, ContentType.TEXT, s1)
-        doc_element2 = DocElement(0, 0, 0, 0, ContentType.TEXT, s2)
-
-        # Compute Levenshtein distance
-        distance = TextUtils.levenshtein_distance(doc_element1, doc_element2)
-
-        # Check if the computed distance matches the expected distance
-        assert distance == expected_distance, f"Distance for {s1} and {s2} is incorrect"
