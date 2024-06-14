@@ -1,3 +1,6 @@
 pydicom>=2.4.4
 numpy>=1.26.4
 Pillow>=10.3.0
+pytest~=8.2.2
+requests~=2.32.3
+black
