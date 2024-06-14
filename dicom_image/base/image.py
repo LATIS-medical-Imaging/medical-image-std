@@ -1,10 +1,13 @@
 import os
 from abc import ABC, abstractmethod
+from typing import Callable, TypeVar
+
 from PIL import Image as PILImage
 
 import pydicom
 
 from log_manager import logger
+T = TypeVar('T')
 
 
 class Image(ABC):
@@ -63,3 +66,16 @@ class DicomImage(Image):
 
         except Exception as e:
             logger.error(f"Error converting image to PNG: {e}")
+
+    def apply_threshold(self, threshold_func: Callable[[T], T]) -> None:
+        """Apply a thresholding function to the DICOM image."""
+        if self.pixel_data is None:
+            raise RuntimeError("No pixel data loaded. Cannot apply threshold.")
+
+        try:
+            # Apply the thresholding function to the pixel data
+            self.pixel_data = threshold_func(self.pixel_data)
+            logger.info("Threshold applied successfully.")
+
+        except Exception as e:
+            logger.error(f"Error applying threshold: {e}")
