@@ -24,23 +24,6 @@ class DicomImage(Image):
         self.width = self.dicom_data.Columns
         self.height = self.dicom_data.Rows
 
-    def to_png(self, output_path):
-        """Convert DICOM image to PNG format."""
-        if self.pixel_data is None:
-            raise RuntimeError("No pixel data loaded. Cannot convert to PNG.")
-
-        try:
-            # Convert pixel data to PIL Image format
-            img = PILImage.fromarray(self.pixel_data)
-
-            # Save as PNG
-            png_path = os.path.join(output_path, "converted_image.png")
-            img.save(png_path)
-            logger.info(f"Converted image saved to {png_path}")
-
-        except Exception as e:
-            logger.error(f"Error converting image to PNG: {e}")
-
     def apply_threshold(self, threshold_func: Callable[[T], T]) -> None:
         """Apply a thresholding function to the DICOM image."""
         if self.pixel_data is None:
