@@ -1,4 +1,4 @@
 .idea
 /venv/
-/dicom_image/tests/dummy_data/
-/dicom_image/tests/file.log
+/medical_image/tests/dummy_data/
+/medical_image/tests/file.log

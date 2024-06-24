@@ -1,15 +1,15 @@
 import numpy as np
 import pytest
 
-from dicom_image.tests.mock_sample import *
+from medical_image.tests.mock_sample import *
 import os
 
-from dicom_image.utils.threshold import Threshold
+from medical_image.utils.threshold import Threshold
 from log_manager import logger
 
 
 class TestDicom:
-    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    @pytest.mark.parametrize("medical_image", mock_dicom_image())
     def test_dicom_image(self, dicom_image):
         dicom_image.to_png("dummy_data/")
         assert dicom_image.pixel_data is not None
@@ -17,7 +17,7 @@ class TestDicom:
         assert dicom_image.height == 512
         assert os.path.splitext("dummy_data/converted_image.png")[1].lower() == ".png"
 
-    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    @pytest.mark.parametrize("medical_image", mock_dicom_image())
     def test_otsu_threshold(self, dicom_image):
         # Apply Otsu's threshold to the mock DICOM image
         original_pixel_data = (
@@ -32,7 +32,7 @@ class TestDicom:
             np.logical_or(dicom_image.pixel_data == 0, dicom_image.pixel_data == 255)
         )
 
-    @pytest.mark.parametrize("dicom_image, window_size, k", mock_sauvola_threshold())
+    @pytest.mark.parametrize("medical_image, window_size, k", mock_sauvola_threshold())
     def test_sauvola_threshold(self, dicom_image, window_size, k):
         # Apply Sauvola's threshold to the mock DICOM image
         dicom_image.apply_threshold(
