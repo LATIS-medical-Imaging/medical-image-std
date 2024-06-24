@@ -2,7 +2,7 @@ import os
 
 import requests
 
-from medical_image.base.image import DicomImage
+from medical_image.data.dicom_image import DicomImage
 
 
 def mock_dicom_image():
