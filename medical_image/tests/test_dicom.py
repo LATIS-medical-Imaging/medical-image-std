@@ -5,7 +5,7 @@ import os
 
 from log_manager import logger
 from medical_image.tests.mock_sample import mock_dicom_image, mock_sauvola_threshold
-from medical_image.utils.threshold import Threshold
+from medical_image.process.threshold import Threshold
 
 
 class TestDicom:
