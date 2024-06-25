@@ -57,7 +57,13 @@ class Threshold:
         return binary_image
 
     @staticmethod
-    def sauvola_threshold(image_data: Image, output: np.ndarray = None, window_size: int = 10, k: float = 0.5, r: int = 128) -> np.ndarray:
+    def sauvola_threshold(
+        image_data: Image,
+        output: np.ndarray = None,
+        window_size: int = 10,
+        k: float = 0.5,
+        r: int = 128,
+    ) -> np.ndarray:
         """
         Applies Sauvola thresholding to a grayscale image.
 

@@ -8,14 +8,14 @@ from medical_image.data.dicom_image import DicomImage
 def mock_dicom_image():
     mock_dicom()
     dicom_image = DicomImage("dummy_data/sample.dcm")
-    dicom_image.load()
+    dicom_image.save()
     return [dicom_image]
 
 
 def mock_sauvola_threshold():
     mock_dicom()
     dicom_image = DicomImage("dummy_data/sample.dcm")
-    dicom_image.load()
+    dicom_image.save()
     return [(dicom_image, 15, 0.2), (dicom_image, 35, 0.3), (dicom_image, 25, 0.1)]
 
 

@@ -23,8 +23,12 @@ class Filters:
         pad_width = kernel_width // 2
 
         # Pad the image
-        padded_image = np.pad(image, ((pad_height, pad_height), (pad_width, pad_width)), mode='constant',
-                              constant_values=0)
+        padded_image = np.pad(
+            image,
+            ((pad_height, pad_height), (pad_width, pad_width)),
+            mode="constant",
+            constant_values=0,
+        )
 
         # Initialize the output image
         convolved_image = np.zeros_like(image)
@@ -32,7 +36,7 @@ class Filters:
         # Perform the convolution
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
-                region = padded_image[i:i + kernel_height, j:j + kernel_width]
+                region = padded_image[i : i + kernel_height, j : j + kernel_width]
                 convolved_image[i, j] = np.sum(region * kernel)
 
         np.copyto(output.pixel_data, convolved_image)
@@ -70,7 +74,7 @@ class Filters:
         x = np.arange(-k, k + 1)
         y = np.arange(-k, k + 1)
         x, y = np.meshgrid(x, y)
-        kernel = np.exp(-(x ** 2 + y ** 2) / (2 * sigma ** 2))
+        kernel = np.exp(-(x**2 + y**2) / (2 * sigma**2))
         return kernel / np.sum(kernel)
 
     @staticmethod
@@ -90,7 +94,7 @@ class Filters:
         pad_size = size // 2
 
         # Pad the image
-        padded_image = np.pad(image, pad_size, mode='constant', constant_values=0)
+        padded_image = np.pad(image, pad_size, mode="constant", constant_values=0)
 
         # Initialize the output image
         filtered_image = np.zeros_like(image)
@@ -98,7 +102,7 @@ class Filters:
         # Perform the median filtering
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
-                region = padded_image[i:i + size, j:j + size]
+                region = padded_image[i : i + size, j : j + size]
                 filtered_image[i, j] = np.median(region)
 
         np.copyto(output.pixel_data, filtered_image)

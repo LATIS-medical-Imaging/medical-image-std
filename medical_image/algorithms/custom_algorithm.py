@@ -6,7 +6,9 @@ from medical_image.process.threshold import Threshold
 class CustomAlgorithm(Algorithm):
     def __init__(self):
         super().__init__()
-        self.gaussian = lambda img, output: Filters.gaussian_filter(image_data=img, output=output, sigma=2.0)
+        self.gaussian = lambda img, output: Filters.gaussian_filter(
+            image_data=img, output=output, sigma=2.0
+        )
         self.otsu = Threshold.otsu_threshold
 
     def apply(self, image, output):

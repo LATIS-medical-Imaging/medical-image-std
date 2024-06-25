@@ -1,18 +1,13 @@
 import os
-from typing import Callable
 
 import pydicom
-from PIL import Image as PILImage
 
-from log_manager import logger
-from medical_image.data.image import Image, T
+from medical_image.data.image import Image
 
 
 # TODO: - Implement Plotting method
-#       - Implement similar to threshold, apply_filter method
 class DicomImage(Image):
     def __init__(self, file_path):
-
         super().__init__(file_path)
         if os.path.splitext(self.file_path)[1].lower() != ".dcm":
             raise RuntimeError("Only .dcm-files are supported")
@@ -24,15 +19,14 @@ class DicomImage(Image):
         self.width = self.dicom_data.Columns
         self.height = self.dicom_data.Rows
 
-    def apply_threshold(self, threshold_func: Callable[[T], T]) -> None:
-        """Apply a thresholding function to the DICOM image."""
-        if self.pixel_data is None:
-            raise RuntimeError("No pixel data loaded. Cannot apply threshold.")
+    def save(self):
+        if self.dicom_data is None:
+            raise RuntimeError(
+                "DICOM data has not been loaded yet. Call load() method first."
+            )
+        filename, extension = os.path.splitext(self.file_path)
+        # Update DICOM data pixel array
+        self.dicom_data.PixelData = self.pixel_data.tobytes()
 
-        try:
-            # Apply the thresholding function to the pixel data
-            self.pixel_data = threshold_func(self.pixel_data)
-            logger.info("Threshold applied successfully.")
-
-        except Exception as e:
-            logger.error(f"Error applying threshold: {e}")
+        # Save DICOM data back to file
+        self.dicom_data.save_as(filename + "_modified.dcm")
