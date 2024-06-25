@@ -3,7 +3,7 @@ import numpy as np
 
 class Threshold:
     @staticmethod
-    def otsu_threshold(image_data: np.ndarray) -> np.ndarray:
+    def otsu_threshold(image_data: np.ndarray, output: np.ndarray = None) -> np.ndarray:
         """
         Applies Otsu's thresholding method to the given image data.
 
@@ -15,6 +15,7 @@ class Threshold:
 
         Args:
             image_data (np.ndarray): The input image data as a NumPy array with pixel values ranging from 0 to 4095.
+            output (np.ndarray, optional): An optional output array to store the binary thresholded image.
 
         Returns:
             np.ndarray: The binary thresholded image where pixel values are either 0 or 255.
@@ -36,26 +37,40 @@ class Threshold:
             cumsum * (cumsum[-1] - cumsum)
         )
 
+        # Replace NaNs with zeroes (since division by zero can occur)
+        between_class_variance = np.nan_to_num(between_class_variance)
+
         # Find the threshold value that maximizes between-class variance
-        threshold_value = np.nanargmax(between_class_variance)
+        threshold_value = np.argmax(between_class_variance)
 
         # Apply threshold
         binary_image = image_data > threshold_value
-        return binary_image.astype(np.uint8) * 255
+        binary_image = binary_image.astype(np.uint8) * 255
+
+        # If an output array is provided, copy the result to it
+        if output is not None:
+            np.copyto(output, binary_image)
+
+        return binary_image
 
     @staticmethod
-    def sauvola_threshold(image, window_size=10, k=0.5, r=128):
+    def sauvola_threshold(image: np.ndarray, output: np.ndarray = None, window_size: int = 10, k: float = 0.5, r: int = 128) -> np.ndarray:
         """
         Applies Sauvola thresholding to a grayscale image.
 
+        Sauvola's method calculates the local threshold value for each pixel in a grayscale image based on the mean
+        and standard deviation of the pixel values in a local window. This method is particularly useful for images with
+        varying illumination.
+
         Args:
-            image: A 2D grayscale image as a NumPy array.
-            window_size: The size of the local neighborhood window (odd integer).
-            k: The weighting factor for the standard deviation.
-            r: The dynamic range parameter.
+            image (np.ndarray): A 2D grayscale image as a NumPy array.
+            output (np.ndarray, optional): An optional output array to store the binary thresholded image.
+            window_size (int): The size of the local neighborhood window (must be an odd integer). Default is 10.
+            k (float): The weighting factor for the standard deviation. Default is 0.5.
+            r (int): The dynamic range parameter. Default is 128.
 
         Returns:
-            A 2D binary image (0s and 1s) as a NumPy array.
+            np.ndarray: The binary thresholded image where pixel values are either 0 or 255.
         """
 
         # Check for odd window size
@@ -67,7 +82,7 @@ class Threshold:
         image_padded = np.pad(image, pad_width, mode="edge")
 
         # Initialize output image
-        thresh_image = np.zeros_like(image)
+        thresh_image = np.zeros_like(image, dtype=np.uint8)
 
         # Iterate through each pixel (avoiding padded borders)
         for i in range(pad_width, image.shape[0] + pad_width):
@@ -88,5 +103,9 @@ class Threshold:
                 thresh_image[i - pad_width, j - pad_width] = (
                     255 if image[i - pad_width, j - pad_width] > threshold else 0
                 )
+
+        # If an output array is provided, copy the result to it
+        if output is not None:
+            np.copyto(output, thresh_image)
 
         return thresh_image
