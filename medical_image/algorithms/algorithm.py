@@ -22,3 +22,6 @@ class Algorithm(ABC):
         The processed image after applying the operations.
         """
         pass
+
+    def __call__(self, image: Image, output: Image):
+        self.apply(image, output)
