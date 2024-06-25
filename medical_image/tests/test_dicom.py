@@ -11,16 +11,16 @@ from medical_image.process.threshold import Threshold
 class TestDicom:
     @pytest.mark.parametrize("dicom_image", mock_dicom_image())
     def test_dicom_image(self, dicom_image):
-        dicom_image.to_png("dummy_data/")
+        dicom_image.to_png()
         assert dicom_image.pixel_data is not None
         assert dicom_image.width == 512
         assert dicom_image.height == 512
-        assert os.path.splitext("dummy_data/converted_image.png")[1].lower() == ".png"
 
     @pytest.mark.parametrize("dicom_image", mock_dicom_image())
     def test_otsu_threshold(self, dicom_image):
         # Apply Otsu's threshold to the mock DICOM image
         output = dicom_image
+        # TODO: FIX THIS: it seems output is not set after update (or applying the threshold)
         Threshold.otsu_threshold(dicom_image, output)
         # Check that the pixel data has been modified
         assert not np.array_equal(dicom_image.pixel_data, output.pixel_data)

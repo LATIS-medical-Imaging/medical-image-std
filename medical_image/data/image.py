@@ -35,7 +35,7 @@ class Image(ABC):
         logger.info(f"Width: {self.width}")
         logger.info(f"Height: {self.height}")
 
-    def to_png(self, output_path):
+    def to_png(self):
         """
         Save a NumPy array as a PNG file.
 
@@ -45,7 +45,7 @@ class Image(ABC):
         """
         if self.pixel_data is None and not isinstance(self.pixel_data, np.ndarray):
             raise ValueError("pixel_data is not a valid NumPy array.")
-
+        filename, _ = os.path.splitext(self.file_path)
         image = PILImage.fromarray(self.pixel_data)
-        image.save(output_path)
-        logger.info(f"Image saved successfully at {output_path}")
+        image.save(filename + ".png")
+        logger.info(f"Image saved successfully at {filename+".png"}")
