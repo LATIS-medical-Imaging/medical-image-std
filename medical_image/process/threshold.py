@@ -1,9 +1,11 @@
 import numpy as np
 
+from medical_image.data.image import Image
+
 
 class Threshold:
     @staticmethod
-    def otsu_threshold(image_data: np.ndarray, output: np.ndarray = None) -> np.ndarray:
+    def otsu_threshold(image_data: Image, output: np.ndarray = None) -> np.ndarray:
         """
         Applies Otsu's thresholding method to the given image data.
 
@@ -14,14 +16,15 @@ class Threshold:
         https://en.wikipedia.org/wiki/Otsu%27s_method
 
         Args:
-            image_data (np.ndarray): The input image data as a NumPy array with pixel values ranging from 0 to 4095.
+            image_data (Image): The input image data as a Image array with pixel values ranging from 0 to 4095.
             output (np.ndarray, optional): An optional output array to store the binary thresholded image.
 
         Returns:
             np.ndarray: The binary thresholded image where pixel values are either 0 or 255.
         """
+        image = image_data.pixel_data
         # Compute histogram
-        hist, bins = np.histogram(image_data.flatten(), bins=4096, range=(0, 4096))
+        hist, bins = np.histogram(image.flatten(), bins=4096, range=(0, 4096))
 
         # Compute cumulative sums of the histogram
         cumsum = np.cumsum(hist)
@@ -44,7 +47,7 @@ class Threshold:
         threshold_value = np.argmax(between_class_variance)
 
         # Apply threshold
-        binary_image = image_data > threshold_value
+        binary_image = image > threshold_value
         binary_image = binary_image.astype(np.uint8) * 255
 
         # If an output array is provided, copy the result to it
@@ -54,7 +57,7 @@ class Threshold:
         return binary_image
 
     @staticmethod
-    def sauvola_threshold(image: np.ndarray, output: np.ndarray = None, window_size: int = 10, k: float = 0.5, r: int = 128) -> np.ndarray:
+    def sauvola_threshold(image_data: Image, output: np.ndarray = None, window_size: int = 10, k: float = 0.5, r: int = 128) -> np.ndarray:
         """
         Applies Sauvola thresholding to a grayscale image.
 
@@ -72,6 +75,7 @@ class Threshold:
         Returns:
             np.ndarray: The binary thresholded image where pixel values are either 0 or 255.
         """
+        image = image_data.pixel_data
 
         # Check for odd window size
         if window_size % 2 == 0:
