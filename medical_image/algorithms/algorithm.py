@@ -1,3 +1,24 @@
+from abc import ABC, abstractmethod
 
-class Algorithm:
-    pass
+from medical_image.data.image import Image
+
+
+class Algorithm(ABC):
+    def __init__(self):
+        """
+        Constructor for the Algorithm class.
+        """
+        super().__init__()
+
+    @abstractmethod
+    def apply(self, image: Image, output: Image):
+        """
+        Apply the defined operations to the input image.
+
+        Parameters:
+        image: The input image to which the operations will be applied.
+
+        Returns:
+        The processed image after applying the operations.
+        """
+        pass
