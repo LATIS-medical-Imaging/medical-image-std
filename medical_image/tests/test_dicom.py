@@ -23,27 +23,18 @@ class TestDicom:
         output = dicom_image
         Threshold.otsu_threshold(dicom_image, output)
         # Check that the pixel data has been modified
-        assert not np.array_equal(dicom_image.pixel_data, original_pixel_data)
+        assert not np.array_equal(dicom_image.pixel_data, output.pixel_data)
 
         # Check that the output is a binary image (0 or 255)
-        assert np.all(
-            np.logical_or(dicom_image.pixel_data == 0, dicom_image.pixel_data == 255)
-        )
+        assert np.all(np.logical_or(output.pixel_data == 0, output.pixel_data == 255))
 
     @pytest.mark.parametrize("dicom_image, window_size, k", mock_sauvola_threshold())
     def test_sauvola_threshold(self, dicom_image, window_size, k):
         # Apply Sauvola's threshold to the mock DICOM image
-        dicom_image.apply_threshold(
-            lambda data: Threshold.sauvola_threshold(data, window_size=window_size, k=k)
-        )
+        output = dicom_image
+        Threshold.sauvola_threshold(dicom_image, output, window_size, k)
+        # Check that the pixel data has been modified
+        assert not np.array_equal(dicom_image.pixel_data, output.pixel_data)
 
         # Check that the output is a binary image (0 or 255)
-        logger.info(dicom_image.pixel_data)
-
-        condition = np.logical_or(
-            dicom_image.pixel_data == 0, dicom_image.pixel_data == 255
-        )
-        logger.info(f"Condition array: {condition}")
-        logger.info(f"False elements: {np.where(~condition)}")
-
-        assert np.all(condition)
+        assert np.all(np.logical_or(output.pixel_data == 0, output.pixel_data == 255))
