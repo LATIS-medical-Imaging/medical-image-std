@@ -5,7 +5,7 @@ from medical_image.data.image import Image
 
 class Threshold:
     @staticmethod
-    def otsu_threshold(image_data: Image, output: np.ndarray = None) -> np.ndarray:
+    def otsu_threshold(image_data: Image, output: Image = None) -> np.ndarray:
         """
         Applies Otsu's thresholding method to the given image data.
 
@@ -23,6 +23,7 @@ class Threshold:
             np.ndarray: The binary thresholded image where pixel values are either 0 or 255.
         """
         image = image_data.pixel_data
+        image_out = output.pixel_data
         # Compute histogram
         hist, bins = np.histogram(image.flatten(), bins=4096, range=(0, 4096))
 
@@ -51,15 +52,15 @@ class Threshold:
         binary_image = binary_image.astype(np.uint8) * 255
 
         # If an output array is provided, copy the result to it
-        if output is not None:
-            np.copyto(output, binary_image)
-
+        if image_out is not None:
+            np.copyto(image_out, binary_image)
+        output.pixel_data = image_out
         return binary_image
 
     @staticmethod
     def sauvola_threshold(
         image_data: Image,
-        output: np.ndarray = None,
+        output: Image = None,
         window_size: int = 10,
         k: float = 0.5,
         r: int = 128,
@@ -82,6 +83,7 @@ class Threshold:
             np.ndarray: The binary thresholded image where pixel values are either 0 or 255.
         """
         image = image_data.pixel_data
+        image_out = output.pixel_data
 
         # Check for odd window size
         if window_size % 2 == 0:
@@ -115,7 +117,7 @@ class Threshold:
                 )
 
         # If an output array is provided, copy the result to it
-        if output is not None:
-            np.copyto(output, thresh_image)
-
+        if image_out is not None:
+            np.copyto(image_out, thresh_image)
+        output.pixel_data = image_out
         return thresh_image

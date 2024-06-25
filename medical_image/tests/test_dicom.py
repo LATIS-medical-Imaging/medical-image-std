@@ -20,10 +20,8 @@ class TestDicom:
     @pytest.mark.parametrize("dicom_image", mock_dicom_image())
     def test_otsu_threshold(self, dicom_image):
         # Apply Otsu's threshold to the mock DICOM image
-        original_pixel_data = (
-            dicom_image.pixel_data.copy()
-        )  # Make a copy for comparison
-        dicom_image.apply_threshold(Threshold.otsu_threshold)
+        output = dicom_image
+        Threshold.otsu_threshold(dicom_image, output)
         # Check that the pixel data has been modified
         assert not np.array_equal(dicom_image.pixel_data, original_pixel_data)
 
