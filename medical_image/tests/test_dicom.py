@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 import pytest
 
@@ -20,8 +22,7 @@ class TestDicom:
     @pytest.mark.parametrize("dicom_image", mock_dicom_image())
     def test_otsu_threshold(self, dicom_image):
         # Apply Otsu's threshold to the mock DICOM image
-        output = DicomImage("dummy_data/sample.dcm")
-        output.load()
+        output = copy.deepcopy(dicom_image)
         # TODO: FIX THIS: it seems output is not set after update (or applying the threshold)
         Threshold.otsu_threshold(dicom_image, output)
         # Check that the pixel data has been modified
@@ -33,7 +34,7 @@ class TestDicom:
     @pytest.mark.parametrize("dicom_image, window_size, k", mock_sauvola_threshold())
     def test_sauvola_threshold(self, dicom_image, window_size, k):
         # Apply Sauvola's threshold to the mock DICOM image
-        output = dicom_image
+        output = copy.deepcopy(dicom_image)
         Threshold.sauvola_threshold(dicom_image, output, window_size, k)
         # Check that the pixel data has been modified
         assert not np.array_equal(dicom_image.pixel_data, output.pixel_data)

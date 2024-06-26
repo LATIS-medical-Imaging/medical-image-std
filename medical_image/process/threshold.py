@@ -50,14 +50,11 @@ class Threshold:
         # Apply threshold
         binary_image = image > threshold_value
         binary_image = binary_image.astype(np.uint8) * 255
-        binary_image = np.ones_like(binary_image)
-        # logger.debug(f"the original image before copy {image_data.pixel_data}")
+
         # If an output array is provided, copy the result to it
         if output.pixel_data is not None:
             output.pixel_data = binary_image
 
-        logger.debug(f"the original image {image_data.pixel_data}")
-        logger.debug(f"the output image {output.pixel_data}")
         return binary_image
 
     @staticmethod
