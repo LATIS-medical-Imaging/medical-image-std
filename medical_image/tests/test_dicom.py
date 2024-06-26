@@ -4,6 +4,7 @@ import pytest
 import os
 
 from log_manager import logger
+from medical_image.data.dicom_image import DicomImage
 from medical_image.tests.mock_sample import mock_dicom_image, mock_sauvola_threshold
 from medical_image.process.threshold import Threshold
 
@@ -19,7 +20,8 @@ class TestDicom:
     @pytest.mark.parametrize("dicom_image", mock_dicom_image())
     def test_otsu_threshold(self, dicom_image):
         # Apply Otsu's threshold to the mock DICOM image
-        output = dicom_image
+        output = DicomImage("dummy_data/sample.dcm")
+        output.load()
         # TODO: FIX THIS: it seems output is not set after update (or applying the threshold)
         Threshold.otsu_threshold(dicom_image, output)
         # Check that the pixel data has been modified

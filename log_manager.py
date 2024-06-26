@@ -1,24 +1,17 @@
 import logging
+from pathlib import Path
 
-# Configure global logger
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)  # Set the logging level to INFO or desired level
-
-# Create a formatter
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-
-# Create a console handler and set level and formatter
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)
-console_handler.setFormatter(formatter)
-
-# Add the console handler to the logger
-logger.addHandler(console_handler)
-
-# Create a file handler and set level and formatter
-file_handler = logging.FileHandler("file.log")
-file_handler.setLevel(logging.INFO)
-file_handler.setFormatter(formatter)
-
-# Add the file handler to the logger
-logger.addHandler(file_handler)
+# Logger
+logger: logging.Logger = logging.getLogger("Logger")
+logger.setLevel(logging.DEBUG)
+home = str(Path.home())
+handler = logging.FileHandler("./file.log", mode="w")
+formatter = logging.Formatter(
+    "%(asctime)s | %(funcName)s | PID:%(process)d | %(levelname)s | %(message)s",
+    datefmt="%Y%m%d-%H:%M:%S",
+)
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+consoleHandler = logging.StreamHandler()
+consoleHandler.setFormatter(formatter)
+logger.addHandler(consoleHandler)

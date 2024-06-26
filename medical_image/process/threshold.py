@@ -1,5 +1,6 @@
 import numpy as np
 
+from log_manager import logger
 from medical_image.data.image import Image
 
 
@@ -23,7 +24,6 @@ class Threshold:
             np.ndarray: The binary thresholded image where pixel values are either 0 or 255.
         """
         image = image_data.pixel_data
-        image_out = output.pixel_data
         # Compute histogram
         hist, bins = np.histogram(image.flatten(), bins=4096, range=(0, 4096))
 
@@ -50,11 +50,14 @@ class Threshold:
         # Apply threshold
         binary_image = image > threshold_value
         binary_image = binary_image.astype(np.uint8) * 255
-
+        binary_image = np.ones_like(binary_image)
+        # logger.debug(f"the original image before copy {image_data.pixel_data}")
         # If an output array is provided, copy the result to it
-        if image_out is not None:
-            np.copyto(image_out, binary_image)
-        output.pixel_data = image_out
+        if output.pixel_data is not None:
+            output.pixel_data = binary_image
+
+        logger.debug(f"the original image {image_data.pixel_data}")
+        logger.debug(f"the output image {output.pixel_data}")
         return binary_image
 
     @staticmethod

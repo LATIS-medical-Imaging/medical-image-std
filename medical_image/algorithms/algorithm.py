@@ -22,6 +22,6 @@ class Algorithm(ABC):
         The processed image after applying the operations.
         """
         pass
-
+    # TODO: write unist test for this __call__ method
     def __call__(self, image: Image, output: Image):
         self.apply(image, output)
