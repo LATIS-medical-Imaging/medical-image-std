@@ -23,7 +23,6 @@ class TestDicom:
     def test_otsu_threshold(self, dicom_image):
         # Apply Otsu's threshold to the mock DICOM image
         output = copy.deepcopy(dicom_image)
-        # TODO: FIX THIS: it seems output is not set after update (or applying the threshold)
         Threshold.otsu_threshold(dicom_image, output)
         # Check that the pixel data has been modified
         assert not np.array_equal(dicom_image.pixel_data, output.pixel_data)
