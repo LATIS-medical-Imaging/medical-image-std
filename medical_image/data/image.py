@@ -48,4 +48,4 @@ class Image(ABC):
         filename, _ = os.path.splitext(self.file_path)
         image = PILImage.fromarray(self.pixel_data)
         image.save(filename + ".png")
-        logger.info(f"Image saved successfully at {filename+".png"}")
+        logger.info(f"Image saved successfully at {filename+'.png'}")
