@@ -53,4 +53,3 @@ class TestDicom:
 
         # Check that the output is a binary image (0 or 255)
         assert np.all(np.logical_or(output.pixel_data == 0, output.pixel_data == 255))
-

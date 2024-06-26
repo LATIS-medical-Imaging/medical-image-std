@@ -23,6 +23,5 @@ class Algorithm(ABC):
         """
         pass
 
-    # TODO: write unist test for this __call__ method
     def __call__(self, image: Image, output: Image):
         self.apply(image, output)
