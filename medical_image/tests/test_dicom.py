@@ -6,6 +6,7 @@ import pytest
 import os
 
 from log_manager import logger
+from medical_image.algorithms.custom_algorithm import CustomAlgorithm
 from medical_image.data.dicom_image import DicomImage
 from medical_image.tests.mock_sample import mock_dicom_image, mock_sauvola_threshold
 from medical_image.process.threshold import Threshold
@@ -40,3 +41,16 @@ class TestDicom:
 
         # Check that the output is a binary image (0 or 255)
         assert np.all(np.logical_or(output.pixel_data == 0, output.pixel_data == 255))
+
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_custom_algorithm(self, dicom_image):
+        # Apply two gaussian filters and followed with Otsu's threshold to the mock DICOM image
+        output = copy.deepcopy(dicom_image)
+        algorithm = CustomAlgorithm()
+        algorithm(dicom_image, output)
+        # Check that the pixel data has been modified
+        assert not np.array_equal(dicom_image.pixel_data, output.pixel_data)
+
+        # Check that the output is a binary image (0 or 255)
+        assert np.all(np.logical_or(output.pixel_data == 0, output.pixel_data == 255))
+
