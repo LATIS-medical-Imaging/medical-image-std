@@ -97,9 +97,42 @@ class Metrics:
 
     @staticmethod
     def mutual_information(image1: Image, image2: Image, decimals=4):
+        """
+        This function calculates the mutual information between two images.
+        For more information about mutual information, see:
+        https://en.wikipedia.org/wiki/Mutual_information
+
+        Parameters:
+            image1 (Image): The first Image object containing the 2D ndarray to process.
+            image2 (Image): The second Image object containing the 2D ndarray to process.
+            decimals (int, optional): Number of decimal places to round the mutual information to. Default is 4.
+
+        Returns:
+            float: Mutual information value rounded to the specified number of decimal places.
+
+        Notes:
+            The calculation is based on the entropy and joint entropy of the two images.
+
+        Examples:
+            >>> import numpy as np
+            >>> class ExampleImage(Image):
+            >>>     def load(self):
+            >>>         self.width = 512
+            >>>         self.height = 512
+            >>>         self.pixel_data = np.random.randint(0, 4095, (self.width, self.height))
+            >>>     def save(self):
+            >>>         pass
+            >>> image1 = ExampleImage("example_path1")
+            >>> image2 = ExampleImage("example_path2")
+            >>> image1.load()
+            >>> image2.load()
+            >>> mi = mutual_information(image1, image2)
+            >>> print(mi)
+            17.3331
+        """
         mi = (
                 Metrics.entropy(image1, decimals=decimals)
                 + Metrics.entropy(image2, decimals=decimals)
-                - Metrics.joint_entropy(image1, image2,decimals=decimals)
+                - Metrics.joint_entropy(image1, image2, decimals=decimals)
         )
         return mi
