@@ -89,7 +89,9 @@ class Metrics:
             >>> print(joint_ent)
             6.6435
         """
-        joint_histogram, _, _ = np.histogram2d(image1.pixel_data.flatten(), image2.pixel_data.flatten())
+        joint_histogram, _, _ = np.histogram2d(
+            image1.pixel_data.flatten(), image2.pixel_data.flatten()
+        )
         joint_histogram_without_zero = joint_histogram[joint_histogram != 0]
         joint_prob = joint_histogram_without_zero / (image2.width * image2.height)
 
@@ -131,8 +133,8 @@ class Metrics:
             17.3331
         """
         mi = (
-                Metrics.entropy(image1, decimals=decimals)
-                + Metrics.entropy(image2, decimals=decimals)
-                - Metrics.joint_entropy(image1, image2, decimals=decimals)
+            Metrics.entropy(image1, decimals=decimals)
+            + Metrics.entropy(image2, decimals=decimals)
+            - Metrics.joint_entropy(image1, image2, decimals=decimals)
         )
         return mi
