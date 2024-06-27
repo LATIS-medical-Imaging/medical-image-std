@@ -4,27 +4,35 @@ from medical_image.data.image import Image
 
 
 class Metrics:
-    @staticmethod
-    def entropy(image: Image, decimals = 4):
+    def entropy(image: Image, decimals=4):
         """
-        This function calculates Shannon Entropy of an image.
-        For more information about the Entropy this link:
+        This function calculates the Shannon Entropy of an image.
+        For more information about entropy, see:
         https://en.wikipedia.org/wiki/Entropy_(information_theory)
 
         Parameters:
-            input: 2d ndarray to process.
+            image (Image): An Image object containing the 2D ndarray to process.
+            decimals (int, optional): Number of decimal places to round the entropy to. Default is 4.
 
         Returns:
-            entropy: float rounded to 4 decimal places
+            float: Entropy value rounded to the specified number of decimal places.
 
         Notes:
             The logarithm used is the bit logarithm (base-2).
 
         Examples:
             >>> import numpy as np
-            >>> a = np.random.randint(0, 4095, (512,512))
-            >>> ent = entropy_main(a)
-            >>> ent
+            >>> class ExampleImage(Image):
+            >>>     def load(self):
+            >>>         self.width = 512
+            >>>         self.height = 512
+            >>>         self.pixel_data = np.random.randint(0, 4095, (self.width, self.height))
+            >>>     def save(self):
+            >>>         pass
+            >>> example_image = ExampleImage("example_path")
+            >>> example_image.load()
+            >>> ent = entropy(example_image)
+            >>> print(ent)
             11.9883
         """
         image_array = image.pixel_data
@@ -45,10 +53,53 @@ class Metrics:
         entropy = -np.sum(probabilities * np.log2(probabilities))
 
         return np.around(entropy, decimals=decimals)
-    @staticmethod
-    def joint_entorpy(image1: Image, image2: Image):
-        pass
 
     @staticmethod
-    def mutual_information(image1: Image, image2: Image):
-        pass
+    def joint_entropy(image1: Image, image2: Image, decimals=4):
+        """
+        This function calculates the joint Shannon Entropy of two images.
+        For more information about joint entropy, see:
+        https://en.wikipedia.org/wiki/Joint_entropy
+
+        Parameters:
+            image1 (Image): The first Image object containing the 2D ndarray to process.
+            image2 (Image): The second Image object containing the 2D ndarray to process.
+            decimals (int, optional): Number of decimal places to round the entropy to. Default is 4.
+
+        Returns:
+            float: Joint entropy value rounded to the specified number of decimal places.
+
+        Notes:
+            The logarithm used is the bit logarithm (base-2).
+
+        Examples:
+            >>> import numpy as np
+            >>> class ExampleImage(Image):
+            >>>     def load(self):
+            >>>         self.width = 512
+            >>>         self.height = 512
+            >>>         self.pixel_data = np.random.randint(0, 4095, (self.width, self.height))
+            >>>     def save(self):
+            >>>         pass
+            >>> image1 = ExampleImage("example_path1")
+            >>> image2 = ExampleImage("example_path2")
+            >>> image1.load()
+            >>> image2.load()
+            >>> joint_ent = joint_entropy(image1, image2)
+            >>> print(joint_ent)
+            6.6435
+        """
+        joint_histogram, _, _ = np.histogram2d(image1.pixel_data.flatten(), image2.pixel_data.flatten())
+        joint_histogram_without_zero = joint_histogram[joint_histogram != 0]
+        joint_prob = joint_histogram_without_zero / (image2.width * image2.height)
+
+        return np.around(-np.sum(joint_prob * np.log2(joint_prob)), decimals=decimals)
+
+    @staticmethod
+    def mutual_information(image1: Image, image2: Image, decimals=4):
+        mi = (
+                Metrics.entropy(image1, decimals=decimals)
+                + Metrics.entropy(image2, decimals=decimals)
+                - Metrics.joint_entropy(image1, image2,decimals=decimals)
+        )
+        return mi
