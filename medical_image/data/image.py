@@ -81,7 +81,12 @@ class RegionOfInterest:
         >>> mask[50:150, 50:150] = 1
         >>> roi_mask = RegionOfInterest(image, mask)
     """
-    def __init__(self, image: Image, coordinates: Union[List[int], List[Tuple[int, int]], np.ndarray]):
+
+    def __init__(
+        self,
+        image: Image,
+        coordinates: Union[List[int], List[Tuple[int, int]], np.ndarray],
+    ):
         self.image = image
         self.coordinates = coordinates
 
@@ -97,7 +102,9 @@ class RegionOfInterest:
             x_min, y_min, x_max, y_max = self.coordinates
             cropped_pixel_data = self.image.pixel_data[y_min:y_max, x_min:x_max]
 
-        elif isinstance(self.coordinates, list) and all(isinstance(coord, tuple) for coord in self.coordinates):
+        elif isinstance(self.coordinates, list) and all(
+            isinstance(coord, tuple) for coord in self.coordinates
+        ):
             # Polygon: [(x1, y1), (x2, y2), ..., (xn, yn)]
             mask = np.zeros_like(self.image.pixel_data, dtype=bool)
             rr, cc = zip(*self.coordinates)
