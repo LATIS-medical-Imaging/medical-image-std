@@ -1,6 +1,6 @@
 import os
 from abc import ABC, abstractmethod
-from typing import TypeVar
+from typing import TypeVar, Any
 
 import numpy as np
 
@@ -48,4 +48,14 @@ class Image(ABC):
         filename, _ = os.path.splitext(self.file_path)
         image = PILImage.fromarray(self.pixel_data)
         image.save(filename + ".png")
-        logger.info(f"Image saved successfully at {filename+'.png'}")
+        logger.info(f"Image saved successfully at {filename + '.png'}")
+
+
+class RegionOfInterest:
+    # TODO: change coordinates type (for the two case, bbox and polygone and mask)
+    def __init__(self, image: Image, coordinates: Any):
+        pass
+
+    def load(self)->Image:
+        pass
+    pass
