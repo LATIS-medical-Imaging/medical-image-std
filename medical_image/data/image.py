@@ -1,3 +1,4 @@
+import copy
 import os
 from abc import ABC, abstractmethod
 from typing import TypeVar, Any
@@ -84,8 +85,42 @@ class RegionOfInterest:
     def __init__(self, image: Image, coordinates: Union[List[int], List[Tuple[int, int]], np.ndarray]):
         self.image = image
         self.coordinates = coordinates
+    def load(self):
+        """
+        Crop the image to the ROI and create a new ExampleImage object.
 
-    def load(self) -> Image:
-        pass
+        Returns:
+            ExampleImage: A new ExampleImage object cropped to the ROI.
+        """
+        if isinstance(self.coordinates, list) and len(self.coordinates) == 4:
+            # Bounding box: [x_min, y_min, x_max, y_max]
+            x_min, y_min, x_max, y_max = self.coordinates
+            cropped_pixel_data = self.image.pixel_data[y_min:y_max, x_min:x_max]
+
+        elif isinstance(self.coordinates, list) and all(isinstance(coord, tuple) for coord in self.coordinates):
+            # Polygon: [(x1, y1), (x2, y2), ..., (xn, yn)]
+            mask = np.zeros_like(self.image.pixel_data, dtype=np.uint8)
+            polygon = np.array(self.coordinates, dtype=np.int32)
+            cv2.fillPoly(mask, [polygon], 1)
+            cropped_pixel_data = cv2.bitwise_and(self.image.pixel_data, self.image.pixel_data, mask=mask)
+            x, y, w, h = cv2.boundingRect(polygon)
+            cropped_pixel_data = cropped_pixel_data[y:y+h, x:x+w]
+
+        elif isinstance(self.coordinates, np.ndarray):
+            # Mask: 2D numpy array of the same dimensions as the image
+            mask = self.coordinates
+            cropped_pixel_data = cv2.bitwise_and(self.image.pixel_data, self.image.pixel_data, mask=mask)
+            x, y, w, h = cv2.boundingRect(mask.astype(np.uint8))
+            cropped_pixel_data = cropped_pixel_data[y:y+h, x:x+w]
+
+        else:
+            raise ValueError("Unsupported coordinates type")
+
+        cropped_image = copy.deepcopy(self.image)
+        cropped_image.width = cropped_pixel_data.shape[1]
+        cropped_image.height = cropped_pixel_data.shape[0]
+        cropped_image.pixel_data = cropped_pixel_data
+
+        return cropped_image
 
     pass
