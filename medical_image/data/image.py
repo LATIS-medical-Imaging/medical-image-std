@@ -51,11 +51,41 @@ class Image(ABC):
         logger.info(f"Image saved successfully at {filename + '.png'}")
 
 
+from typing import Union, List, Tuple
+import numpy as np
+
+
 class RegionOfInterest:
-    # TODO: change coordinates type (for the two case, bbox and polygone and mask)
-    def __init__(self, image: Image, coordinates: Any):
+    """
+    This class represents a region of interest (ROI) within an image.
+
+    Parameters:
+        image (Image): The Image object that contains the region of interest.
+        coordinates (Union[List[int], List[Tuple[int, int]], np.ndarray]): The coordinates defining the region of interest.
+            This can be in various forms such as:
+            - Bounding box: List of four integers [x_min, y_min, x_max, y_max]
+            - Polygon: List of tuples of integers [(x1, y1), (x2, y2), ..., (xn, yn)]
+            - Mask: 2D numpy array of the same dimensions as the image, where the region of interest is marked
+
+    Attributes:
+        image (Image): The Image object that contains the region of interest.
+        coordinates (Union[List[int], List[Tuple[int, int]], np.ndarray]): The coordinates defining the region of interest.
+
+    Examples:
+        >>> image = Image("example_path")
+        >>> image.load()
+        >>> roi_bbox = RegionOfInterest(image, [50, 50, 150, 150])
+        >>> roi_polygon = RegionOfInterest(image, [(50, 50), (150, 50), (150, 150), (50, 150)])
+        >>> mask = np.zeros((image.height, image.width))
+        >>> mask[50:150, 50:150] = 1
+        >>> roi_mask = RegionOfInterest(image, mask)
+    """
+
+    def __init__(self, image: Image, coordinates: Union[List[int], List[Tuple[int, int]], np.ndarray]):
+        self.image = image
+        self.coordinates = coordinates
+
+    def load(self) -> Image:
         pass
 
-    def load(self)->Image:
-        pass
     pass
