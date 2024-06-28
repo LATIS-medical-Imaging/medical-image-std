@@ -73,7 +73,7 @@ class RegionOfInterest:
         coordinates (Union[List[int], List[Tuple[int, int]], np.ndarray]): The coordinates defining the region of interest.
 
     Examples:
-        >>> image = Image("example_path")
+        >>> image = ExampleImage("example_path")
         >>> image.load()
         >>> roi_bbox = RegionOfInterest(image, [50, 50, 150, 150])
         >>> roi_polygon = RegionOfInterest(image, [(50, 50), (150, 50), (150, 150), (50, 150)])
@@ -81,10 +81,10 @@ class RegionOfInterest:
         >>> mask[50:150, 50:150] = 1
         >>> roi_mask = RegionOfInterest(image, mask)
     """
-
     def __init__(self, image: Image, coordinates: Union[List[int], List[Tuple[int, int]], np.ndarray]):
         self.image = image
         self.coordinates = coordinates
+
     def load(self):
         """
         Crop the image to the ROI and create a new ExampleImage object.
@@ -99,19 +99,19 @@ class RegionOfInterest:
 
         elif isinstance(self.coordinates, list) and all(isinstance(coord, tuple) for coord in self.coordinates):
             # Polygon: [(x1, y1), (x2, y2), ..., (xn, yn)]
-            mask = np.zeros_like(self.image.pixel_data, dtype=np.uint8)
-            polygon = np.array(self.coordinates, dtype=np.int32)
-            cv2.fillPoly(mask, [polygon], 1)
-            cropped_pixel_data = cv2.bitwise_and(self.image.pixel_data, self.image.pixel_data, mask=mask)
-            x, y, w, h = cv2.boundingRect(polygon)
-            cropped_pixel_data = cropped_pixel_data[y:y+h, x:x+w]
+            mask = np.zeros_like(self.image.pixel_data, dtype=bool)
+            rr, cc = zip(*self.coordinates)
+            mask[cc, rr] = True
+            cropped_pixel_data = self.image.pixel_data[mask].reshape((len(rr), -1))
 
         elif isinstance(self.coordinates, np.ndarray):
             # Mask: 2D numpy array of the same dimensions as the image
-            mask = self.coordinates
-            cropped_pixel_data = cv2.bitwise_and(self.image.pixel_data, self.image.pixel_data, mask=mask)
-            x, y, w, h = cv2.boundingRect(mask.astype(np.uint8))
-            cropped_pixel_data = cropped_pixel_data[y:y+h, x:x+w]
+            mask = self.coordinates.astype(bool)
+            cropped_pixel_data = self.image.pixel_data * mask
+            y_indices, x_indices = np.nonzero(mask)
+            y_min, y_max = y_indices.min(), y_indices.max() + 1
+            x_min, x_max = x_indices.min(), x_indices.max() + 1
+            cropped_pixel_data = cropped_pixel_data[y_min:y_max, x_min:x_max]
 
         else:
             raise ValueError("Unsupported coordinates type")
@@ -122,5 +122,3 @@ class RegionOfInterest:
         cropped_image.pixel_data = cropped_pixel_data
 
         return cropped_image
-
-    pass
