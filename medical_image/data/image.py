@@ -2,7 +2,7 @@ import copy
 import os
 from abc import ABC, abstractmethod
 from typing import TypeVar, Union, List, Tuple
-
+import matplotlib.pyplot as plt
 import numpy as np
 
 from log_manager import logger
@@ -50,11 +50,15 @@ class Image(ABC):
         image = PILImage.fromarray(self.pixel_data)
         image.save(filename + ".png")
         logger.info(f"Image saved successfully at {filename + '.png'}")
-    def plot(self):
-        """Display the image using matplotlib."""
+    def plot(self, cmap='gray'):
+        """Display the image using matplotlib.
+
+        Parameters:
+        cmap (str): Colormap to use for displaying the image. Default is 'gray'.
+        """
         if self.pixel_data is None:
             raise ValueError("pixel_data is not loaded.")
-        plt.imshow(self.pixel_data)
+        plt.imshow(self.pixel_data, cmap=cmap)
         plt.axis('off')  # Hide axes
         plt.show()
 
