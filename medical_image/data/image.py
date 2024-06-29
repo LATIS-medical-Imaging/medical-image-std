@@ -1,7 +1,7 @@
 import copy
 import os
 from abc import ABC, abstractmethod
-from typing import TypeVar, Any
+from typing import TypeVar, Union, List, Tuple
 
 import numpy as np
 
@@ -50,10 +50,13 @@ class Image(ABC):
         image = PILImage.fromarray(self.pixel_data)
         image.save(filename + ".png")
         logger.info(f"Image saved successfully at {filename + '.png'}")
-
-
-from typing import Union, List, Tuple
-import numpy as np
+    def plot(self):
+        """Display the image using matplotlib."""
+        if self.pixel_data is None:
+            raise ValueError("pixel_data is not loaded.")
+        plt.imshow(self.pixel_data)
+        plt.axis('off')  # Hide axes
+        plt.show()
 
 
 class RegionOfInterest:
@@ -129,3 +132,4 @@ class RegionOfInterest:
         cropped_image.pixel_data = cropped_pixel_data
 
         return cropped_image
+
