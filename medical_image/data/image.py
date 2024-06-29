@@ -50,7 +50,8 @@ class Image(ABC):
         image = PILImage.fromarray(self.pixel_data)
         image.save(filename + ".png")
         logger.info(f"Image saved successfully at {filename + '.png'}")
-    def plot(self, cmap='gray'):
+
+    def plot(self, cmap="gray"):
         """Display the image using matplotlib.
 
         Parameters:
@@ -59,7 +60,7 @@ class Image(ABC):
         if self.pixel_data is None:
             raise ValueError("pixel_data is not loaded.")
         plt.imshow(self.pixel_data, cmap=cmap)
-        plt.axis('off')  # Hide axes
+        plt.axis("off")  # Hide axes
         plt.show()
 
 
@@ -136,4 +137,3 @@ class RegionOfInterest:
         cropped_image.pixel_data = cropped_pixel_data
 
         return cropped_image
-
