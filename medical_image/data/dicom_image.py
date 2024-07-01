@@ -5,7 +5,6 @@ import pydicom
 from medical_image.data.image import Image
 
 
-# TODO: - Implement Plotting method
 class DicomImage(Image):
     def __init__(self, file_path):
         super().__init__(file_path)
