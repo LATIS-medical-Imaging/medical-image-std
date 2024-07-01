@@ -1,11 +1,13 @@
 from pathlib import Path
 from setuptools import setup, find_packages
+
 # TODO: - ADD readme.md,
 #       - fix this setup (remove DocumentAI),
 #       - setup the version,
 #       - But before all this implement FEBDS algorithm,
 #       - Add what's new between version in documentation
 #       - Add License
+#       - Add Setup tool in requirements.txt
 with open("requirements.txt") as f:
     required = f.read().splitlines()
 
