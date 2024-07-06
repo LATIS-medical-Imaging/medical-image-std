@@ -1,4 +1,7 @@
+from typing import Union
+
 import numpy as np
+from scipy import ndimage
 
 from medical_image.data.image import Image
 
@@ -138,3 +141,54 @@ class Metrics:
             - Metrics.joint_entropy(image1, image2, decimals=decimals)
         )
         return mi
+    # tODO: Update Docstring
+    @staticmethod
+    def local_variance(image: Image, output: Image, kernel: Union[float, tuple]) -> np.ndarray:
+        """
+        Calculate the variance a specified sub-regions in image.
+
+        Parameters:
+            input: 2d ndarray to process.
+            kernel: size of sub-region
+        Returns:
+            2D ndarray with the same size as the input contains the local variance of each region with size = kernel
+
+
+        Examples:
+            >>> a = np.random.randint(0, 5, (9,9))
+            >>> Metrics.local_variance(a, 3)
+            array([[0, 1, 1, 2, 1, 1, 1, 1, 2],
+                   [0, 1, 2, 2, 1, 1, 1, 1, 1],
+                   [0, 0, 1, 1, 2, 1, 1, 1, 1],
+                   [1, 1, 0, 1, 1, 1, 1, 1, 0],
+                   [2, 1, 0, 1, 1, 2, 2, 2, 1],
+                   [3, 2, 1, 0, 1, 2, 1, 1, 0],
+                   [2, 2, 1, 0, 1, 1, 1, 1, 1],
+                   [1, 1, 1, 0, 0, 1, 2, 1, 1],
+                   [0, 0, 0, 0, 0, 1, 2, 2, 1]])
+
+        """
+        output.pixel_data = ndimage.generic_filter(image.pixel_data, np.var, size=kernel)
+
+    # tODO: Update Docstring
+    @staticmethod
+    def variance(image: Image, output: Image):
+        """
+        Calculate the variance of the values of an 2-D image array
+
+        Parameters:
+            input: 2d ndarray to process.
+
+        Returns:
+            variance : float
+
+
+        Examples:
+            >>> a = np.array([[1, 2, 0, 0],
+            ...               [5, 3, 0, 4],
+            ...               [0, 0, 0, 7],
+            ...               [9, 3, 0, 0]])
+            >>> Metrics.variance(a)
+            7.609375
+        """
+        output.pixel_data = ndimage.variance(image.pixel_data)

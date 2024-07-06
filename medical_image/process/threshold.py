@@ -1,7 +1,10 @@
+import copy
+
 import numpy as np
 
 from log_manager import logger
 from medical_image.data.image import Image
+from medical_image.process.metrics import Metrics
 
 
 class Threshold:
@@ -160,10 +163,15 @@ class Threshold:
                     [0, 0, 0, 0, 0, 0, 0, 0, 0]])
 
         """
+        # TODO: write unit test for this
         image = image_data.pixel_data
         image_out = output.pixel_data
 
-        local_variance = PixelArrayOperation.getLocalVariance(image, 5)
-        global_variance = PixelArrayOperation.variance(image_out)
-        b = local_variance**2 < (alpha * global_variance**2)
-        output.pixel_data = np.where(b, 0, 1)
+        local_variance =copy.deepcopy(image)
+        global_variance =copy.deepcopy(image)
+
+        Metrics.local_variance(image, output=local_variance, kernel=5)
+        Metrics.variance(image_out, output=global_variance)
+
+        binary = local_variance.pixel_data**2 < (alpha * global_variance.pixel_data**2)
+        output.pixel_data = np.where(binary, 0, 1)
