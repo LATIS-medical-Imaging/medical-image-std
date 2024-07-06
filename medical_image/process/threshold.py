@@ -6,7 +6,7 @@ from medical_image.data.image import Image
 
 class Threshold:
     @staticmethod
-    def otsu_threshold(image_data: Image, output: Image = None) -> np.ndarray:
+    def otsu_threshold(image_data: Image, output: Image = None):
         """
         Applies Otsu's thresholding method to the given image data.
 
@@ -55,7 +55,6 @@ class Threshold:
         if output.pixel_data is not None:
             output.pixel_data = binary_image
 
-        return binary_image
 
     @staticmethod
     def sauvola_threshold(
@@ -64,7 +63,7 @@ class Threshold:
         window_size: int = 10,
         k: float = 0.5,
         r: int = 128,
-    ) -> np.ndarray:
+    ) :
         """
         Applies Sauvola thresholding to a grayscale image.
 
@@ -120,4 +119,51 @@ class Threshold:
         if image_out is not None:
             np.copyto(image_out, thresh_image)
         output.pixel_data = image_out
-        return thresh_image
+
+    @staticmethod
+    def binarize(image_data: Image, output: Image, alpha: float):
+        """
+        This function binarize an image using local and global variance.
+        For more infomation check this paper:
+             https://www.researchgate.net/publication/306253912_Mammograms_calcifications_segmentation_based_on_band-pass_Fourier_filtering_and_adaptive_statistical_thresholding
+
+        Parameters:
+            input : a 2D ndarray.
+            alpha : float
+                 a scaling factor that relates the local and global variances.
+
+        Returns:
+            a 2D ndarray with the same size as the input containing 0 or 1 (a binary array)
+
+
+        Examples:
+             >>> a = np.random.randint(0, 5, (9,9))
+             >>> a
+             array([[3, 1, 0, 1, 1, 3, 4, 2, 2],
+                    [0, 3, 3, 2, 3, 4, 0, 1, 1],
+                    [0, 4, 4, 4, 3, 3, 1, 0, 3],
+                    [4, 2, 3, 2, 2, 4, 2, 3, 4],
+                    [2, 1, 3, 0, 0, 1, 4, 3, 1],
+                    [2, 0, 0, 2, 0, 4, 0, 3, 1],
+                    [4, 4, 4, 0, 4, 4, 1, 4, 2],
+                    [2, 1, 3, 1, 2, 3, 1, 2, 0],
+                    [4, 1, 3, 2, 3, 2, 3, 3, 0]])
+             >>> Threshold.binarize(a, 0.5)
+             array([[1, 1, 0, 0, 1, 0, 0, 0, 0],
+                    [1, 1, 0, 0, 0, 0, 0, 0, 0],
+                    [1, 1, 0, 0, 0, 0, 0, 0, 0],
+                    [1, 1, 1, 1, 1, 1, 1, 1, 0],
+                    [1, 1, 1, 1, 1, 1, 1, 0, 0],
+                    [0, 0, 0, 1, 1, 1, 1, 1, 0],
+                    [0, 0, 1, 1, 1, 0, 1, 0, 0],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0]])
+
+        """
+        image = image_data.pixel_data
+        image_out = output.pixel_data
+
+        local_variance = PixelArrayOperation.getLocalVariance(image, 5)
+        global_variance = PixelArrayOperation.variance(image_out)
+        b = local_variance**2 < (alpha * global_variance**2)
+        output.pixel_data = np.where(b, 0, 1)
