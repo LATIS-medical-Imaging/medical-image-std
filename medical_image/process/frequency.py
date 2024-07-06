@@ -1,9 +1,12 @@
 import numpy as np
 
+from medical_image.data.image import Image
+
 
 class FrequencyOperations:
+    # TODO: update Docstring
     @staticmethod
-    def fft(input):
+    def fft(image: Image, output: Image):
         """
         This function calculates 2-dimensional discrete Fourier Transform using Fast Fourier Transform Algorithms (FFT)
         For more information about the Entropy this link:
@@ -29,10 +32,10 @@ class FrequencyOperations:
                      2893.5 -995.06318895j]])
 
         """
-        return np.fft.fft2(input)
+        output.pixel_data = np.fft.fft2(image.pixel_data)
 
     @staticmethod
-    def inverse_fft(input):
+    def inverse_fft(image: Image, output: Image):
         """
         This function calculates the inverse of 2-dimensional discrete Fourier Transform using Fast Fourier Transform Algorithms (FFT)
         For more information about the Entropy this link:
@@ -58,4 +61,4 @@ class FrequencyOperations:
                      2893.5 -995.06318895j]])
 
         """
-        return np.fft.ifft2(input)
+        output.pixel_data = np.fft.ifft2(image.pixel_data)
