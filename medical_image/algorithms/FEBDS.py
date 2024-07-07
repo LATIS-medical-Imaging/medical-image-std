@@ -10,6 +10,7 @@ from medical_image.process.threshold import Threshold
 
 # TODO: Apply on ROI
 
+
 class FebdsAlgorithm(Algorithm):
     def __init__(self, method):
         super().__init__()
