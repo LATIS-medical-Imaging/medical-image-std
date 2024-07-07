@@ -186,7 +186,7 @@ class Filters:
         output.pixel_data = laplacian
 
     @staticmethod
-    def GammaCorrection(image_data: Image, output: Image, gamma):
+    def gamma_correction(image_data: Image, output: Image, gamma):
         """This function calculates the Gamma Correction of the image in the Dicom file.
             For more information about the Gamma Correction see this link:
             https://en.wikipedia.org/wiki/Gamma_correction
