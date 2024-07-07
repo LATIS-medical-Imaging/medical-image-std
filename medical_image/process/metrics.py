@@ -142,9 +142,12 @@ class Metrics:
             - Metrics.joint_entropy(image1, image2, decimals=decimals)
         )
         return mi
+
     # tODO: Update Docstring
     @staticmethod
-    def local_variance(image: Image, output: Image, kernel: Union[float, tuple]) -> np.ndarray:
+    def local_variance(
+        image: Image, output: Image, kernel: Union[float, tuple]
+    ) -> np.ndarray:
         """
         Calculate the variance a specified sub-regions in image.
 
@@ -169,7 +172,9 @@ class Metrics:
                    [0, 0, 0, 0, 0, 1, 2, 2, 1]])
 
         """
-        output.pixel_data = ndimage.generic_filter(image.pixel_data, np.var, size=kernel)
+        output.pixel_data = ndimage.generic_filter(
+            image.pixel_data, np.var, size=kernel
+        )
 
     # tODO: Update Docstring
     @staticmethod

@@ -64,7 +64,9 @@ class MorpohologyOperations:
                    [0, 0, 1, 1, 1, 0, 0],
                    [0, 0, 0, 0, 0, 0, 0]])
         """
-        output.pixel_data = ndimage.binary_closing(image.pixel_data, structure=np.ones((7, 7))).astype(int)
+        output.pixel_data = ndimage.binary_closing(
+            image.pixel_data, structure=np.ones((7, 7))
+        ).astype(int)
 
     @staticmethod
     def region_fill(image: Image, output: Image):
@@ -108,5 +110,6 @@ class MorpohologyOperations:
                [0, 0, 0, 0, 0]])
 
         """
-        output.pixel_data = ndimage.binary_fill_holes(image.pixel_data, structure=np.ones((7, 7))).astype(int)
-
+        output.pixel_data = ndimage.binary_fill_holes(
+            image.pixel_data, structure=np.ones((7, 7))
+        ).astype(int)

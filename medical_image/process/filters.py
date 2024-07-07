@@ -148,7 +148,9 @@ class Filters:
         return band_pass.transpose()
 
     @staticmethod
-    def difference_of_gaussian(image_data: Image, output: Image, sigma_1: float, sigma_2: float):
+    def difference_of_gaussian(
+        image_data: Image, output: Image, sigma_1: float, sigma_2: float
+    ):
         """
         Applies the Difference of Gaussian (DoG) filter to the given image.
 
@@ -182,7 +184,10 @@ class Filters:
         """
         image = image_data.pixel_data
         gaussian = Filters.gaussian_filter(image, sigma)
-        laplacian = np.gradient(np.gradient(gaussian)[0])[0] + np.gradient(np.gradient(gaussian)[1])[1]
+        laplacian = (
+            np.gradient(np.gradient(gaussian)[0])[0]
+            + np.gradient(np.gradient(gaussian)[1])[1]
+        )
         output.pixel_data = laplacian
 
     @staticmethod

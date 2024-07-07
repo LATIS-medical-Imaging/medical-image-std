@@ -58,7 +58,6 @@ class Threshold:
         if output.pixel_data is not None:
             output.pixel_data = binary_image
 
-
     @staticmethod
     def sauvola_threshold(
         image_data: Image,
@@ -66,7 +65,7 @@ class Threshold:
         window_size: int = 10,
         k: float = 0.5,
         r: int = 128,
-    ) :
+    ):
         """
         Applies Sauvola thresholding to a grayscale image.
 
@@ -167,8 +166,8 @@ class Threshold:
         image = image_data.pixel_data
         image_out = output.pixel_data
 
-        local_variance =copy.deepcopy(image)
-        global_variance =copy.deepcopy(image)
+        local_variance = copy.deepcopy(image)
+        global_variance = copy.deepcopy(image)
 
         Metrics.local_variance(image, output=local_variance, kernel=5)
         Metrics.variance(image_out, output=global_variance)
