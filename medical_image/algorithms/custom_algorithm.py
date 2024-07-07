@@ -15,4 +15,3 @@ class CustomAlgorithm(Algorithm):
         self.gaussian(img=image, output=output)
         self.gaussian(img=output, output=output)
         self.otsu(image_data=output, output=output)
-        return output
