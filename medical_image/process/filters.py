@@ -106,3 +106,43 @@ class Filters:
                 filtered_image[i, j] = np.median(region)
 
         np.copyto(output.pixel_data, filtered_image)
+
+    @staticmethod
+    def butterworth_kernel(image_data: Image, D_0=21, W=32, n=3) -> np.ndarray:
+        """
+        todo: update Docstring
+        Apply a Butterworth band-pass filter to enhance frequency features.
+        This filter is defined in the Fourier domain.
+        For more:
+           https://en.wikipedia.org/wiki/Butterworth_filter
+
+        Parameters:
+            input: 2d ndarray to process.
+            D_0: float
+                 cutoff frequency
+            W: float
+               filter bandwidth
+            n: int
+               filter order
+        Returns:
+            band_pass: ndarray
+                       The Butterworth-kernel.
+
+
+        Examples:
+            >>> a = np.random.randint(0, 5, (3,3))
+            >>> PixelArrayOperation.butterworth_kernel(a)
+            array([[0.78760795, 0.3821997 , 0.3821997 ],
+                  [0.3821997 , 0.00479278, 0.00479278],
+                  [0.3821997 , 0.00479278, 0.00479278]])
+
+        """
+        x = image_data.width
+        y = image_data.height
+        u, v = np.meshgrid(np.arange(x), np.arange(y))
+        D = np.sqrt((u - x / 2) ** 2 + (v - y / 2) ** 2)
+        band_pass = D**2 - D_0**2
+        cuttoff = 8 * W * D
+        denom = 1.0 + (band_pass / cuttoff) ** (2 * n)
+        band_pass = 1.0 / denom
+        return band_pass.transpose()
