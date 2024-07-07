@@ -146,3 +146,41 @@ class Filters:
         denom = 1.0 + (band_pass / cuttoff) ** (2 * n)
         band_pass = 1.0 / denom
         return band_pass.transpose()
+
+    @staticmethod
+    def difference_of_gaussian(image_data: Image, output: Image, sigma1: float, sigma2: float):
+        """
+        Applies the Difference of Gaussian (DoG) filter to the given image.
+
+        Args:
+            image_data (Image): The input image data encapsulated in an Image object.
+            output (Image): An Image object to store the filtered image.
+            sigma1 (float): The standard deviation of the first Gaussian kernel.
+            sigma2 (float): The standard deviation of the second Gaussian kernel.
+
+        Returns:
+            None
+        """
+        image = image_data.pixel_data
+        gaussian1 = Filters.gaussian_filter(image, sigma1)
+        gaussian2 = Filters.gaussian_filter(image, sigma2)
+        dog = gaussian1 - gaussian2
+        output.pixel_data = dog
+
+    @staticmethod
+    def laplacian_of_gaussian(image_data: Image, output: Image, sigma: float):
+        """
+        Applies the Laplacian of Gaussian (LoG) filter to the given image.
+
+        Args:
+            image_data (Image): The input image data encapsulated in an Image object.
+            output (Image): An Image object to store the filtered image.
+            sigma (float): The standard deviation of the Gaussian kernel.
+
+        Returns:
+            None
+        """
+        image = image_data.pixel_data
+        gaussian = Filters.gaussian_filter(image, sigma)
+        laplacian = np.gradient(np.gradient(gaussian)[0])[0] + np.gradient(np.gradient(gaussian)[1])[1]
+        output.pixel_data = laplacian
