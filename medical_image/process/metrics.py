@@ -7,6 +7,7 @@ from medical_image.data.image import Image
 
 
 class Metrics:
+    @staticmethod
     def entropy(image: Image, decimals=4):
         """
         This function calculates the Shannon Entropy of an image.

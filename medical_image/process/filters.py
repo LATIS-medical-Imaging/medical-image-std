@@ -148,22 +148,22 @@ class Filters:
         return band_pass.transpose()
 
     @staticmethod
-    def difference_of_gaussian(image_data: Image, output: Image, sigma1: float, sigma2: float):
+    def difference_of_gaussian(image_data: Image, output: Image, sigma_1: float, sigma_2: float):
         """
         Applies the Difference of Gaussian (DoG) filter to the given image.
 
         Args:
             image_data (Image): The input image data encapsulated in an Image object.
             output (Image): An Image object to store the filtered image.
-            sigma1 (float): The standard deviation of the first Gaussian kernel.
-            sigma2 (float): The standard deviation of the second Gaussian kernel.
+            sigma_1 (float): The standard deviation of the first Gaussian kernel.
+            sigma_2 (float): The standard deviation of the second Gaussian kernel.
 
         Returns:
             None
         """
         image = image_data.pixel_data
-        gaussian1 = Filters.gaussian_filter(image, sigma1)
-        gaussian2 = Filters.gaussian_filter(image, sigma2)
+        gaussian1 = Filters.gaussian_filter(image, sigma_1)
+        gaussian2 = Filters.gaussian_filter(image, sigma_2)
         dog = gaussian1 - gaussian2
         output.pixel_data = dog
 
@@ -184,3 +184,57 @@ class Filters:
         gaussian = Filters.gaussian_filter(image, sigma)
         laplacian = np.gradient(np.gradient(gaussian)[0])[0] + np.gradient(np.gradient(gaussian)[1])[1]
         output.pixel_data = laplacian
+
+    @staticmethod
+    def GammaCorrection(image_data: Image, output: Image, gamma):
+        """This function calculates the Gamma Correction of the image in the Dicom file.
+            For more information about the Gamma Correction see this link:
+            https://en.wikipedia.org/wiki/Gamma_correction
+
+        Args:
+            pixel_array: pixel_array in the Dicom file.
+            max: Maximum value that can be assigned to a pixel.
+
+        Returns:
+            The return value is the corrected image.
+
+        """
+        image = image_data.pixel_data
+        image = np.power(image / float(4095), gamma)
+        output.pixel_data = image * 4095
+
+    @staticmethod
+    def ContrastAdjust(image_data: Image, output: Image, contrast, brightness):
+        """This function used to adjust the contrast and the brightness
+        the image in the Dicom file.
+            This approach is based this equation that can be used to apply
+        both contrast and brightness at the same time:
+            ****
+            new_img = alpha*old_img + beta
+            ****
+            Where alpha and beta are contrast and brightness coefficient respectively:
+
+            alpha 1  beta 0      --> no change
+            0 < alpha < 1        --> lower contrast
+            alpha > 1            --> higher contrast
+            -2047 < beta < +2047   --> good range for brightness values
+
+            In my case:
+                alpha = contrast / 2047 + 1
+                beta = brightness - contrast
+
+        Args:
+            pixel_array: pixel_array in the Dicom file.
+            contrast: the contrast value to be applied.
+            brightness: the brightness value to be applied.
+
+        Returns:
+            The return value is an image with different contrast and brightness.
+
+        """
+        image = image_data.pixel_data
+        quotient = 4095 // 2
+        alpha = contrast / quotient + 1
+        beta = brightness - contrast
+
+        output.pixel_data = np.clip(image * alpha + beta, 0, 4095)
