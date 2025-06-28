@@ -6,7 +6,7 @@ requests~=2.32.3
 matplotlib
 scipy
 black
-
+scikit-image
 --extra-index-url https://download.pytorch.org/whl/cu128
 torch
 torchvision

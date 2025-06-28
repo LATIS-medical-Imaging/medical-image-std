@@ -1,4 +1,5 @@
 import timeit
+from itertools import permutations
 
 import numpy as np
 from math import log, e
@@ -80,30 +81,41 @@ def entropy_main(input):
 
 
 if __name__ == "__main__":
-    repeat_number = 1000000
-    print("start A")
-    a = timeit.repeat(
-        stmt="""entropy_numpy(labels)""",
-        setup="""labels=[
-    [1, 1, 2, 2, 2],
-    [1, 2, 3, 3, 3],
-    [1, 1, 1, 1, 1]
-];from __main__ import entropy_numpy""",
-        repeat=3,
-        number=repeat_number,
-    )
-    print("end A")
-    b = timeit.repeat(
-        stmt="""entropy_main(input)""",
-        setup="""input = [
-    [1, 1, 2, 2, 2],
-    [1, 2, 3, 3, 3],
-    [1, 1, 1, 1, 1]
-];from __main__ import entropy_main""",
-        repeat=3,
-        number=repeat_number,
-    )
-    for approach, timeit_results in zip(["numpy/math", "main/numpy"], [a, b]):
-        print(
-            "Method: {}, Avg.: {:.6f}".format(approach, np.array(timeit_results).mean())
-        )
+    digits = '9876543210'
+    perms = permutations(digits, 9)
+
+    max_number = 0
+    for perm in perms:
+        number = int(''.join(perm))
+        odd_sum = sum(int(perm[i]) for i in range(0, 9, 2))
+        even_sum = sum(int(perm[i]) for i in range(1, 9, 2))
+        if (odd_sum - even_sum) % 11 == 0:
+            max_number = max(max_number, number)
+    print(max_number)
+#     repeat_number = 1000000
+#     print("start A")
+#     a = timeit.repeat(
+#         stmt="""entropy_numpy(labels)""",
+#         setup="""labels=[
+#     [1, 1, 2, 2, 2],
+#     [1, 2, 3, 3, 3],
+#     [1, 1, 1, 1, 1]
+# ];from __main__ import entropy_numpy""",
+#         repeat=3,
+#         number=repeat_number,
+#     )
+#     print("end A")
+#     b = timeit.repeat(
+#         stmt="""entropy_main(input)""",
+#         setup="""input = [
+#     [1, 1, 2, 2, 2],
+#     [1, 2, 3, 3, 3],
+#     [1, 1, 1, 1, 1]
+# ];from __main__ import entropy_main""",
+#         repeat=3,
+#         number=repeat_number,
+#     )
+#     for approach, timeit_results in zip(["numpy/math", "main/numpy"], [a, b]):
+#         print(
+#             "Method: {}, Avg.: {:.6f}".format(approach, np.array(timeit_results).mean())
+#         )

@@ -1,6 +1,7 @@
 import copy
 import os
 from abc import ABC, abstractmethod
+from enum import Enum, auto
 from typing import TypeVar, Union, List, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,6 +10,10 @@ from log_manager import logger
 
 T = TypeVar("T")
 from PIL import Image as PILImage
+class RegionType(Enum):
+    BOUNDING_BOX = auto()
+    POLYGON = auto()
+    MASK = auto()
 
 
 class Image(ABC):
@@ -66,28 +71,20 @@ class Image(ABC):
 
 class RegionOfInterest:
     """
-    This class represents a region of interest (ROI) within an image.
+    Represents a Region of Interest (ROI) in a medical image, which may be a bounding box,
+    a polygon, or a binary mask.
 
     Parameters:
-        image (Image): The Image object that contains the region of interest.
-        coordinates (Union[List[int], List[Tuple[int, int]], np.ndarray]): The coordinates defining the region of interest.
-            This can be in various forms such as:
-            - Bounding box: List of four integers [x_min, y_min, x_max, y_max]
-            - Polygon: List of tuples of integers [(x1, y1), (x2, y2), ..., (xn, yn)]
-            - Mask: 2D numpy array of the same dimensions as the image, where the region of interest is marked
+        image (Image): The Image object the ROI is based on.
+        coordinates (Union[List[int], List[Tuple[int, int]], np.ndarray]): The ROI definition.
+            - Bounding box: [x_min, y_min, x_max, y_max]
+            - Polygon: [(x1, y1), (x2, y2), ..., (xn, yn)]
+            - Mask: 2D NumPy array
 
     Attributes:
-        image (Image): The Image object that contains the region of interest.
-        coordinates (Union[List[int], List[Tuple[int, int]], np.ndarray]): The coordinates defining the region of interest.
-
-    Examples:
-        >>> image = ExampleImage("example_path")
-        >>> image.load()
-        >>> roi_bbox = RegionOfInterest(image, [50, 50, 150, 150])
-        >>> roi_polygon = RegionOfInterest(image, [(50, 50), (150, 50), (150, 150), (50, 150)])
-        >>> mask = np.zeros((image.height, image.width))
-        >>> mask[50:150, 50:150] = 1
-        >>> roi_mask = RegionOfInterest(image, mask)
+        image (Image): The original image.
+        coordinates: Coordinates representing the ROI.
+        region_type (RegionType): The type of ROI (bounding box, polygon, or mask).
     """
 
     def __init__(
@@ -97,43 +94,62 @@ class RegionOfInterest:
     ):
         self.image = image
         self.coordinates = coordinates
+        self.region_type = self._determine_region_type()
 
-    def load(self):
+    def _determine_region_type(self) -> RegionType:
+        if isinstance(self.coordinates, list):
+            if len(self.coordinates) == 4 and all(isinstance(c, int) for c in self.coordinates):
+                return RegionType.BOUNDING_BOX
+            elif all(isinstance(c, tuple) and len(c) == 2 for c in self.coordinates):
+                return RegionType.POLYGON
+        elif isinstance(self.coordinates, np.ndarray):
+            return RegionType.MASK
+
+        raise ValueError("Unsupported or invalid coordinates format for RegionOfInterest")
+
+    def load(self) -> Image:
         """
-        Crop the image to the ROI and create a new ExampleImage object.
+        Crop the image to the ROI and return a new Image object containing only the ROI.
 
         Returns:
-            ExampleImage: A new ExampleImage object cropped to the ROI.
+            Image: A new Image instance cropped to the region of interest.
         """
-        if isinstance(self.coordinates, list) and len(self.coordinates) == 4:
-            # Bounding box: [x_min, y_min, x_max, y_max]
+        pixel_data = self.image.pixel_data
+
+        if self.region_type == RegionType.BOUNDING_BOX:
             x_min, y_min, x_max, y_max = self.coordinates
-            cropped_pixel_data = self.image.pixel_data[y_min:y_max, x_min:x_max]
+            cropped_pixel_data = pixel_data[y_min:y_max, x_min:x_max]
 
-        elif isinstance(self.coordinates, list) and all(
-            isinstance(coord, tuple) for coord in self.coordinates
-        ):
-            # Polygon: [(x1, y1), (x2, y2), ..., (xn, yn)]
-            mask = np.zeros_like(self.image.pixel_data, dtype=bool)
-            rr, cc = zip(*self.coordinates)
-            mask[cc, rr] = True
-            cropped_pixel_data = self.image.pixel_data[mask].reshape((len(rr), -1))
+        elif self.region_type == RegionType.POLYGON:
+            from skimage.draw import polygon  # polygon rasterization
 
-        elif isinstance(self.coordinates, np.ndarray):
-            # Mask: 2D numpy array of the same dimensions as the image
+            mask = np.zeros_like(pixel_data, dtype=bool)
+            poly_y, poly_x = zip(*self.coordinates)
+            rr, cc = polygon(poly_y, poly_x)
+            mask[rr, cc] = True
+            cropped_pixel_data = pixel_data * mask
+
+            y_indices, x_indices = np.nonzero(mask)
+            y_min, y_max = y_indices.min(), y_indices.max() + 1
+            x_min, x_max = x_indices.min(), x_indices.max() + 1
+            cropped_pixel_data = cropped_pixel_data[y_min:y_max, x_min:x_max]
+
+        elif self.region_type == RegionType.MASK:
             mask = self.coordinates.astype(bool)
-            cropped_pixel_data = self.image.pixel_data * mask
+            cropped_pixel_data = pixel_data * mask
+
             y_indices, x_indices = np.nonzero(mask)
             y_min, y_max = y_indices.min(), y_indices.max() + 1
             x_min, x_max = x_indices.min(), x_indices.max() + 1
             cropped_pixel_data = cropped_pixel_data[y_min:y_max, x_min:x_max]
 
         else:
-            raise ValueError("Unsupported coordinates type")
+            raise RuntimeError("Unknown region type.")
 
+        # Create a new Image instance and copy metadata
         cropped_image = copy.deepcopy(self.image)
-        cropped_image.width = cropped_pixel_data.shape[1]
-        cropped_image.height = cropped_pixel_data.shape[0]
         cropped_image.pixel_data = cropped_pixel_data
+        cropped_image.height, cropped_image.width = cropped_pixel_data.shape[:2]
 
         return cropped_image
+
