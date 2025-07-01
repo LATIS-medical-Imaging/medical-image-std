@@ -25,7 +25,7 @@ class DicomImage(Image):
             )
         filename, extension = os.path.splitext(self.file_path)
         # Update DICOM data pixel array
-        self.dicom_data.PixelData = self.pixel_data.tobytes()
+        self.dicom_data.pixel_array = self.pixel_data.tobytes()
 
         # Save DICOM data back to file
         self.dicom_data.save_as(filename + "_modified.dcm")

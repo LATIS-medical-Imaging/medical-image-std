@@ -2,7 +2,10 @@ import os
 from abc import ABC, abstractmethod
 from torch.utils.data import Dataset
 from typing import Union, Callable, Dict, Optional
-from medical_image.data.image import RegionOfInterest, Image
+from medical_image.data.image import Image
+import numpy as np
+
+from medical_image.data.region_of_interest import RegionOfInterest
 
 
 class MedicalDataset(Dataset, ABC):
@@ -12,14 +15,14 @@ class MedicalDataset(Dataset, ABC):
     """
 
     def __init__(
-        self,
-        base_path: str,
-        file_format: str = "dcm",
-        transform: Optional[Callable] = None,
-        label_type: Optional[str] = None,  # "bbox", "mask", or None
-        label_data: Optional[Union[Dict[str, Union[list, "np.ndarray"]], str]] = None,
-        train: bool = True,
-        test: bool = False,
+            self,
+            base_path: str,
+            file_format: str = "dcm",
+            transform: Optional[Callable] = None,
+            label_type: Optional[str] = None,  # "bbox", "mask", or None
+            label_data: Optional[Union[Dict[str, Union[list, "np.ndarray"]], str]] = None,
+            train: bool = True,
+            test: bool = False,
     ):
         self.base_path = base_path
         self.file_format = file_format.lower()
@@ -70,9 +73,7 @@ class MedicalDataset(Dataset, ABC):
 
         # Apply transform
         if self.transform:
-            pixel_data = self.transform(pixel_data)
-            if label is not None and isinstance(label, np.ndarray):  # e.g., mask
-                label = self.transform(label)
+            self.apply_transform(self.transform, pixel_data, label)
 
         return (pixel_data, label) if label is not None else pixel_data
 
@@ -95,3 +96,7 @@ class MedicalDataset(Dataset, ABC):
             return mask
         else:
             raise ValueError("label_data must be a directory path when label_type is 'mask'")
+
+    @abstractmethod
+    def apply_transform(self, transform, pixel_data, label):
+        pass
