@@ -1,11 +1,13 @@
 import os
 from abc import ABC, abstractmethod
-from torch.utils.data import Dataset
-from typing import Union, Callable, Dict, Optional
-from medical_image.data.image import Image
-import numpy as np
+from typing import Callable, Optional, List
 
+from torch.utils.data import Dataset
+
+from medical_image.data.image import Image
 from medical_image.data.region_of_interest import RegionOfInterest
+from medical_image.utils.ErrorHandler import ErrorMessages
+from medical_image.utils.annotation import AnnotationType
 
 
 class MedicalDataset(Dataset, ABC):
@@ -17,41 +19,36 @@ class MedicalDataset(Dataset, ABC):
     def __init__(
             self,
             base_path: str,
-            file_format: str = "dcm",
+            file_format: str = ".dcm",
             transform: Optional[Callable] = None,
-            label_type: Optional[str] = None,  # "bbox", "mask", or None
-            label_data: Optional[Union[Dict[str, Union[list, "np.ndarray"]], str]] = None,
             train: bool = True,
             test: bool = False,
     ):
         self.base_path = base_path
         self.file_format = file_format.lower()
         self.transform = transform
-        self.label_type = label_type
-        self.label_data = label_data
+        self.image_list: List[Image] = None
         self.train = train
         self.test = test
 
-        self.image_paths = [
-            os.path.join(base_path, f)
-            for f in os.listdir(base_path)
-            if f.lower().endswith(self.file_format)
-        ]
-        self.image_paths.sort()
 
     def __len__(self):
-        return len(self.image_paths)
+        return len(self.image_list)
 
     def __getitem__(self, idx):
-        image_path = self.image_paths[idx]
-        image_obj = self.load_image(image_path)  # Returns subclass of Image
+        if self.image_list is None:
+            raise ErrorMessages.empty_dataset()
+        image_path = self.image_list[idx].file_path
+        image_obj = self.image_list[idx]  # Returns subclass of Image
+        # FIXME: the load should be done in externel way to load all images or check with load batch
         image_obj.load()  # Load pixel data into image_obj
 
         pixel_data = image_obj.pixel_data
-        label = None
+        label = image_obj.label
 
         # Load label if defined
-        if self.label_type in {"bbox", "polygon", "mask"}:
+        if label.annotation_type in {AnnotationType.BOUNDING_BOX, AnnotationType.POLYGON, AnnotationType.MASK}:
+            # tODO: Stopped Here continue
             filename = os.path.basename(image_path)
 
             # Coordinate source: either dict (for bbox/polygon) or mask directory path (for mask)
@@ -70,7 +67,8 @@ class MedicalDataset(Dataset, ABC):
                 cropped_image = roi.load()
                 pixel_data = cropped_image.pixel_data
                 label = mask_image.pixel_data  # Full original mask (optional)
-
+        else:
+            raise ErrorMessages.annotation_type_not_recognized(label.annotation_type)
         # Apply transform
         if self.transform:
             self.apply_transform(self.transform, pixel_data, label)
@@ -78,7 +76,7 @@ class MedicalDataset(Dataset, ABC):
         return (pixel_data, label) if label is not None else pixel_data
 
     @abstractmethod
-    def load_image(self, path: str) -> Image:
+    def load_dataset(self) -> Image:
         """
         Should return an instance of Image (e.g., DicomImage).
         """

@@ -3,11 +3,11 @@ from abc import ABC, abstractmethod
 from typing import TypeVar
 
 import matplotlib.pyplot as plt
-import numpy as np
+import torch
 
 from log_manager import logger
-from medical_image.utils.annotation import Annotation
 from medical_image.utils.ErrorHandler import ErrorMessages
+from medical_image.utils.annotation import Annotation
 
 T = TypeVar("T")
 from PIL import Image as PILImage
@@ -20,8 +20,9 @@ class Image(ABC):
         self.file_path = file_path
         self.width = None
         self.height = None
-        self.pixel_data = None
+        self.pixel_data: torch.Tensor = None
         self.label: Annotation = None
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     @abstractmethod
     def load(self):
@@ -47,10 +48,11 @@ class Image(ABC):
         pixel_data (np.ndarray): The NumPy array containing the pixel data.
         file_path (str): The file path where the PNG image will be saved.
         """
-        if self.pixel_data is None and not isinstance(self.pixel_data, np.ndarray):
-            raise ValueError("pixel_data is not a valid NumPy array.")
+
+        if self.pixel_data is None or not isinstance(self.pixel_data, torch.Tensor):
+            raise ErrorMessages.invalid_pixel_data()
         filename, _ = os.path.splitext(self.file_path)
-        image = PILImage.fromarray(self.pixel_data)
+        image = PILImage.fromarray(self.pixel_data.detach().cpu().numpy())
         image.save(filename + ".png")
         logger.info(f"Image saved successfully at {filename + '.png'}")
 
@@ -61,8 +63,11 @@ class Image(ABC):
         cmap (str): Colormap to use for displaying the image. Default is 'gray'.
         """
         if self.pixel_data is None:
-            raise ValueError("pixel_data is not loaded.")
-        plt.imshow(self.pixel_data, cmap=cmap)
+            raise ErrorMessages.invalid_pixel_data()
+        plt.imshow(self.to_numpy(), cmap=cmap)
         plt.axis("off")  # Hide axes
         plt.show()
+
+    def to_numpy(self):
+        return self.pixel_data.detach().cpu().numpy()
 
