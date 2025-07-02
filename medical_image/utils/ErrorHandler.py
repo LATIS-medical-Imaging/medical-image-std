@@ -58,6 +58,11 @@ class ErrorMessages:
             f"Invalid input type: expected {expected_type}, got {received_type}.", code=422
         )
     @staticmethod
+    def input_none(expected_type):
+        return InvalidInputTypeError(
+            f"{expected_type} must be provided.", code=422
+        )
+    @staticmethod
     def unsupported_file_type(extension, expected=".dcm"):
         return UnsupportedFileTypeError(
             f"Unsupported file type: '{extension}'. Only {expected} files are supported.", code=415

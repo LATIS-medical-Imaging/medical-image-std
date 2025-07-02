@@ -4,6 +4,7 @@ from typing import Callable, Optional, List
 
 from torch.utils.data import Dataset
 
+from medical_image.data.dicom_image import DicomImage
 from medical_image.data.image import Image
 from medical_image.data.region_of_interest import RegionOfInterest
 from medical_image.utils.ErrorHandler import ErrorMessages
@@ -27,7 +28,9 @@ class MedicalDataset(Dataset, ABC):
         self.base_path = base_path
         self.file_format = file_format.lower()
         self.transform = transform
-        self.image_list: List[Image] = None
+        self.images_path: List[str] = None
+        self.image_labels = None
+        self.current_image = None
         self.train = train
         self.test = test
 
@@ -36,15 +39,17 @@ class MedicalDataset(Dataset, ABC):
         return len(self.image_list)
 
     def __getitem__(self, idx):
-        if self.image_list is None:
+        if self.images_path is None:
             raise ErrorMessages.empty_dataset()
-        image_path = self.image_list[idx].file_path
-        image_obj = self.image_list[idx]  # Returns subclass of Image
+        image_path = self.images_path[idx]
+        if self.file_format == ".dcm":
+            self.current_image = DicomImage(image_path)
         # FIXME: the load should be done in externel way to load all images or check with load batch
-        image_obj.load()  # Load pixel data into image_obj
+        #       The load should be external and the image should be already loaded (first load 10 then remove then reload the next 10 (add method destroy)
+        # image_obj.load()  # Load pixel data into image_obj
 
-        pixel_data = image_obj.pixel_data
-        label = image_obj.label
+        pixel_data = self.current_image.pixel_data
+        label = self.current_image.label
 
         # Load label if defined
         if label.annotation_type in {AnnotationType.BOUNDING_BOX, AnnotationType.POLYGON, AnnotationType.MASK}:
@@ -76,7 +81,15 @@ class MedicalDataset(Dataset, ABC):
         return (pixel_data, label) if label is not None else pixel_data
 
     @abstractmethod
-    def load_dataset(self) -> Image:
+    def load_batch(self, batch_size) -> Image:
+        """
+        Should return an instance of Image (e.g., DicomImage).
+        """
+        pass
+
+
+    @abstractmethod
+    def destroy_batch(self) -> Image:
         """
         Should return an instance of Image (e.g., DicomImage).
         """
