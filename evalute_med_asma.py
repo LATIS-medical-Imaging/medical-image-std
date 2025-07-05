@@ -6,7 +6,7 @@ import pandas as pd
 from tqdm import tqdm
 from transformers import pipeline
 import torch
-
+from PIL import Image
 # Initialize MedGemma
 device = 0 if torch.cuda.is_available() else -1
 print(f"[INFO] Using device: {'GPU' if device == 0 else 'CPU'}")
@@ -18,11 +18,14 @@ def dcm_to_raw_array(dcm_path):
     print(f"[DEBUG] Reading DICOM file: {dcm_path}")
     ds = pydicom.dcmread(dcm_path)
     img = ds.pixel_array
+
     print(f"[DEBUG] DICOM shape: {img.shape}, dtype: {img.dtype}")
-    if len(img.shape) == 2:
-        img = np.stack([img]*3, axis=-1)
-        print("[DEBUG] Converted grayscale to 3-channel image.")
-    return img
+    # if len(img.shape) == 2:
+    #     img = np.stack([img]*3, axis=-1)
+    #     print("[DEBUG] Converted grayscale to 3-channel image.")
+    image = Image.fromarray(img.astype(np.uint8))
+
+    return image
 
 def ask_medgemma(image_np):
     """Query MedGemma with raw DICOM image array (no normalization)."""
