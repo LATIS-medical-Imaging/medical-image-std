@@ -6,52 +6,52 @@
 # print(df.head())
 
 
-#from transformers import AutoProcessor, AutoModelForImageTextToText
-#from PIL import Image
+# from transformers import AutoProcessor, AutoModelForImageTextToText
+# from PIL import Image
 import torch
 import pydicom
 import numpy as np
+
 # import os
 # os.environ["TORCHDYNAMO_DISABLE"] = "1"
 # os.environ["TORCHDYNAMO_VERBOSE"] = "1"
 
 # Load the processor and model
-#processor = AutoProcessor.from_pretrained("google/medgemma-4b-it")
-#model = AutoModelForImageTextToText.from_pretrained("google/medgemma-4b-it")
+# processor = AutoProcessor.from_pretrained("google/medgemma-4b-it")
+# model = AutoModelForImageTextToText.from_pretrained("google/medgemma-4b-it")
 
 # Load and preprocess DICOM image
-#dicom_path = "/home/latis/Downloads/MRBRAIN.DCM"  # Replace with your actual path
-#dicom_data = pydicom.dcmread(dicom_path)
+# dicom_path = "/home/latis/Downloads/MRBRAIN.DCM"  # Replace with your actual path
+# dicom_data = pydicom.dcmread(dicom_path)
 
 # Convert the DICOM pixel data to a PIL Image
-#pixel_array = dicom_data.pixel_array
+# pixel_array = dicom_data.pixel_array
 
 # Normalize the pixel values to 0-255 and convert to uint8
-#pixel_array = pixel_array.astype(float)
-#pixel_array -= pixel_array.min()
-#pixel_array /= pixel_array.max()
-#pixel_array *= 255.0
-#pixel_array = pixel_array.astype(np.uint8)
+# pixel_array = pixel_array.astype(float)
+# pixel_array -= pixel_array.min()
+# pixel_array /= pixel_array.max()
+# pixel_array *= 255.0
+# pixel_array = pixel_array.astype(np.uint8)
 
 # Convert to RGB if grayscale
-#if len(pixel_array.shape) == 2:
- #   image = Image.fromarray(pixel_array).convert("RGB")
-#else:
+# if len(pixel_array.shape) == 2:
+#   image = Image.fromarray(pixel_array).convert("RGB")
+# else:
 #    image = Image.fromarray(pixel_array)
 
 # Define the prompt
-#prompt = "Describe the medical condition in the image."
+# prompt = "Describe the medical condition in the image."
 
 # Preprocess and run the model
-#inputs = processor(images=image, text=prompt, return_tensors="pt")
+# inputs = processor(images=image, text=prompt, return_tensors="pt")
 
-#with torch.no_grad():
+# with torch.no_grad():
 #    generated_ids = model.generate(**inputs, max_new_tokens=128)
 
 # Decode the output
-#generated_text = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
-#print("Generated Text:", generated_text)
-
+# generated_text = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+# print("Generated Text:", generated_text)
 
 
 # pip install accelerate
@@ -61,7 +61,7 @@ import requests
 import torch
 
 dicom_url = "https://marketing.webassets.siemens-healthineers.com/fcc5ee5afaaf9c51/b73cfcb2da62/Vida_Head.MR.Comp_DR-Gain_DR.1005.1.2021.04.27.14.20.13.818.14380335.dcm"  # Add your DICOM file URL here
-#dcm_path="/home/latis/Downloads/Altea_t1_sag_tse_DR_77233508.dcm"
+# dcm_path="/home/latis/Downloads/Altea_t1_sag_tse_DR_77233508.dcm"
 dcm_path = "/home/latis/Downloads/1.3.6.1.4.1.5962.99.1.2280943358.716200484.1363785608958.256.0.dcm"
 # Fetch DICOM image from URL
 dicom_data = requests.get(dicom_url, stream=True).content
@@ -85,21 +85,27 @@ processor = AutoProcessor.from_pretrained(model_id)
 messages = [
     {
         "role": "system",
-        "content": [{"type": "text", "text": "You are an expert radiologist."}]
+        "content": [{"type": "text", "text": "You are an expert radiologist."}],
     },
     {
         "role": "user",
         "content": [
-            {"type": "text", "text": "Does the image contains some anomalies, and describe it"},
-            {"type": "image", "image": image}
-        ]
-    }
+            {
+                "type": "text",
+                "text": "Does the image contains some anomalies, and describe it",
+            },
+            {"type": "image", "image": image},
+        ],
+    },
 ]
 
 # Process the input
 inputs = processor.apply_chat_template(
-    messages, add_generation_prompt=True, tokenize=True,
-    return_dict=True, return_tensors="pt"
+    messages,
+    add_generation_prompt=True,
+    tokenize=True,
+    return_dict=True,
+    return_tensors="pt",
 ).to(model.device, dtype=torch.bfloat16)
 
 input_len = inputs["input_ids"].shape[-1]
@@ -113,4 +119,3 @@ with torch.inference_mode():
 decoded = processor.decode(generation, skip_special_tokens=True)
 print(decoded)
 print(type(decoded))
-

@@ -18,12 +18,12 @@ class MedicalDataset(Dataset, ABC):
     """
 
     def __init__(
-            self,
-            base_path: str,
-            file_format: str = ".dcm",
-            transform: Optional[Callable] = None,
-            train: bool = True,
-            test: bool = False,
+        self,
+        base_path: str,
+        file_format: str = ".dcm",
+        transform: Optional[Callable] = None,
+        train: bool = True,
+        test: bool = False,
     ):
         self.base_path = base_path
         self.file_format = file_format.lower()
@@ -33,7 +33,6 @@ class MedicalDataset(Dataset, ABC):
         self.current_image = None
         self.train = train
         self.test = test
-
 
     def __len__(self):
         return len(self.image_list)
@@ -52,7 +51,11 @@ class MedicalDataset(Dataset, ABC):
         label = self.current_image.label
 
         # Load label if defined
-        if label.annotation_type in {AnnotationType.BOUNDING_BOX, AnnotationType.POLYGON, AnnotationType.MASK}:
+        if label.annotation_type in {
+            AnnotationType.BOUNDING_BOX,
+            AnnotationType.POLYGON,
+            AnnotationType.MASK,
+        }:
             # tODO: Stopped Here continue
             filename = os.path.basename(image_path)
 
@@ -63,7 +66,9 @@ class MedicalDataset(Dataset, ABC):
                     roi = RegionOfInterest(image_obj, coordinates)
                     cropped_image = roi.load()
                     pixel_data = cropped_image.pixel_data
-                    label = roi.coordinates  # Optionally, return the raw coordinates as label
+                    label = (
+                        roi.coordinates
+                    )  # Optionally, return the raw coordinates as label
 
             elif self.label_type == "mask":
                 mask_image = self.load_mask(image_path)  # Should return Image subclass
@@ -87,7 +92,6 @@ class MedicalDataset(Dataset, ABC):
         """
         pass
 
-
     @abstractmethod
     def destroy_batch(self) -> Image:
         """
@@ -106,7 +110,9 @@ class MedicalDataset(Dataset, ABC):
             mask.load()
             return mask
         else:
-            raise ValueError("label_data must be a directory path when label_type is 'mask'")
+            raise ValueError(
+                "label_data must be a directory path when label_type is 'mask'"
+            )
 
     @abstractmethod
     def apply_transform(self, transform, pixel_data, label):

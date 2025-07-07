@@ -45,12 +45,14 @@ def ask_medgemma(image_pil):
     messages = [
         {
             "role": "system",
-            "content": [{"type": "text", "text": "You are an expert radiologist."}]
+            "content": [{"type": "text", "text": "You are an expert radiologist."}],
         },
         {
             "role": "user",
             "content": [
-                {"type": "text", "text": """
+                {
+                    "type": "text",
+                    "text": """
                 Analyze the provided mammography images for the presence of microcalcifications.
 
                     1. Identify and highlight all suspicious microcalcifications.
@@ -75,17 +77,20 @@ def ask_medgemma(image_pil):
                     
                     * Acknowledge any limitations in the image quality or specific areas that are challenging to assess
 
-                """
-                 },
-                {"type": "image", "image": image_pil}
-            ]
-        }
+                """,
+                },
+                {"type": "image", "image": image_pil},
+            ],
+        },
     ]
 
     # Process the input with the processor
     inputs = processor.apply_chat_template(
-        messages, add_generation_prompt=True, tokenize=True,
-        return_dict=True, return_tensors="pt"
+        messages,
+        add_generation_prompt=True,
+        tokenize=True,
+        return_dict=True,
+        return_tensors="pt",
     ).to(model.device, dtype=torch.bfloat16)
 
     input_len = inputs["input_ids"].shape[-1]
@@ -124,6 +129,7 @@ def find_matching_dcm(tif_id, dcm_root):
     print(f"[WARNING] No match found for ID: {tif_id}")
     return None
 
+
 def evaluate_from_masks(tif_dir, dcm_root, output_json="medgemma_results.json"):
     results = []
     tif_files = [f for f in os.listdir(tif_dir) if f.lower().endswith(".tif")]
@@ -144,20 +150,24 @@ def evaluate_from_masks(tif_dir, dcm_root, output_json="medgemma_results.json"):
         try:
             image_pil = dcm_to_raw_array(dcm_path)
             prediction = ask_medgemma(image_pil)
-            results.append({
-                "mask_file": tif_file,
-                "dcm_file": os.path.basename(dcm_path),
-                "microcalcification": prediction
-            })
+            results.append(
+                {
+                    "mask_file": tif_file,
+                    "dcm_file": os.path.basename(dcm_path),
+                    "microcalcification": prediction,
+                }
+            )
             print(f"[SUCCESS] Prediction saved for {tif_file}")
         except Exception as e:
             print(f"[ERROR] Failed to process {dcm_path}: {e}")
 
     # Save results as JSON
-    with open(output_json, 'w') as f:
+    with open(output_json, "w") as f:
         json.dump(results, f, indent=4)
 
     print(f"\n✅ Results saved to: {output_json}")
+
+
 # def evaluate_from_masks(tif_dir, dcm_root, output_csv="medgemma_results.csv"):
 #     results = []
 #     tif_files = [f for f in os.listdir(tif_dir) if f.lower().endswith(".tif")]

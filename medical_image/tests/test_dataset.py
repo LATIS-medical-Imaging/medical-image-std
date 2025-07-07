@@ -11,7 +11,7 @@ class TestDataset:
             file_format="dcm",
             label_type="mask",
             label_data="data/masks",
-            transform=transform
+            transform=transform,
         )
 
         # Create DataLoader for batch-wise loading
@@ -20,7 +20,7 @@ class TestDataset:
             batch_size=8,
             shuffle=True,
             num_workers=4,  # Parallel loading (depends on your CPU)
-            pin_memory=True  # Optimized transfer to GPU
+            pin_memory=True,  # Optimized transfer to GPU
         )
 
         # Training loop (example)
@@ -29,4 +29,3 @@ class TestDataset:
             images = images.to(device)
             masks = masks.to(device)
             # ... forward pass, loss, etc.
-

@@ -70,4 +70,3 @@ class Image(ABC):
 
     def to_numpy(self):
         return self.pixel_data.detach().cpu().numpy()
-
