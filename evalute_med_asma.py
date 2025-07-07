@@ -7,6 +7,7 @@ from tqdm import tqdm
 from transformers import AutoModelForImageTextToText, AutoProcessor
 import torch
 from PIL import Image
+import json
 
 # Initialize MedGemma model and processor
 device = 0 if torch.cuda.is_available() else -1
@@ -123,8 +124,7 @@ def find_matching_dcm(tif_id, dcm_root):
     print(f"[WARNING] No match found for ID: {tif_id}")
     return None
 
-
-def evaluate_from_masks(tif_dir, dcm_root, output_csv="medgemma_results.csv"):
+def evaluate_from_masks(tif_dir, dcm_root, output_json="medgemma_results.json"):
     results = []
     tif_files = [f for f in os.listdir(tif_dir) if f.lower().endswith(".tif")]
     print(f"[INFO] Found {len(tif_files)} .tif mask files.")
@@ -153,9 +153,43 @@ def evaluate_from_masks(tif_dir, dcm_root, output_csv="medgemma_results.csv"):
         except Exception as e:
             print(f"[ERROR] Failed to process {dcm_path}: {e}")
 
-    df = pd.DataFrame(results)
-    df.to_csv(output_csv, index=False)
-    print(f"\n✅ Results saved to: {output_csv}")
+    # Save results as JSON
+    with open(output_json, 'w') as f:
+        json.dump(results, f, indent=4)
+
+    print(f"\n✅ Results saved to: {output_json}")
+# def evaluate_from_masks(tif_dir, dcm_root, output_csv="medgemma_results.csv"):
+#     results = []
+#     tif_files = [f for f in os.listdir(tif_dir) if f.lower().endswith(".tif")]
+#     print(f"[INFO] Found {len(tif_files)} .tif mask files.")
+#
+#     for tif_file in tqdm(tif_files, desc="Evaluating from mask files"):
+#         print(f"\n[PROCESSING] {tif_file}")
+#         tif_id = extract_id_from_filename(tif_file)
+#         if not tif_id:
+#             print(f"[WARNING] Skipping unrecognized file name: {tif_file}")
+#             continue
+#
+#         dcm_path = find_matching_dcm(tif_id, dcm_root)
+#         if not dcm_path:
+#             print(f"[WARNING] No matching DICOM found for: {tif_file}")
+#             continue
+#
+#         try:
+#             image_pil = dcm_to_raw_array(dcm_path)
+#             prediction = ask_medgemma(image_pil)
+#             results.append({
+#                 "mask_file": tif_file,
+#                 "dcm_file": os.path.basename(dcm_path),
+#                 "microcalcification": prediction
+#             })
+#             print(f"[SUCCESS] Prediction saved for {tif_file}")
+#         except Exception as e:
+#             print(f"[ERROR] Failed to process {dcm_path}: {e}")
+#
+#     df = pd.DataFrame(results)
+#     df.to_csv(output_csv, index=False)
+#     print(f"\n✅ Results saved to: {output_csv}")
 
 
 if __name__ == "__main__":
