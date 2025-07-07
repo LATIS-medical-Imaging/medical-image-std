@@ -42,7 +42,7 @@ def find_dcm_files(root_dir):
                 dcm_files.append(os.path.join(root, file))
     return dcm_files
 
-def evaluate_dataset(dataset_root, output_csv="medgemma_results.csv"):
+def evaluate_dataset(dataset_root, output_csv="medgemma_results_classification.csv"):
     dcm_files = find_dcm_files(dataset_root)
     results = []
 

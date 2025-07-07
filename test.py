@@ -1,7 +1,7 @@
 # import pandas as pd
 # import pydicom
 #
-# df = pd.read_csv("medgemma_results.csv")
+# df = pd.read_csv("medgemma_results_classification.csv")
 #
 # print(df.head())
 

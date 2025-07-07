@@ -49,7 +49,33 @@ def ask_medgemma(image_pil):
         {
             "role": "user",
             "content": [
-                {"type": "text", "text": "Does this image contain microcalcification? Answer with only 'yes' or 'no'."},
+                {"type": "text", "text": """
+                Analyze the provided mammography images for the presence of microcalcifications.
+
+                    1. Identify and highlight all suspicious microcalcifications.
+                    
+                    2. For each detected microcalcification cluster or individual calcification, provide precise anatomical localization (e.g., quadrant, clock position, distance from nipple, depth).
+                    
+                    3. Describe the morphology and distribution of the calcifications using BI-RADS descriptors (e.g., punctate, amorphous, pleomorphic, fine linear, branching, clustered, diffuse, regional, segmental).
+                    
+                    4. Based on the detected features, provide a preliminary BI-RADS assessment category for the calcifications (e.g., BI-RADS 2, 3, 4A, 4B, 4C, 5).
+                    
+                    5. Suggest potential differential diagnoses based on the characteristics of the calcifications.
+                    
+                    6. Propose next steps or further imaging/biopsy recommendations based on the assessment.
+                    
+                    7. Indicate the confidence level of the detection and assessment (e.g., High, Moderate, Low).
+                    
+                    Present the findings in a structured report format, clearly separating sections for 'Detection', 'Localization', 'Characterization', 'Assessment', 'Differential Diagnosis', and 'Recommendations'. Use bullet points for lists and clear, concise language. If possible, visually annotate the image with bounding boxes or overlays highlighting the detected calcifications.
+                    
+                    * Focus solely on microcalcifications; ignore other findings unless they are directly relevant to the calcification assessment.
+                    
+                    * Prioritize clinically significant findings.
+                    
+                    * Acknowledge any limitations in the image quality or specific areas that are challenging to assess
+
+                """
+                 },
                 {"type": "image", "image": image_pil}
             ]
         }
@@ -73,7 +99,8 @@ def ask_medgemma(image_pil):
     print(f"[RESULT] MedGemma response: {decoded}")
 
     # Check if the response contains 'yes' or 'no'
-    return "yes" if "yes" in decoded.lower() else "no"
+    # return "yes" if "yes" in decoded.lower() else "no"
+    return decoded
 
 
 def extract_id_from_filename(filename):
