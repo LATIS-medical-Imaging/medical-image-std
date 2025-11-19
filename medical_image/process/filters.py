@@ -88,7 +88,7 @@ class Filters:
         x = np.arange(-k, k + 1)
         y = np.arange(-k, k + 1)
         x, y = np.meshgrid(x, y)
-        kernel = np.exp(-(x ** 2 + y ** 2) / (2 * sigma ** 2))
+        kernel = np.exp(-(x**2 + y**2) / (2 * sigma**2))
         return kernel / np.sum(kernel)
 
     @staticmethod
@@ -116,7 +116,7 @@ class Filters:
         # Perform the median filtering
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
-                region = padded_image[i: i + size, j: j + size]
+                region = padded_image[i : i + size, j : j + size]
                 filtered_image[i, j] = np.median(region)
 
         np.copyto(output.pixel_data, filtered_image)
@@ -155,7 +155,7 @@ class Filters:
         y = image_data.height
         u, v = np.meshgrid(np.arange(x), np.arange(y))
         D = np.sqrt((u - x / 2) ** 2 + (v - y / 2) ** 2)
-        band_pass = D ** 2 - D_0 ** 2
+        band_pass = D**2 - D_0**2
         cuttoff = 8 * W * D
         denom = 1.0 + (band_pass / cuttoff) ** (2 * n)
         band_pass = 1.0 / denom
@@ -163,7 +163,7 @@ class Filters:
 
     @staticmethod
     def difference_of_gaussian(
-            image_data: Image, output: Image, sigma_1: float, sigma_2: float
+        image_data: Image, output: Image, sigma_1: float, sigma_2: float
     ):
         """
         Applies the Difference of Gaussian (DoG) filter to the given image.
@@ -199,8 +199,8 @@ class Filters:
         image = image_data.pixel_data
         gaussian = Filters.gaussian_filter(image, sigma)
         laplacian = (
-                np.gradient(np.gradient(gaussian)[0])[0]
-                + np.gradient(np.gradient(gaussian)[1])[1]
+            np.gradient(np.gradient(gaussian)[0])[0]
+            + np.gradient(np.gradient(gaussian)[1])[1]
         )
         output.pixel_data = laplacian
 

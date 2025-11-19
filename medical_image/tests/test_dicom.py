@@ -58,7 +58,9 @@ class TestDicom:
         algorithm(image=dicom_image, output=output)
 
         # Check that the pixel data has been modified
-        assert not torch.allclose(dicom_image.pixel_data.float(), output.pixel_data.float())
+        assert not torch.allclose(
+            dicom_image.pixel_data.float(), output.pixel_data.float()
+        )
 
         # Check that the output is a binary image (0 or 255)
         unique_vals = torch.unique(output.pixel_data)

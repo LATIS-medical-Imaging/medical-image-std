@@ -52,8 +52,6 @@ class Patch:
         return f"Patch[{self.row_idx},{self.col_idx}] ({self.x},{self.y}) size={self.width}x{self.height}"
 
 
-
-
 class PatchGrid:
     def __init__(self, parent_image, patch_size):
         """
@@ -138,11 +136,10 @@ class PatchGrid:
 # TODO: add unit test with plots for this patch detection
 # TODO: ADD a plot method in Image class
 
-#TODO: add these to Patch class
+# TODO: add these to Patch class
 #   is_empty() (useful for padded patches)
 #   to_mask() if patch includes segmentation labels
 #   reproject_to_parent() → maps patch coordinates back to original image
 #   and produce:
 #   A SlidingWindowPatchGrid for overlapping patches (stride < patch_size)
 #   and GPU-accelerated patch extraction using torch.unfold
-
