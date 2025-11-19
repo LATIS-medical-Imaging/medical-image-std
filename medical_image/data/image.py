@@ -22,7 +22,9 @@ class Image(ABC):
         self.height = None
         self.pixel_data: torch.Tensor = None
         self.label: Annotation = None
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = "cpu"
+        # TODO: in the case of cuda create a strategy or some abstraction to apply it in process on cuda, or if only cpu process, just handle the case device on cuda and process on cpu
+        # self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     @abstractmethod
     def load(self):

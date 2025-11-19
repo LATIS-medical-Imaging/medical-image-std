@@ -17,7 +17,7 @@ class DicomImage(Image):
 
     def load(self):
         self.dicom_data = pydicom.dcmread(self.file_path)
-        self.pixel_data = torch.Tensor(self.dicom_data.pixel_array, device=self.device)
+        self.pixel_data = torch.tensor(self.dicom_data.pixel_array, device=self.device)
         self.width = self.dicom_data.Columns
         self.height = self.dicom_data.Rows
 
@@ -26,7 +26,8 @@ class DicomImage(Image):
             raise ErrorMessages.dicom_data_not_loaded()
         filename, extension = os.path.splitext(self.file_path)
         # Update DICOM data pixel array
-        self.dicom_data.pixel_array = self.to_numpy().tobytes()
+        # TODO: We should discuss this
+        self.dicom_data.set_pixel_data(self.to_numpy(), "MONOCHROME2", 16)
 
         # Save DICOM data back to file
         self.dicom_data.save_as(filename + "_modified.dcm")

@@ -1,6 +1,7 @@
 import copy
 
 import numpy as np
+import torch
 
 from medical_image.data.image import Image
 from medical_image.process.metrics import Metrics
@@ -10,51 +11,52 @@ class Threshold:
     @staticmethod
     def otsu_threshold(image_data: Image, output: Image = None):
         """
-        Applies Otsu's thresholding method to the given image data.
-
-        Otsu's method automatically determines the optimal threshold value by maximizing the between-class variance.
-        This method is particularly useful for bimodal images where the histogram of pixel intensities has two peaks.
-
-        For more information about the Otsu method, see this link:
-        https://en.wikipedia.org/wiki/Otsu%27s_method
+        Applies Otsu's thresholding method using pure PyTorch operations.
+        Works on CPU and CUDA.
 
         Args:
-            image_data (Image): The input image data as a Image array with pixel values ranging from 0 to 4095.
-            output (np.ndarray, optional): An optional output array to store the binary thresholded image.
+            image_data (Image): The input image data (torch tensor).
+            output (Image, optional): Optional output object.
 
         Returns:
-            np.ndarray: The binary thresholded image where pixel values are either 0 or 255.
+            torch.Tensor: thresholded binary image (0 or 255)
         """
-        image = image_data.pixel_data
-        # Compute histogram
-        hist, bins = np.histogram(image.flatten(), bins=4096, range=(0, 4096))
 
-        # Compute cumulative sums of the histogram
-        cumsum = np.cumsum(hist)
+        # Get torch tensor (assume uint16 → convert to int32)
+        image = image_data.pixel_data.to(torch.int32)
 
-        # Compute cumulative means
-        cummean = np.cumsum(hist * np.arange(4096))
+        device = image.device
 
-        # Compute global mean
+        # 1) Compute histogram using torch.histc
+        # bins = 4096 for 12-bit medical CT/MR images
+        hist = torch.histc(image.float(), bins=4096, min=0, max=4095)
+
+        # 2) Cumulative sums
+        cumsum = torch.cumsum(hist, dim=0)
+
+        # 3) Cumulative means
+        values = torch.arange(4096, device=device, dtype=torch.float32)
+        cummean = torch.cumsum(hist * values, dim=0)
+
+        # 4) Global mean
         global_mean = cummean[-1]
 
-        # Compute between-class variance
-        between_class_variance = (global_mean * cumsum - cummean) ** 2 / (
-            cumsum * (cumsum[-1] - cumsum)
-        )
+        # 5) Between-class variance
+        denom = cumsum * (cumsum[-1] - cumsum)
+        numer = (global_mean * cumsum - cummean) ** 2
 
-        # Replace NaNs with zeroes (since division by zero can occur)
-        between_class_variance = np.nan_to_num(between_class_variance)
+        # Avoid division by zero
+        denom = torch.where(denom == 0, torch.ones_like(denom), denom)
+        between_class_variance = numer / denom
 
-        # Find the threshold value that maximizes between-class variance
-        threshold_value = np.argmax(between_class_variance)
+        # 6) Find threshold (argmax)
+        threshold_value = torch.argmax(between_class_variance).item()
 
-        # Apply threshold
-        binary_image = image > threshold_value
-        binary_image = binary_image.astype(np.uint8) * 255
+        # 7) Apply threshold (comparison works on int32)
+        binary_image = (image > threshold_value).to(torch.uint8) * 255
 
-        # If an output array is provided, copy the result to it
-        if output.pixel_data is not None:
+        # 8) Write to output if provided
+        if output is not None:
             output.pixel_data = binary_image
 
     @staticmethod
