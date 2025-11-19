@@ -82,24 +82,33 @@ class Threshold:
         img = image.unsqueeze(0).unsqueeze(0).float()  # shape (1, 1, H, W)
 
         # Create averaging kernel
-        kernel = torch.ones((1, 1, window_size, window_size), device=image.device) / (window_size ** 2)
+        kernel = torch.ones((1, 1, window_size, window_size), device=image.device) / (
+            window_size**2
+        )
 
         # Local mean
-        mean = F.conv2d(F.pad(img, (pad, pad, pad, pad), mode='replicate'), kernel)
+        mean = F.conv2d(F.pad(img, (pad, pad, pad, pad), mode="replicate"), kernel)
 
         # Local squared mean for std
-        mean_sq = F.conv2d(F.pad(img**2, (pad, pad, pad, pad), mode='replicate'), kernel)
+        mean_sq = F.conv2d(
+            F.pad(img**2, (pad, pad, pad, pad), mode="replicate"), kernel
+        )
         std = torch.sqrt(mean_sq - mean**2 + 1e-8)
 
         # Sauvola threshold
         thresh = mean * (1 + k * (std / r - 1))
 
         # Apply threshold
-        thresh_image = torch.where(image > thresh.squeeze(0).squeeze(0), torch.tensor(255, device=image.device, dtype=torch.uint8), torch.tensor(0, device=image.device, dtype=torch.uint8))
+        thresh_image = torch.where(
+            image > thresh.squeeze(0).squeeze(0),
+            torch.tensor(255, device=image.device, dtype=torch.uint8),
+            torch.tensor(0, device=image.device, dtype=torch.uint8),
+        )
 
         # Assign to output
         if output is not None:
             output.pixel_data[:] = thresh_image
+
     @staticmethod
     def binarize(image_data: Image, output: Image, alpha: float):
         """

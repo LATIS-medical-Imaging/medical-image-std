@@ -1,45 +1,59 @@
 import numpy as np
+import torch
+from torch.nn import functional as F
 
 from medical_image.data.image import Image
 
 
+# TODO: Update everything to be in TORCH
 class Filters:
     @staticmethod
-    def convolution(image_data: Image, output: Image, kernel: np.ndarray):
+    def convolution(image_data: Image, output: Image, kernel):
         """
-        Applies a convolution filter to the given image using the specified kernel.
+        Applies a convolution filter to the given image using PyTorch.
 
         Args:
-            image_data (Image): The input image data encapsulated in an Image object.
-            output (Image): An Image object to store the convolved image.
-            kernel (np.ndarray): The convolution kernel as a 2D NumPy array.
+            image_data (Image): Input image object.
+            output (Image): Output image object.
+            kernel (np.ndarray or torch.Tensor): 2D convolution kernel.
 
         Returns:
             None
         """
-        image = image_data.pixel_data
-        kernel_height, kernel_width = kernel.shape
-        pad_height = kernel_height // 2
-        pad_width = kernel_width // 2
+        image = image_data.pixel_data  # Could be uint16
 
-        # Pad the image
-        padded_image = np.pad(
-            image,
-            ((pad_height, pad_height), (pad_width, pad_width)),
-            mode="constant",
-            constant_values=0,
-        )
+        # Convert to float32 for convolution
+        if not isinstance(image, torch.Tensor):
+            image = torch.from_numpy(image).float()
+        else:
+            image = image.float()
 
-        # Initialize the output image
-        convolved_image = np.zeros_like(image)
+        # Convert kernel to torch.Tensor
+        if not isinstance(kernel, torch.Tensor):
+            kernel = torch.from_numpy(kernel).float()
+        else:
+            kernel = kernel.float()
 
-        # Perform the convolution
-        for i in range(image.shape[0]):
-            for j in range(image.shape[1]):
-                region = padded_image[i : i + kernel_height, j : j + kernel_width]
-                convolved_image[i, j] = np.sum(region * kernel)
+        # Add batch and channel dimensions
+        img = image.unsqueeze(0).unsqueeze(0)  # shape (1,1,H,W)
+        k = kernel.unsqueeze(0).unsqueeze(0)  # shape (1,1,KH,KW)
 
-        np.copyto(output.pixel_data, convolved_image)
+        # Compute padding
+        pad_h = kernel.shape[0] // 2
+        pad_w = kernel.shape[1] // 2
+
+        # Apply convolution
+        convolved = F.conv2d(F.pad(img, (pad_w, pad_w, pad_h, pad_h)), k)
+
+        # Remove batch/channel dimensions
+        convolved = convolved.squeeze(0).squeeze(0)
+
+        # Cast back to original dtype if needed
+        if output.pixel_data.dtype != torch.float32:
+            convolved = convolved.to(output.pixel_data.dtype)
+
+        # Copy to output
+        output.pixel_data[:] = convolved
 
     @staticmethod
     def gaussian_filter(image_data: Image, output: Image, sigma: float):
@@ -74,7 +88,7 @@ class Filters:
         x = np.arange(-k, k + 1)
         y = np.arange(-k, k + 1)
         x, y = np.meshgrid(x, y)
-        kernel = np.exp(-(x**2 + y**2) / (2 * sigma**2))
+        kernel = np.exp(-(x ** 2 + y ** 2) / (2 * sigma ** 2))
         return kernel / np.sum(kernel)
 
     @staticmethod
@@ -102,7 +116,7 @@ class Filters:
         # Perform the median filtering
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
-                region = padded_image[i : i + size, j : j + size]
+                region = padded_image[i: i + size, j: j + size]
                 filtered_image[i, j] = np.median(region)
 
         np.copyto(output.pixel_data, filtered_image)
@@ -141,7 +155,7 @@ class Filters:
         y = image_data.height
         u, v = np.meshgrid(np.arange(x), np.arange(y))
         D = np.sqrt((u - x / 2) ** 2 + (v - y / 2) ** 2)
-        band_pass = D**2 - D_0**2
+        band_pass = D ** 2 - D_0 ** 2
         cuttoff = 8 * W * D
         denom = 1.0 + (band_pass / cuttoff) ** (2 * n)
         band_pass = 1.0 / denom
@@ -149,7 +163,7 @@ class Filters:
 
     @staticmethod
     def difference_of_gaussian(
-        image_data: Image, output: Image, sigma_1: float, sigma_2: float
+            image_data: Image, output: Image, sigma_1: float, sigma_2: float
     ):
         """
         Applies the Difference of Gaussian (DoG) filter to the given image.
@@ -185,8 +199,8 @@ class Filters:
         image = image_data.pixel_data
         gaussian = Filters.gaussian_filter(image, sigma)
         laplacian = (
-            np.gradient(np.gradient(gaussian)[0])[0]
-            + np.gradient(np.gradient(gaussian)[1])[1]
+                np.gradient(np.gradient(gaussian)[0])[0]
+                + np.gradient(np.gradient(gaussian)[1])[1]
         )
         output.pixel_data = laplacian
 

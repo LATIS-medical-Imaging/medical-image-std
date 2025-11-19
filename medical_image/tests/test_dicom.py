@@ -44,12 +44,22 @@ class TestDicom:
 
     @pytest.mark.parametrize("dicom_image", mock_dicom_image())
     def test_custom_algorithm(self, dicom_image):
-        # Apply two gaussian filters and followed with Otsu's threshold to the mock DICOM image
+        # Convert input pixel data to torch.Tensor if not already
+        if not isinstance(dicom_image.pixel_data, torch.Tensor):
+            dicom_image.pixel_data = torch.from_numpy(dicom_image.pixel_data).float()
+
+        # Prepare output image
         output = copy.deepcopy(dicom_image)
+        if not isinstance(output.pixel_data, torch.Tensor):
+            output.pixel_data = torch.from_numpy(output.pixel_data).float()
+
+        # Apply the custom algorithm
         algorithm = CustomAlgorithm()
-        algorithm(dicom_image, output)
+        algorithm(image=dicom_image, output=output)
+
         # Check that the pixel data has been modified
-        assert not np.array_equal(dicom_image.pixel_data, output.pixel_data)
+        assert not torch.allclose(dicom_image.pixel_data.float(), output.pixel_data.float())
 
         # Check that the output is a binary image (0 or 255)
-        assert np.all(np.logical_or(output.pixel_data == 0, output.pixel_data == 255))
+        unique_vals = torch.unique(output.pixel_data)
+        assert set(unique_vals.tolist()).issubset({0, 255})
