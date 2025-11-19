@@ -2,6 +2,7 @@ import copy
 
 import numpy as np
 import pytest
+import torch
 
 from medical_image.algorithms.custom_algorithm import CustomAlgorithm
 from medical_image.process.threshold import Threshold
@@ -27,22 +28,19 @@ class TestDicom:
             dicom_image.pixel_data.cpu().numpy(), output.pixel_data.cpu().numpy()
         )
 
-        # Convert to numpy for binary check
-        out_np = output.pixel_data.cpu().numpy()
-
-        # Check that the output is a binary image (0 or 255)
-        assert np.all((out_np == 0) | (out_np == 255))
+        assert torch.all((output.pixel_data == 0) | (output.pixel_data == 255))
 
     @pytest.mark.parametrize("dicom_image, window_size, k", mock_sauvola_threshold())
     def test_sauvola_threshold(self, dicom_image, window_size, k):
-        # Apply Sauvola's threshold to the mock DICOM image
         output = copy.deepcopy(dicom_image)
         Threshold.sauvola_threshold(dicom_image, output, window_size, k)
-        # Check that the pixel data has been modified
-        assert not np.array_equal(dicom_image.pixel_data, output.pixel_data)
 
-        # Check that the output is a binary image (0 or 255)
-        assert np.all(np.logical_or(output.pixel_data == 0, output.pixel_data == 255))
+        # Check that pixel data has changed
+        assert not torch.equal(dicom_image.pixel_data, output.pixel_data)
+
+        # Check that output is binary (0 or 255)
+        out = output.pixel_data
+        assert torch.all((out == 0) | (out == 255))
 
     @pytest.mark.parametrize("dicom_image", mock_dicom_image())
     def test_custom_algorithm(self, dicom_image):

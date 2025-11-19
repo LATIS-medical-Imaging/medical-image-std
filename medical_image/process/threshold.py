@@ -2,6 +2,7 @@ import copy
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 
 from medical_image.data.image import Image
 from medical_image.process.metrics import Metrics
@@ -61,68 +62,44 @@ class Threshold:
 
     @staticmethod
     def sauvola_threshold(
-        image_data: Image,
-        output: Image = None,
+        image_data: "Image",
+        output: "Image" = None,
         window_size: int = 10,
         k: float = 0.5,
         r: int = 128,
     ):
         """
-        Applies Sauvola thresholding to a grayscale image.
-
-        Sauvola's method calculates the local threshold value for each pixel in a grayscale image based on the mean
-        and standard deviation of the pixel values in a local window. This method is particularly useful for images with
-        varying illumination.
-
-        Args:
-            image (np.ndarray): A 2D grayscale image as a NumPy array.
-            output (np.ndarray, optional): An optional output array to store the binary thresholded image.
-            window_size (int): The size of the local neighborhood window (must be an odd integer). Default is 10.
-            k (float): The weighting factor for the standard deviation. Default is 0.5.
-            r (int): The dynamic range parameter. Default is 128.
-
-        Returns:
-            np.ndarray: The binary thresholded image where pixel values are either 0 or 255.
+        Applies Sauvola thresholding to a grayscale image using PyTorch tensors.
         """
-        image = image_data.pixel_data
-        image_out = output.pixel_data
+        image = image_data.pixel_data  # assume PyTorch tensor: shape (H, W)
 
-        # Check for odd window size
         if window_size % 2 == 0:
             raise ValueError("Window size must be an odd integer.")
 
-        # Pad the image to handle borders
-        pad_width = window_size // 2
-        image_padded = np.pad(image, pad_width, mode="edge")
+        pad = window_size // 2
 
-        # Initialize output image
-        thresh_image = np.zeros_like(image, dtype=np.uint8)
+        # Add batch and channel dimensions for conv2d
+        img = image.unsqueeze(0).unsqueeze(0).float()  # shape (1, 1, H, W)
 
-        # Iterate through each pixel (avoiding padded borders)
-        for i in range(pad_width, image.shape[0] + pad_width):
-            for j in range(pad_width, image.shape[1] + pad_width):
-                # Extract local window
-                window = image_padded[
-                    i - pad_width : i + pad_width + 1, j - pad_width : j + pad_width + 1
-                ]
+        # Create averaging kernel
+        kernel = torch.ones((1, 1, window_size, window_size), device=image.device) / (window_size ** 2)
 
-                # Calculate local mean and standard deviation
-                mean = np.mean(window)
-                std = np.std(window)
+        # Local mean
+        mean = F.conv2d(F.pad(img, (pad, pad, pad, pad), mode='replicate'), kernel)
 
-                # Apply Sauvola formula
-                threshold = mean * (1 + k * (std / r - 1))
+        # Local squared mean for std
+        mean_sq = F.conv2d(F.pad(img**2, (pad, pad, pad, pad), mode='replicate'), kernel)
+        std = torch.sqrt(mean_sq - mean**2 + 1e-8)
 
-                # Apply threshold
-                thresh_image[i - pad_width, j - pad_width] = (
-                    255 if image[i - pad_width, j - pad_width] > threshold else 0
-                )
+        # Sauvola threshold
+        thresh = mean * (1 + k * (std / r - 1))
 
-        # If an output array is provided, copy the result to it
-        if image_out is not None:
-            np.copyto(image_out, thresh_image)
-        output.pixel_data = image_out
+        # Apply threshold
+        thresh_image = torch.where(image > thresh.squeeze(0).squeeze(0), torch.tensor(255, device=image.device, dtype=torch.uint8), torch.tensor(0, device=image.device, dtype=torch.uint8))
 
+        # Assign to output
+        if output is not None:
+            output.pixel_data[:] = thresh_image
     @staticmethod
     def binarize(image_data: Image, output: Image, alpha: float):
         """
