@@ -7,13 +7,13 @@ from torch.utils.data import Dataset
 # TODO: implemnt it with Tree check, download the required csv for train test, and Label, match with the required image
 class CbisDDsmDataset(Dataset):
     def __init__(
-            self,
-            base_path: str,
-            file_format: str = ".dcm",
-            transform: Optional[Callable] = None,
-            train: bool = True,
-            test: bool = False,
-            task: str = "calcification"
+        self,
+        base_path: str,
+        file_format: str = ".dcm",
+        transform: Optional[Callable] = None,
+        train: bool = True,
+        test: bool = False,
+        task: str = "calcification",
     ):
         self.base_path = base_path
         self.file_format = file_format

@@ -26,9 +26,9 @@ class RegionOfInterest:
     """
 
     def __init__(
-            self,
-            image: Image,
-            coordinates: Union[List[int], List[Tuple[int, int]], np.ndarray],
+        self,
+        image: Image,
+        coordinates: Union[List[int], List[Tuple[int, int]], np.ndarray],
     ):
         self.image = image
         self.coordinates = coordinates
@@ -36,14 +36,18 @@ class RegionOfInterest:
 
     def _determine_annotation_type(self) -> AnnotationType:
         if isinstance(self.coordinates, list):
-            if len(self.coordinates) == 4 and all(isinstance(c, int) for c in self.coordinates):
+            if len(self.coordinates) == 4 and all(
+                isinstance(c, int) for c in self.coordinates
+            ):
                 return AnnotationType.BOUNDING_BOX
             elif all(isinstance(c, tuple) and len(c) == 2 for c in self.coordinates):
                 return AnnotationType.POLYGON
         elif isinstance(self.coordinates, np.ndarray):
             return AnnotationType.MASK
 
-        raise ValueError("Unsupported or invalid coordinates format for RegionOfInterest")
+        raise ValueError(
+            "Unsupported or invalid coordinates format for RegionOfInterest"
+        )
 
     def load(self) -> Image:
         """

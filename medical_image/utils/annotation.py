@@ -24,17 +24,17 @@ class Annotation:
     """
 
     def __init__(
-            self,
-            annotation_type: str,  # Assuming AnnotationType is a string enum or constant
-            coordinates: List[Union[List[int], List[Tuple[int, int]], np.ndarray]],
-            classes: List[str],
-            image_view: str,
-            abnormality_type: str,
-            pathology: str,
-            calcification_type: str = None,  # Optional, only for calcifications
-            calcification_distribution: str = None,  # Optional, only for calcifications
-            mass_shape: str = None,  # Optional, only for masses
-            mass_margin: str = None  # Optional, only for masses
+        self,
+        annotation_type: str,  # Assuming AnnotationType is a string enum or constant
+        coordinates: List[Union[List[int], List[Tuple[int, int]], np.ndarray]],
+        classes: List[str],
+        image_view: str,
+        abnormality_type: str,
+        pathology: str,
+        calcification_type: str = None,  # Optional, only for calcifications
+        calcification_distribution: str = None,  # Optional, only for calcifications
+        mass_shape: str = None,  # Optional, only for masses
+        mass_margin: str = None,  # Optional, only for masses
     ):
         """
         Initializes an Annotation object with all necessary attributes.
@@ -74,19 +74,18 @@ class Annotation:
             self.calcification_type = calcification_type
             self.calcification_distribution = calcification_distribution
             if not self.calcification_type or not self.calcification_distribution:
-                raise ErrorMessages.input_none('`calcification_type` and `calcification_distribution`')
+                raise ErrorMessages.input_none(
+                    "`calcification_type` and `calcification_distribution`"
+                )
         elif self.abnormality_type == "mass":
             self.mass_shape = mass_shape
             self.mass_margin = mass_margin
             if not self.mass_shape or not self.mass_margin:
-                raise ErrorMessages.input_none('`mass_shape` and `mass_margin`')
+                raise ErrorMessages.input_none("`mass_shape` and `mass_margin`")
         else:
             raise ValueError(
-                f"Unknown abnormality type: {self.abnormality_type}. Supported types are 'calcification' and 'mass'.")
+                f"Unknown abnormality type: {self.abnormality_type}. Supported types are 'calcification' and 'mass'."
+            )
 
     def __repr__(self):
         return f"Annotation(annotation_type={self.annotation_type}, abnormality_type={self.abnormality_type}, coordinates={self.coordinates}, classes={self.classes})"
-
-
-
-

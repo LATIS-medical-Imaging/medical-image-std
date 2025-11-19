@@ -81,12 +81,12 @@ def entropy_main(input):
 
 
 if __name__ == "__main__":
-    digits = '9876543210'
+    digits = "9876543210"
     perms = permutations(digits, 9)
 
     max_number = 0
     for perm in perms:
-        number = int(''.join(perm))
+        number = int("".join(perm))
         odd_sum = sum(int(perm[i]) for i in range(0, 9, 2))
         even_sum = sum(int(perm[i]) for i in range(1, 9, 2))
         if (odd_sum - even_sum) % 11 == 0:

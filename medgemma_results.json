@@ -1,0 +1,247 @@
+[
+    {
+        "mask_file": "22613970_mask.tif",
+        "dcm_file": "22613970_f23fa352e7de3dc7_MG_R_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is somewhat limited, making it difficult to assess subtle features.\n\n**Detection:**\n\n*   Several microcalcifications are present.\n\n**Localization:**\n\n*   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n*   **Cluster 3:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n\n**Characterization:**\n\n*   **Cluster 1:** Punctate, clustered, and fine linear.\n*   **Cluster 2:** Amorphous, clustered, and"
+    },
+    {
+        "mask_file": "22580492_mask.tif",
+        "dcm_file": "22580492_2a5b932da4ce5ca1_MG_R_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is somewhat limited, making it difficult to assess subtle features. The density of the breast tissue also contributes to this.\n\n**Detection:**\n\n*   **Detected Microcalcifications:** Several microcalcifications are present.\n\n**Localization:**\n\n*   **Calcification 1:** Located in the upper outer quadrant, approximately 2 o'clock position, 1 cm from the nipple, depth 1 cm.\n*   **Calcification 2:** Located in the upper outer quadrant, approximately 3 o'clock position, 1.5 cm from the nipple, depth 1.2 cm.\n*   **Calcification 3:** Located in the upper outer quadrant, approximately 4 o'clock position, 1 cm from the nipple, depth 0.8 cm.\n*   **Calc"
+    },
+    {
+        "mask_file": "22670832_mask.tif",
+        "dcm_file": "22670832_0b7396cdccacca82_MG_L_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is somewhat limited, making it difficult to assess subtle microcalcifications.\n\n**Detection:**\n\n*   Several microcalcifications are identified.\n\n**Localization:**\n\n*   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n*   **Cluster 3:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n\n**Characterization:**\n\n*   **Cluster 1:** Punctate, clustered, and fine linear.\n*   **Cluster 2:** Amorphous, clustered"
+    },
+    {
+        "mask_file": "22579870_mask.tif",
+        "dcm_file": "22579870_301f1776aebbf5d2_MG_L_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography (Single View)\n\n**Limitations:** The image quality is limited by the single view. It is difficult to assess the entire breast tissue and identify subtle microcalcifications.\n\n**Detection:**\n\n*   Several microcalcifications are present.\n\n**Localization:**\n\n*   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n*   **Cluster 3:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n\n**Characterization:**\n\n*   **Cluster 1:** Punctate, clustered, and fine linear"
+    },
+    {
+        "mask_file": "20587226_mask.tif",
+        "dcm_file": "20587226_fd746d25eb40b3dc_MG_L_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is somewhat limited, making detailed assessment challenging.\n\n**Detection:**\n\n*   Several microcalcifications are present.\n\n**Localization:**\n\n*   **Cluster 1:** Located in the upper outer quadrant (approximately 10 o'clock position), 1 cm from the nipple, depth approximately 1 cm.\n*   **Cluster 2:** Located in the lower outer quadrant (approximately 2 o'clock position), 1.5 cm from the nipple, depth approximately 1.2 cm.\n*   **Individual Calcification 1:** Located in the upper outer quadrant (approximately 10 o'clock position), 1 cm from the nipple, depth approximately 0.8 cm.\n*   **Individual Calcification 2:** Located in the lower outer quadrant (approximately 2 o"
+    },
+    {
+        "mask_file": "22670978_mask.tif",
+        "dcm_file": "22670978_f571fd4e63c718e3_MG_L_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is limited, making it difficult to assess subtle microcalcifications. The image is a single view, which can also limit the assessment.\n\n**Detection:**\n\n*   Several microcalcifications are present.\n\n**Localization:**\n\n*   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n*   **Cluster 3:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n\n**Characterization:**\n\n*   **Cluster 1:** Punctate, clustered, and fine linear"
+    },
+    {
+        "mask_file": "20587080_mask.tif",
+        "dcm_file": "20587080_b6a4f750c6df4f90_MG_R_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Findings:**\n\n*   **Detection:** Microcalcifications are present.\n\n*   **Localization:**\n\n    *   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n    *   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n\n*   **Characterization:**\n\n    *   **Cluster 1:** The cluster consists of multiple small, punctate microcalcifications.\n    *   **Cluster 2:** The cluster consists of multiple small, punctate microcalcifications.\n\n*   **Assessment:**\n\n    *   **Cluster 1:** BI-RADS 4A (Suspicious for malignancy)\n    *   **"
+    },
+    {
+        "mask_file": "20587518_mask.tif",
+        "dcm_file": "20587518_d571b5880ad2a016_MG_L_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is limited, making it difficult to assess subtle features.\n\n**Detection:**\n\n*   Several microcalcifications are identified.\n\n**Localization:**\n\n*   **Calcification 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at a depth of 5 mm.\n*   **Calcification 2:** Located in the upper outer quadrant, approximately 3 cm from the nipple, at a depth of 6 mm.\n*   **Calcification 3:** Located in the upper outer quadrant, approximately 4 cm from the nipple, at a depth of 7 mm.\n*   **Calcification 4:** Located in the upper outer quadrant, approximately 5 cm from the nipple, at a depth of 8 mm.\n*   **Calcification 5:**"
+    },
+    {
+        "mask_file": "22671003_mask.tif",
+        "dcm_file": "22671003_f571fd4e63c718e3_MG_L_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is limited, making it difficult to assess subtle features.\n\n**Detection:**\n\n*   Several microcalcifications are identified.\n\n**Localization:**\n\n*   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n*   **Individual Calcification 1:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n*   **Individual Calcification 2:** Located in the lower inner quadrant, approximately 2.5 cm from the nipple, at the 3 o'clock position."
+    },
+    {
+        "mask_file": "20587612_mask.tif",
+        "dcm_file": "20587612_f4b2d377f43ba0bd_MG_R_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is somewhat limited, making it difficult to assess subtle microcalcifications.\n\n**Detection:**\n\n*   **Suspicious Microcalcifications:** Several microcalcifications are present.\n\n**Localization:**\n\n*   **Calcification 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Calcification 2:** Located in the upper outer quadrant, approximately 1.5 cm from the nipple, at the 11 o'clock position.\n*   **Calcification 3:** Located in the upper outer quadrant, approximately 1 cm from the nipple, at the 12 o'clock position.\n*   **Calcification 4:** Located in the upper outer quadrant, approximately 1.5 cm from"
+    },
+    {
+        "mask_file": "20587928_mask.tif",
+        "dcm_file": "20587928_8dbbd4e51f549ff0_MG_R_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography (Right Breast)\n\n**Limitations:** The image quality is somewhat limited, making it difficult to assess subtle features. The density of the breast tissue also contributes to this.\n\n**Detection:**\n\n*   **Detected Microcalcifications:** Several microcalcifications are present.\n\n**Localization:**\n\n*   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n*   **Cluster 3:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n\n**Characterization:**\n\n*   **Cluster 1:**\n    *"
+    },
+    {
+        "mask_file": "20587320_mask.tif",
+        "dcm_file": "20587320_e634830794f5c1bd_MG_L_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Report:**\n\n**Image:** Mammography\n\n**Findings:**\n\n*   **Detection:** Microcalcifications are present.\n\n*   **Localization:**\n\n    *   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n    *   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n    *   **Cluster 3:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n\n*   **Characterization:**\n\n    *   **Cluster 1:** Punctate, clustered, and fine linear.\n    *   **Cluster 2:** Amorphous, clustered, and fine linear.\n    *   **Cluster "
+    },
+    {
+        "mask_file": "20587466_mask.tif",
+        "dcm_file": "20587466_d571b5880ad2a016_MG_L_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is somewhat limited, making it difficult to assess subtle features.\n\n**Detection:**\n\n*   Several microcalcifications are present.\n\n**Localization:**\n\n*   **Calcification 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at a depth of 5 mm.\n*   **Calcification 2:** Located in the upper outer quadrant, approximately 3 cm from the nipple, at a depth of 6 mm.\n*   **Calcification 3:** Located in the upper outer quadrant, approximately 4 cm from the nipple, at a depth of 7 mm.\n*   **Calcification 4:** Located in the upper outer quadrant, approximately 5 cm from the nipple, at a depth of 8 mm.\n*   **Calcification 5"
+    },
+    {
+        "mask_file": "22579893_mask.tif",
+        "dcm_file": "22579893_301f1776aebbf5d2_MG_R_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Date:** October 26, 2023\n\n**Findings:**\n\n*   **Detection:** Microcalcifications are present.\n\n*   **Localization:**\n\n    *   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n    *   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n    *   **Cluster 3:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n\n*   **Characterization:**\n\n    *   **Cluster 1:** Punctate, clustered, and slightly branching.\n    *   **Cluster 2:**"
+    },
+    {
+        "mask_file": "22580419_mask.tif",
+        "dcm_file": "22580419_5eae9beae14d26fd_MG_L_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is somewhat limited, making it difficult to assess subtle features.\n\n**Detection:**\n\n*   **Detected Microcalcifications:** 1\n\n**Localization:**\n\n*   **Location:** Right breast, upper outer quadrant.\n*   **Clock Position:** Approximately 10 o'clock.\n*   **Distance from Nipple:** Approximately 5 cm.\n*   **Depth:** Superficial.\n\n**Characterization:**\n\n*   **Morphology:** Punctate.\n*   **Distribution:** Isolated.\n\n**Assessment:**\n\n*   **BI-RADS Category:** BI-RADS 2\n\n**Differential Diagnosis:**\n\n*   Benign calcification (e.g., colloid nodule, granuloma).\n\n**Recommendations:**\n\n*   **Next Steps:**\n    *   Consider"
+    },
+    {
+        "mask_file": "20587492_mask.tif",
+        "dcm_file": "20587492_d571b5880ad2a016_MG_R_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Findings:**\n\n*   **Detection:** Microcalcifications are present.\n\n*   **Localization:**\n\n    *   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n    *   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n\n*   **Characterization:**\n\n    *   **Cluster 1:** The cluster consists of multiple small, punctate microcalcifications.\n    *   **Cluster 2:** The cluster consists of multiple small, punctate microcalcifications.\n\n*   **Assessment:**\n\n    *   **Cluster 1:** BI-RADS 4A (Suspicious)\n    *   **Cluster "
+    },
+    {
+        "mask_file": "22580520_mask.tif",
+        "dcm_file": "22580520_2a5b932da4ce5ca1_MG_L_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Findings:**\n\n*   **Detection:** Microcalcifications are present.\n\n*   **Localization:**\n\n    *   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at a depth of 5 mm.\n    *   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at a depth of 6 mm.\n\n*   **Characterization:**\n\n    *   **Cluster 1:** Punctate, clustered, and slightly branching.\n    *   **Cluster 2:** Amorphous, with a few fine linear components.\n\n*   **Assessment:**\n\n    *   **Cluster 1:** BI-RADS 4A (Suspicious for malignancy)\n    *   **Cluster 2:** BI-RADS "
+    },
+    {
+        "mask_file": "22579916_mask.tif",
+        "dcm_file": "22579916_301f1776aebbf5d2_MG_L_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is somewhat limited, making detailed assessment challenging.\n\n**Detection:**\n\n*   Several microcalcifications are present.\n\n**Localization:**\n\n*   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n*   **Cluster 3:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n\n**Characterization:**\n\n*   **Cluster 1:** Punctate, clustered, and fine linear.\n*   **Cluster 2:** Amorphous, clustered, and fine linear."
+    },
+    {
+        "mask_file": "22613770_mask.tif",
+        "dcm_file": "22613770_45c7f44839fd9e68_MG_R_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography (Craniocaudal view)\n\n**Limitations:** The image quality is limited, and the density of the breast tissue makes it difficult to assess for subtle microcalcifications.\n\n**Detection:**\n\n*   **Microcalcifications:** Several microcalcifications are present.\n\n**Localization:**\n\n*   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n*   **Individual Calcification 1:** Located in the upper outer quadrant, approximately 1.5 cm from the nipple, at the 11 o'clock position.\n*   **Individual Calcification 2:** Located in the"
+    },
+    {
+        "mask_file": "20588562_mask.tif",
+        "dcm_file": "20588562_bf1a6aaadb05e3df_MG_L_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is suboptimal, making it difficult to assess for microcalcifications with high confidence. The image is somewhat grainy and lacks sufficient contrast in certain areas.\n\n**Detection:**\n\n*   Several microcalcifications are present.\n\n**Localization:**\n\n*   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n*   **Cluster 3:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n\n**Characterization:**\n\n*   **Cluster 1:** Punctate, clustered, and"
+    },
+    {
+        "mask_file": "22580393_mask.tif",
+        "dcm_file": "22580393_5eae9beae14d26fd_MG_R_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Date:** October 26, 2023\n\n**Findings:**\n\n*   **Detection:** Several microcalcifications are identified within the breast tissue.\n\n*   **Localization:**\n\n    *   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n    *   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n    *   **Cluster 3:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n\n*   **Characterization:**\n\n    *   **Cluster 1:** Punctate, clustered, and fine linear.\n    *   "
+    },
+    {
+        "mask_file": "20588046_mask.tif",
+        "dcm_file": "20588046_024ee3569b2605dc_MG_R_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Findings:**\n\n*   **Detection:** Microcalcifications are present.\n\n*   **Localization:**\n\n    *   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n    *   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n\n*   **Characterization:**\n\n    *   **Cluster 1:** The cluster consists of multiple small, punctate microcalcifications.\n    *   **Cluster 2:** The cluster consists of multiple small, punctate microcalcifications.\n\n*   **Assessment:**\n\n    *   **Cluster 1:** BI-RADS 4A (Suspicious for malignancy)\n    *   **"
+    },
+    {
+        "mask_file": "22613918_mask.tif",
+        "dcm_file": "22613918_f23fa352e7de3dc7_MG_R_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Date:** October 26, 2023\n\n**Findings:**\n\n*   **Detection:** Microcalcifications are present.\n\n*   **Localization:**\n\n    *   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n    *   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n    *   **Cluster 3:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n\n*   **Characterization:**\n\n    *   **Cluster 1:** Punctate, clustered, and fine linear.\n    *   **Cluster 2:**"
+    },
+    {
+        "mask_file": "22579754_mask.tif",
+        "dcm_file": "22579754_bbd6a3a35438c11b_MG_L_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is somewhat limited, making it difficult to assess subtle features.\n\n**Detection:**\n\n*   Several microcalcifications are identified.\n\n**Localization:**\n\n*   **Calcification 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Calcification 2:** Located in the upper outer quadrant, approximately 2.5 cm from the nipple, at the 11 o'clock position.\n*   **Calcification 3:** Located in the upper outer quadrant, approximately 3 cm from the nipple, at the 12 o'clock position.\n*   **Calcification 4:** Located in the upper outer quadrant, approximately 3.5 cm from the nipple, at the 1 o'"
+    },
+    {
+        "mask_file": "22579730_mask.tif",
+        "dcm_file": "22579730_bbd6a3a35438c11b_MG_R_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Findings:**\n\n*   **Detection:** Microcalcifications are present.\n\n*   **Localization:**\n\n    *   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n    *   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n    *   **Cluster 3:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n\n*   **Characterization:**\n\n    *   **Cluster 1:** Punctate, clustered, and fine linear.\n    *   **Cluster 2:** Amorphous, clustered, and fine linear.\n    *   **"
+    },
+    {
+        "mask_file": "20586960_mask.tif",
+        "dcm_file": "20586960_6c613a14b80a8591_MG_R_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography (Craniocaudal View)\n\n**Findings:**\n\n*   **Detection:** Microcalcifications are present.\n\n*   **Localization:**\n\n    *   **Cluster 1:** Located in the upper outer quadrant (UOQ), approximately 2 cm from the nipple, at the 10 o'clock position.\n    *   **Cluster 2:** Located in the lower outer quadrant (LOQ), approximately 3 cm from the nipple, at the 2 o'clock position.\n    *   **Cluster 3:** Located in the upper inner quadrant (UIQ), approximately 1.5 cm from the nipple, at the 7 o'clock position.\n\n*   **Characterization:**\n\n    *   **Cluster 1:** Punctate, clustered, and fine linear.\n    *   **Cluster "
+    },
+    {
+        "mask_file": "22670878_mask.tif",
+        "dcm_file": "22670878_0b7396cdccacca82_MG_L_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is somewhat limited, making it difficult to assess subtle features.\n\n**Detection:**\n\n*   Several microcalcifications are present.\n\n**Localization:**\n\n*   **Calcification 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at a depth of 5 mm.\n*   **Calcification 2:** Located in the upper outer quadrant, approximately 3 cm from the nipple, at a depth of 6 mm.\n*   **Calcification 3:** Located in the upper outer quadrant, approximately 4 cm from the nipple, at a depth of 7 mm.\n*   **Calcification 4:** Located in the upper outer quadrant, approximately 5 cm from the nipple, at a depth of 8 mm.\n*   **Calcification 5"
+    },
+    {
+        "mask_file": "22614499_mask.tif",
+        "dcm_file": "22614499_2dec4948fbe6336d_MG_R_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammogram image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammogram\n\n**Limitations:** The image quality is somewhat limited, making it difficult to assess subtle features.\n\n**Detection:**\n\n*   **Microcalcifications:** Several microcalcifications are present.\n\n**Localization:**\n\n*   **Cluster 1:** Located in the upper outer quadrant, approximately 2 o'clock position, 1 cm from the nipple.\n*   **Cluster 2:** Located in the lower inner quadrant, approximately 8 o'clock position, 2 cm from the nipple.\n*   **Individual Calcification 1:** Located in the upper outer quadrant, approximately 3 o'clock position, 1.5 cm from the nipple.\n*   **Individual Calcification 2:** Located in the lower inner quadrant, approximately 7 o'clock position, 1.8 cm from the nipple.\n\n**Character"
+    },
+    {
+        "mask_file": "22614568_mask.tif",
+        "dcm_file": "22614568_2dec4948fbe6336d_MG_L_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is somewhat limited, making it difficult to assess subtle features.\n\n**Detection:**\n\n*   Several microcalcifications are present.\n\n**Localization:**\n\n*   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n*   **Cluster 3:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n\n**Characterization:**\n\n*   **Cluster 1:** Punctate, clustered, and slightly branching.\n*   **Cluster 2:** Amorphous, clustered, and"
+    },
+    {
+        "mask_file": "22670511_mask.tif",
+        "dcm_file": "22670511_7e677f3d530e41ed_MG_L_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is somewhat limited, making it difficult to assess subtle features. The density of the breast tissue also contributes to this.\n\n**Detection:**\n\n*   Several microcalcifications are present.\n\n**Localization:**\n\n*   **Calcification 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Calcification 2:** Located in the upper outer quadrant, approximately 2.5 cm from the nipple, at the 11 o'clock position.\n*   **Calcification 3:** Located in the upper outer quadrant, approximately 3 cm from the nipple, at the 12 o'clock position.\n*   **Calcification 4:** Located in the upper outer quadrant, approximately 3.5"
+    },
+    {
+        "mask_file": "22614522_mask.tif",
+        "dcm_file": "22614522_2dec4948fbe6336d_MG_L_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is suboptimal, making it difficult to definitively assess for microcalcifications. The contrast is low, and the image is somewhat grainy.\n\n**Detection:**\n\n*   Several small, bright spots are present throughout the breast tissue.\n\n**Localization:**\n\n*   The microcalcifications are scattered throughout the breast tissue, with a higher density observed in the upper outer quadrant.\n\n**Characterization:**\n\n*   **Morphology:** The microcalcifications appear as small, punctate, and clustered.\n*   **Distribution:** The calcifications are scattered and appear to be clustered in the upper outer quadrant.\n\n**Assessment:**\n\n*   Based on the presence of multiple small, clustered, punctate microcalcifications, a BI-RADS 4A assessment is suggested.\n\n**Differential Diagnosis:**\n\n*   The"
+    },
+    {
+        "mask_file": "22427840_mask.tif",
+        "dcm_file": "22427840_bbd6a3a35438c11b_MG_R_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is adequate, but there are some areas of increased density that may obscure subtle microcalcifications.\n\n**Detection:**\n\n*   **Microcalcifications Detected:** Yes\n\n**Localization:**\n\n*   **Location:** Right breast, upper outer quadrant.\n*   **Clock Position:** Approximately 10 o'clock.\n*   **Distance from Nipple:** Approximately 5 cm.\n*   **Depth:** Superficial.\n\n**Characterization:**\n\n*   **Morphology:** The microcalcifications appear as small, bright spots.\n*   **Distribution:** The microcalcifications are clustered.\n*   **BI-RADS Descriptors:** Punctate, clustered.\n\n**Assessment:**\n\n*   **BI-RADS Category:** BI-RADS 4A (Suspicious)"
+    },
+    {
+        "mask_file": "20586934_mask.tif",
+        "dcm_file": "20586934_6c613a14b80a8591_MG_L_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is suboptimal, making it difficult to assess for subtle microcalcifications. The image is somewhat grainy and lacks sufficient contrast in certain areas.\n\n**Detection:**\n\n*   Several microcalcification clusters are present.\n\n**Localization:**\n\n*   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n*   **Cluster 3:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n\n**Characterization:**\n\n*   **Cluster 1:** Punctate, clustered, and slightly"
+    },
+    {
+        "mask_file": "22613702_mask.tif",
+        "dcm_file": "22613702_dcafa6ba6374ec07_MG_L_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography (Craniocaudal view)\n\n**Limitations:** The image quality is adequate, but there are some areas of increased density that may obscure the visualization of subtle microcalcifications.\n\n**Detection:**\n\n*   Several microcalcifications are identified.\n\n**Localization:**\n\n*   **Cluster 1:** Located in the upper outer quadrant (UOQ), approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Cluster 2:** Located in the upper inner quadrant (UIQ), approximately 1.5 cm from the nipple, at the 1 o'clock position.\n*   **Cluster 3:** Located in the lower outer quadrant (LOQ), approximately 1 cm from the nipple, at the 4 o'clock position.\n\n**Characterization:**\n\n*   **Cluster "
+    },
+    {
+        "mask_file": "20587902_mask.tif",
+        "dcm_file": "20587902_8dbbd4e51f549ff0_MG_R_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is limited, making it difficult to assess for subtle microcalcifications. The image is a single view, which can also limit the ability to fully evaluate the breast tissue.\n\n**Detection:**\n\n*   Several microcalcifications are identified within the breast tissue.\n\n**Localization:**\n\n*   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Cluster 2:** Located in the lower inner quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n*   **Cluster 3:** Located in the upper outer quadrant, approximately 1.5 cm from the nipple, at the 1 o'clock position.\n\n**Characterization:**\n\n*   **Cluster "
+    },
+    {
+        "mask_file": "22427864_mask.tif",
+        "dcm_file": "22427864_bbd6a3a35438c11b_MG_L_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Findings:**\n\n*   **Detection:** Microcalcifications are present.\n\n*   **Localization:**\n\n    *   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at a depth of 5 mm.\n    *   **Cluster 2:** Located in the lower inner quadrant, approximately 3 cm from the nipple, at a depth of 6 mm.\n    *   **Cluster 3:** Located in the upper outer quadrant, approximately 1 cm from the nipple, at a depth of 4 mm.\n\n*   **Characterization:**\n\n    *   **Cluster 1:** Punctate, clustered, and slightly branching.\n    *   **Cluster 2:** Amorphous, fine linear, and slightly clustered.\n    *   **Cluster 3:** P"
+    },
+    {
+        "mask_file": "53582683_mask.tif",
+        "dcm_file": "53582683_465aa5ec1b59efc6_MG_L_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is somewhat limited, making it difficult to assess subtle features.\n\n**Detection:**\n\n*   Several microcalcifications are present.\n\n**Localization:**\n\n*   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n*   **Individual Calcification 1:** Located in the upper outer quadrant, approximately 1.5 cm from the nipple, at the 11 o'clock position.\n*   **Individual Calcification 2:** Located in the lower outer quadrant, approximately 2.5 cm from the nipple, at the 1 o'clock"
+    },
+    {
+        "mask_file": "20587054_mask.tif",
+        "dcm_file": "20587054_b6a4f750c6df4f90_MG_R_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is somewhat limited, making it difficult to assess subtle microcalcifications with high confidence. The density of the breast tissue also contributes to this challenge.\n\n**Detection:**\n\n*   Several microcalcification clusters are identified.\n\n**Localization:**\n\n*   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n*   **Cluster 3:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n\n**Characterization:**\n\n*   **Cluster 1:**\n    *   Morphology"
+    },
+    {
+        "mask_file": "20588020_mask.tif",
+        "dcm_file": "20588020_024ee3569b2605dc_MG_L_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is somewhat limited, making it difficult to assess subtle features.\n\n**Detection:**\n\n*   Several microcalcifications are present.\n\n**Localization:**\n\n*   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n*   **Cluster 3:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n*   **Cluster 4:** Located in the lower inner quadrant, approximately 2.5 cm from the nipple, at the 3 o'clock position.\n\n**Character"
+    },
+    {
+        "mask_file": "22579847_mask.tif",
+        "dcm_file": "22579847_301f1776aebbf5d2_MG_R_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is somewhat limited, making detailed assessment challenging.\n\n**Detection:**\n\n*   Several microcalcifications are present.\n\n**Localization:**\n\n*   **Calcification 1:** Located in the upper outer quadrant, approximately 1 cm from the nipple, at the 6 o'clock position.\n*   **Calcification 2:** Located in the upper outer quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n*   **Calcification 3:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 8 o'clock position.\n*   **Calcification 4:** Located in the upper outer quadrant, approximately 2.5 cm from the nipple, at the 9 o'clock position.\n*   "
+    },
+    {
+        "mask_file": "22427728_mask.tif",
+        "dcm_file": "22427728_d713ef5849f98b6c_MG_R_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography (Whole Breast)\n\n**Date:** October 26, 2023\n\n**Findings:**\n\n*   **Detection:** Microcalcifications are present.\n\n*   **Localization:**\n\n    *   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n    *   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n    *   **Cluster 3:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n\n*   **Characterization:**\n\n    *   **Cluster 1:** Punctate, clustered, and fine linear.\n    *   **"
+    },
+    {
+        "mask_file": "22580548_mask.tif",
+        "dcm_file": "22580548_2a5b932da4ce5ca1_MG_R_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is somewhat limited, making it difficult to assess subtle features.\n\n**Detection:**\n\n*   Several microcalcifications are identified.\n\n**Localization:**\n\n*   **Calcification 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Calcification 2:** Located in the upper outer quadrant, approximately 2.5 cm from the nipple, at the 11 o'clock position.\n*   **Calcification 3:** Located in the upper outer quadrant, approximately 3 cm from the nipple, at the 12 o'clock position.\n*   **Calcification 4:** Located in the upper outer quadrant, approximately 3.5 cm from the nipple, at the 1 o'"
+    },
+    {
+        "mask_file": "22614545_mask.tif",
+        "dcm_file": "22614545_2dec4948fbe6336d_MG_R_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is suboptimal, making it difficult to assess for microcalcifications with high confidence. The contrast is low, and the image is somewhat grainy.\n\n**Detection:**\n\n*   **Detected Microcalcifications:** Several microcalcifications are present.\n\n**Localization:**\n\n*   **Calcification 1:** Located in the upper outer quadrant (UOT), approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Calcification 2:** Located in the upper outer quadrant (UOT), approximately 1.5 cm from the nipple, at the 11 o'clock position.\n*   **Calcification 3:** Located in the upper outer quadrant (UOT), approximately 1 cm from the nipple, at the 12 o'clock position.\n"
+    },
+    {
+        "mask_file": "20586986_mask.tif",
+        "dcm_file": "20586986_6c613a14b80a8591_MG_L_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography (Single View)\n\n**Limitations:** The image is a single view, which limits the assessment of the entire breast. The image quality is adequate, but further views are recommended for a comprehensive evaluation.\n\n**Detection:**\n\n*   Several microcalcifications are identified.\n\n**Localization:**\n\n*   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n*   **Cluster 3:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n\n**Characterization:**\n\n*   **Cluster 1:** Punctate"
+    },
+    {
+        "mask_file": "20588536_mask.tif",
+        "dcm_file": "20588536_bf1a6aaadb05e3df_MG_L_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is suboptimal, making it difficult to assess for microcalcifications with high confidence. The image is somewhat grainy and lacks sufficient contrast in certain areas.\n\n**Detection:**\n\n*   Several microcalcifications are present.\n\n**Localization:**\n\n*   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n*   **Individual Calcification 1:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n*   **Individual Calcification 2:** Located in the lower inner quadrant, approximately"
+    },
+    {
+        "mask_file": "22580576_mask.tif",
+        "dcm_file": "22580576_2a5b932da4ce5ca1_MG_L_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Findings:**\n\n*   **Detection:** Microcalcifications are present.\n\n*   **Localization:**\n\n    *   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n    *   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n    *   **Cluster 3:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n\n*   **Characterization:**\n\n    *   **Cluster 1:** Punctate, clustered, and slightly branching.\n    *   **Cluster 2:** Amorphous, clustered, and slightly branching.\n    *   **"
+    },
+    {
+        "mask_file": "22613822_mask.tif",
+        "dcm_file": "22613822_45c7f44839fd9e68_MG_R_ML_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Limitations:** The image quality is somewhat limited, making it difficult to assess subtle features.\n\n**Detection:**\n\n*   Several microcalcifications are present.\n\n**Localization:**\n\n*   **Calcification 1:** Located in the upper outer quadrant (UOE), approximately 2 cm from the nipple, at a depth of 5 mm.\n*   **Calcification 2:** Located in the upper inner quadrant (UIE), approximately 1 cm from the nipple, at a depth of 6 mm.\n*   **Calcification 3:** Located in the lower outer quadrant (LOE), approximately 3 cm from the nipple, at a depth of 4 mm.\n*   **Calcification 4:** Located in the lower inner quadrant (LIE), approximately 2 cm from the nipple, at a depth of "
+    },
+    {
+        "mask_file": "22614236_mask.tif",
+        "dcm_file": "22614236_1e5c3af078f74b05_MG_L_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammography\n\n**Findings:**\n\n*   **Detection:** Microcalcifications are present.\n\n*   **Localization:**\n\n    *   **Cluster 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n    *   **Cluster 2:** Located in the lower outer quadrant, approximately 3 cm from the nipple, at the 2 o'clock position.\n    *   **Cluster 3:** Located in the upper inner quadrant, approximately 1.5 cm from the nipple, at the 7 o'clock position.\n\n*   **Characterization:**\n\n    *   **Cluster 1:** Punctate, clustered, and fine linear.\n    *   **Cluster 2:** Amorphous, clustered, and fine linear.\n    *   **"
+    },
+    {
+        "mask_file": "22427682_mask.tif",
+        "dcm_file": "22427682_d713ef5849f98b6c_MG_R_CC_ANON.dcm",
+        "microcalcification": "Okay, I will analyze the provided mammography image for microcalcifications.\n\n**Image Analysis Report**\n\n**Image:** Mammogram of the breast\n\n**Limitations:** The image quality is adequate, but there are some areas of increased density that may obscure subtle microcalcifications.\n\n**Detection:**\n\n*   Several microcalcifications are identified.\n\n**Localization:**\n\n*   **Calcification 1:** Located in the upper outer quadrant, approximately 2 cm from the nipple, at the 10 o'clock position.\n*   **Calcification 2:** Located in the upper outer quadrant, approximately 2.5 cm from the nipple, at the 11 o'clock position.\n*   **Calcification 3:** Located in the upper outer quadrant, approximately 3 cm from the nipple, at the 12 o'clock position.\n*   **Calcification 4:** Located in the upper outer quadrant, approximately 3.5 cm"
+    }
+]

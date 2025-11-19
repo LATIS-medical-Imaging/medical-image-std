@@ -17,7 +17,7 @@ class DicomImage(Image):
 
     def load(self):
         self.dicom_data = pydicom.dcmread(self.file_path)
-        self.pixel_data = torch.Tensor(self.dicom_data.pixel_array, device = self.device)
+        self.pixel_data = torch.Tensor(self.dicom_data.pixel_array, device=self.device)
         self.width = self.dicom_data.Columns
         self.height = self.dicom_data.Rows
 
