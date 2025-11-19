@@ -3,13 +3,9 @@ import copy
 import numpy as np
 import pytest
 
-import os
-
-from log_manager import logger
 from medical_image.algorithms.custom_algorithm import CustomAlgorithm
-from medical_image.data.dicom_image import DicomImage
-from medical_image.tests.mock_sample import mock_dicom_image, mock_sauvola_threshold
 from medical_image.process.threshold import Threshold
+from medical_image.tests.mock_sample import mock_dicom_image, mock_sauvola_threshold
 
 
 class TestDicom:

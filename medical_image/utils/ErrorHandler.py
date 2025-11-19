@@ -1,6 +1,3 @@
-from medical_image.utils.annotation import AnnotationType
-
-
 class AppError(Exception):
     """Base exception for all application-specific errors."""
 
@@ -102,9 +99,9 @@ class ErrorMessages:
     def annotation_type_not_recognized(received, expected=None):
         if expected is None:
             expected = {
-                AnnotationType.BOUNDING_BOX,
-                AnnotationType.POLYGON,
-                AnnotationType.MASK,
+                "AnnotationType.BOUNDING_BOX",
+                "AnnotationType.POLYGON",
+                "AnnotationType.MASK",
             }
 
         expected_names = ", ".join(sorted(e.name for e in expected))

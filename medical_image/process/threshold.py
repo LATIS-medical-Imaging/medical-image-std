@@ -2,7 +2,6 @@ import copy
 
 import numpy as np
 
-from log_manager import logger
 from medical_image.data.image import Image
 from medical_image.process.metrics import Metrics
 
