@@ -21,11 +21,17 @@ class TestDicom:
         # Apply Otsu's threshold to the mock DICOM image
         output = copy.deepcopy(dicom_image)
         Threshold.otsu_threshold(dicom_image, output)
+
         # Check that the pixel data has been modified
-        assert not np.array_equal(dicom_image.pixel_data, output.pixel_data)
+        assert not np.array_equal(
+            dicom_image.pixel_data.cpu().numpy(), output.pixel_data.cpu().numpy()
+        )
+
+        # Convert to numpy for binary check
+        out_np = output.pixel_data.cpu().numpy()
 
         # Check that the output is a binary image (0 or 255)
-        assert np.all(np.logical_or(output.pixel_data == 0, output.pixel_data == 255))
+        assert np.all((out_np == 0) | (out_np == 255))
 
     @pytest.mark.parametrize("dicom_image, window_size, k", mock_sauvola_threshold())
     def test_sauvola_threshold(self, dicom_image, window_size, k):
