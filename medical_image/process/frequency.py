@@ -1,64 +1,67 @@
-import numpy as np
+import torch
 
 from medical_image.data.image import Image
 
 
 class FrequencyOperations:
-    # TODO: update Docstring
     @staticmethod
-    def fft(image_data: Image, output: Image):
+    def fft(image_data: Image, output: Image, device="cpu"):
         """
-        This function calculates 2-dimensional discrete Fourier Transform using Fast Fourier Transform Algorithms (FFT)
-        For more information about the Entropy this link:
-        https://en.wikipedia.org/wiki/Fast_Fourier_transform
+        Computes the 2-dimensional Fast Fourier Transform (FFT) of an image.
 
-        Parameters:
-            input: 2d ndarray to process.
+        This function transforms the spatial domain image into the frequency domain
+        using PyTorch's FFT implementation.
+
+        Args:
+            image_data (Image): Input image.
+            output (Image): Output image to store the complex FFT result.
+            device (str): Device to perform computation on ("cpu" or "cuda").
 
         Returns:
-            out: complex ndarray
+            None. The result is stored in output.pixel_data as a complex tensor.
 
-
-        Examples:
-            >>> import numpy as np
-            >>> a = np.random.randint(0, 4095, (3,3))
-            >>> fft = PixelArrayOperation.fft(a)
-            >>> fft
-            array([[19218.    +0.j        ,  1506. +1307.69835971j,
-                     1506. -1307.69835971j],
-                   [ 1455. +2527.06212824j,  2893.5 +995.06318895j,
-                     1290.  +299.64478971j],
-                   [ 1455. -2527.06212824j,  1290.  -299.64478971j,
-                     2893.5 -995.06318895j]])
-
+        Example:
+            >>> from medical_image.data.image import Image
+            >>> fft_result = FrequencyOperations.fft(image, output, device="cuda")
         """
-        output.pixel_data = np.fft.fft2(image_data.pixel_data)
+        # Move image to specified device
+        img = image_data.pixel_data.to(device).float()
+
+        # Compute 2D FFT
+        fft_result = torch.fft.fft2(img)
+
+        # Store result in output
+        output.pixel_data = fft_result.to(device)
+        output.width = image_data.width
+        output.height = image_data.height
 
     @staticmethod
-    def inverse_fft(image_data: Image, output: Image):
+    def inverse_fft(image_data: Image, output: Image, device="cpu"):
         """
-        This function calculates the inverse of 2-dimensional discrete Fourier Transform using Fast Fourier Transform Algorithms (FFT)
-        For more information about the Entropy this link:
-        https://en.wikipedia.org/wiki/Fast_Fourier_transform
+        Computes the inverse 2-dimensional Fast Fourier Transform (IFFT) of an image.
 
-        Parameters:
-            input: 2d ndarray (it can be complex) to process.
+        This function transforms a frequency domain image back to the spatial domain
+        using PyTorch's IFFT implementation.
+
+        Args:
+            image_data (Image): Input image in the frequency domain (complex tensor).
+            output (Image): Output image to store the inverse FFT result.
+            device (str): Device to perform computation on ("cpu" or "cuda").
 
         Returns:
-            out: complex ndarray
+            None. The result is stored in output.pixel_data as a complex or float tensor.
 
-
-        Examples:
-            >>> import numpy as np
-            >>> a = np.random.randint(0, 4095, (3,3))
-            >>> ifft = PixelArrayOperation.inverse_fft(a)
-            >>> ifft
-            array([[19218.    +0.j        ,  1506. +1307.69835971j,
-                     1506. -1307.69835971j],
-                   [ 1455. +2527.06212824j,  2893.5 +995.06318895j,
-                     1290.  +299.64478971j],
-                   [ 1455. -2527.06212824j,  1290.  -299.64478971j,
-                     2893.5 -995.06318895j]])
-
+        Example:
+            >>> from medical_image.data.image import Image
+            >>> ifft_result = FrequencyOperations.inverse_fft(image, output, device="cuda")
         """
-        output.pixel_data = np.fft.ifft2(image_data.pixel_data)
+        # Move image to specified device
+        img = image_data.pixel_data.to(device)
+
+        # Compute inverse 2D FFT
+        ifft_result = torch.fft.ifft2(img)
+
+        # Store result in output
+        output.pixel_data = ifft_result.to(device)
+        output.width = image_data.width
+        output.height = image_data.height

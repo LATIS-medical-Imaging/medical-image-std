@@ -1,115 +1,87 @@
-import numpy as np
-from scipy import ndimage
+import torch
+import torch.nn.functional as F
 
 from medical_image.data.image import Image
 
 
-class MorpohologyOperations:
-    # TODO: Update docstrings
+class MorphologyOperations:
     @staticmethod
-    def morphoogy_closing(image: Image, output: Image):
+    def morphology_closing(
+        image: Image, output: Image, kernel_size: int = 7, device="cpu"
+    ):
         """
-        Two-dimensional binary closing with the given structuring element.
+        Performs 2D binary closing on a given image using PyTorch.
 
-        The *closing* of an input image by a structuring element is the
-        *erosion* of the *dilation* of the image by the structuring element.
-        For more information:
-            https://en.wikipedia.org/wiki/Closing_%28morphology%29
-            https://en.wikipedia.org/wiki/Mathematical_morphology
+        Closing is defined as a *dilation followed by an erosion* with the same structuring element.
+        This operation fills small holes and smooths boundaries in binary images.
 
-        Parameters:
-            input : 2d ndarray
-                Binary array_like to be closed. Non-zero (True) elements form
-                the subset to be closed.
+        Args:
+            image (Image): Input binary image (0/1).
+            output (Image): Output Image object to store the result.
+            kernel_size (int): Size of the square structuring element. Default is 7.
+            device (str): Device for computation ("cpu" or "cuda").
 
         Returns:
-            binary_closing : ndarray of bools
-                Closing of the input by the structuring element.
-
-        Examples:
-            >>> a = np.zeros((5,5), dtype=int)
-            >>> a[1:-1, 1:-1] = 1; a[2,2] = 0
-            >>> a
-            array([[0, 0, 0, 0, 0],
-                   [0, 1, 1, 1, 0],
-                   [0, 1, 0, 1, 0],
-                   [0, 1, 1, 1, 0],
-                   [0, 0, 0, 0, 0]])
-            >>> # Closing removes small holes
-            >>> PixelArrayOperation.morphoogy_closing(a)
-            array([[0, 0, 0, 0, 0],
-                   [0, 1, 1, 1, 0],
-                   [0, 1, 1, 1, 0],
-                   [0, 1, 1, 1, 0],
-                   [0, 0, 0, 0, 0]])
-
-            >>> a = np.zeros((7,7), dtype=int)
-            >>> a[1:6, 2:5] = 1; a[1:3,3] = 0
-            >>> a
-            array([[0, 0, 0, 0, 0, 0, 0],
-                   [0, 0, 1, 0, 1, 0, 0],
-                   [0, 0, 1, 0, 1, 0, 0],
-                   [0, 0, 1, 1, 1, 0, 0],
-                   [0, 0, 1, 1, 1, 0, 0],
-                   [0, 0, 1, 1, 1, 0, 0],
-                   [0, 0, 0, 0, 0, 0, 0]])
-            >>> # In addition to removing holes, closing can also
-            >>> # coarsen boundaries with fine hollows.
-            >>> PixelArrayOperation.morphoogy_closing(a)
-            array([[0, 0, 0, 0, 0, 0, 0],
-                   [0, 0, 1, 0, 1, 0, 0],
-                   [0, 0, 1, 1, 1, 0, 0],
-                   [0, 0, 1, 1, 1, 0, 0],
-                   [0, 0, 1, 1, 1, 0, 0],
-                   [0, 0, 1, 1, 1, 0, 0],
-                   [0, 0, 0, 0, 0, 0, 0]])
+            None: The result is stored in `output.pixel_data`.
         """
-        output.pixel_data = ndimage.binary_closing(
-            image.pixel_data, structure=np.ones((7, 7))
-        ).astype(int)
+        img = image.pixel_data.to(device).float().unsqueeze(0).unsqueeze(0)  # (1,1,H,W)
+        se = torch.ones((1, 1, kernel_size, kernel_size), device=device)
+
+        # Dilation
+        pad = kernel_size // 2
+        dilated = F.conv2d(F.pad(img, (pad, pad, pad, pad)), se, padding=0)
+        dilated = (dilated > 0).float()
+
+        # Erosion
+        # Use complement trick: erosion = 1 - dilation(1 - img)
+        dilated_padded = F.pad(1 - dilated, (pad, pad, pad, pad))
+        eroded = F.conv2d(dilated_padded, se, padding=0)
+        eroded = (eroded < kernel_size * kernel_size).float()
+        closed = 1 - eroded
+
+        output.pixel_data = closed.squeeze(0).squeeze(0)
+        output.width = image.width
+        output.height = image.height
 
     @staticmethod
-    def region_fill(image: Image, output: Image):
+    def region_fill(image: Image, output: Image, device="cpu"):
         """
-        Fill the holes in binary images.
-        For more:
-            https://en.wikipedia.org/wiki/Mathematical_morphology
-        Parameters:
-            input : array_like
-                2-D binary array with holes to be filled
+        Fills holes in a binary image using PyTorch.
+
+        The algorithm performs binary dilation of the complement from the image boundary
+        to fill all interior holes not connected to the border.
+
+        Args:
+            image (Image): Input binary image (0/1).
+            output (Image): Output Image object to store the filled result.
+            device (str): Device for computation ("cpu" or "cuda").
 
         Returns:
-            an ndarray
-            Transformation of the initial image `input` where holes have been
-            filled.
-
-        Notes:
-            The algorithm used in this function consists in invading the complementary
-            of the shapes in `input` from the outer boundary of the image,
-            using binary dilations. Holes are not connected to the boundary and are
-            therefore not invaded. The result is the complementary subset of the
-            invaded region.
-
-
-        Examples:
-
-        >>> a = np.zeros((5, 5), dtype=int)
-        >>> a[1:4, 1:4] = 1
-        >>> a[2,2] = 0
-        >>> a
-        array([[0, 0, 0, 0, 0],
-               [0, 1, 1, 1, 0],
-               [0, 1, 0, 1, 0],
-               [0, 1, 1, 1, 0],
-               [0, 0, 0, 0, 0]])
-        >>> PixelArrayOperation.region_fill(a)
-        array([[0, 0, 0, 0, 0],
-               [0, 1, 1, 1, 0],
-               [0, 1, 1, 1, 0],
-               [0, 1, 1, 1, 0],
-               [0, 0, 0, 0, 0]])
-
+            None: The result is stored in `output.pixel_data`.
         """
-        output.pixel_data = ndimage.binary_fill_holes(
-            image.pixel_data, structure=np.ones((7, 7))
-        ).astype(int)
+        img = image.pixel_data.to(device).float()
+        h, w = img.shape
+        # Create mask for flood fill: start from boundary
+        mask = torch.zeros((h + 2, w + 2), device=device)
+        mask[1:-1, 1:-1] = 1 - img  # complement
+
+        prev_mask = torch.zeros_like(mask)
+        struct_elem = torch.ones((3, 3), device=device)
+
+        # Iterative flood fill until no change
+        while not torch.equal(mask, prev_mask):
+            prev_mask = mask.clone()
+            dilated = F.conv2d(
+                mask.unsqueeze(0).unsqueeze(0),
+                struct_elem.unsqueeze(0).unsqueeze(0),
+                padding=1,
+            )
+            mask = (dilated > 0).float().squeeze(0).squeeze(0)
+
+        # Filled image: original OR complement of invaded region
+        filled = img + (1 - mask[1:-1, 1:-1])
+        filled = (filled > 0).float()
+
+        output.pixel_data = filled
+        output.width = image.width
+        output.height = image.height
