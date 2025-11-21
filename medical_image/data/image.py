@@ -1,6 +1,6 @@
 import os
 from abc import ABC, abstractmethod
-from typing import TypeVar
+from typing import TypeVar, Union, List
 
 import matplotlib.pyplot as plt
 import torch
@@ -14,6 +14,7 @@ from PIL import Image as PILImage
 
 
 class Image(ABC):
+    # TODO: add another constructor, from Image, Empty Image, Default,
     def __init__(self, file_path):
         if not os.path.exists(file_path):
             raise ErrorMessages.file_not_found(file_path)
@@ -21,7 +22,9 @@ class Image(ABC):
         self.width = None
         self.height = None
         self.pixel_data: torch.Tensor = None
-        self.label: Annotation = None
+        # TODO: comment Annotation
+        self.annotations: Union[Annotation, List[Annotation]] = None
+        # TODO: remove from Image class to Process
         self.device = "cpu"
         # TODO: in the case of cuda create a strategy or some abstraction to apply it in process on cuda, or if only cpu process, just handle the case device on cuda and process on cpu
         # self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -38,10 +41,12 @@ class Image(ABC):
 
     def display_info(self):
         """Display basic information about the image."""
+        # TODO: update based on constructors
         logger.info(f"File Path: {self.file_path}")
         logger.info(f"Width: {self.width}")
         logger.info(f"Height: {self.height}")
 
+    # TODO: remove it from here to utils
     def to_png(self):
         """
         Save a NumPy array as a PNG file.
@@ -58,6 +63,7 @@ class Image(ABC):
         image.save(filename + ".png")
         logger.info(f"Image saved successfully at {filename + '.png'}")
 
+    # TODO: remove it from here to utils
     def plot(self, cmap="gray"):
         """Display the image using matplotlib.
 
@@ -70,5 +76,6 @@ class Image(ABC):
         plt.axis("off")  # Hide axes
         plt.show()
 
+    # TODO: remove it from here to utils
     def to_numpy(self):
         return self.pixel_data.detach().cpu().numpy()

@@ -4,7 +4,7 @@ from medical_image.algorithms.algorithm import Algorithm
 from medical_image.data.image import Image
 from medical_image.process.filters import Filters
 from medical_image.process.frequency import FrequencyOperations
-from medical_image.process.morphology import MorpohologyOperations
+from medical_image.process.morphology import MorphologyOperations
 from medical_image.process.threshold import Threshold
 
 
@@ -35,8 +35,8 @@ class FebdsAlgorithm(Algorithm):
             image_data=img, output=output, alpha=1
         )
         self.otsu = Threshold.otsu_threshold
-        self.mophology_closing = MorpohologyOperations.morphoogy_closing
-        self.region_fill = MorpohologyOperations.region_fill
+        self.mophology_closing = MorphologyOperations.morphoogy_closing
+        self.region_fill = MorphologyOperations.region_fill
 
     def apply(self, image: Image, output: Image):
         if self.method == "dog":

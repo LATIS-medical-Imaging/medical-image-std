@@ -11,6 +11,7 @@ class CustomAlgorithm(Algorithm):
         )
         self.otsu = Threshold.otsu_threshold
 
+    # TODO: check garbage collector of Python
     def apply(self, image, output):
         self.gaussian(img=image, output=output)
         self.gaussian(img=output, output=output)

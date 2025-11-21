@@ -13,6 +13,9 @@ from typing import List, Union, Tuple
 import numpy as np
 
 
+# TODO: move to Torch, and  check Dicom Annotation
+
+
 class Annotation:
     """
     Represents an annotation for an image, which could correspond to different
