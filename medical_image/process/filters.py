@@ -5,10 +5,9 @@ from torch.nn import functional as F
 from medical_image.data.image import Image
 
 
-# TODO: Update everything to be in TORCH
 class Filters:
     @staticmethod
-    def convolution(image_data: Image, output: Image, kernel):
+    def convolution(image_data: Image, output: Image, kernel, device="cup"):
         """
         Applies a convolution filter to the given image using PyTorch.
 
@@ -56,171 +55,238 @@ class Filters:
         output.pixel_data[:] = convolved
 
     @staticmethod
-    def gaussian_filter(image_data: Image, output: Image, sigma: float):
-        """
-        Applies a Gaussian filter to the given image.
+    def gaussian_filter(image_data: Image, output: Image, sigma: float, device="cpu"):
+        # Determine kernel size
+        size = int(2 * torch.ceil(torch.tensor(3 * sigma)) + 1)
 
-        Args:
-            image_data (Image): The input image data encapsulated in an Image object.
-            output (Image): An Image object to store the filtered image.
-            sigma (float): The standard deviation of the Gaussian kernel.
+        # Generate kernel
+        kernel = Filters._generate_gaussian_kernel(size, sigma, device=device)
+        kernel = kernel.unsqueeze(0).unsqueeze(0)  # (1, 1, k, k)
 
-        Returns:
-            None
-        """
-        size = int(2 * np.ceil(3 * sigma) + 1)
-        kernel = Filters._generate_gaussian_kernel(size, sigma)
-        Filters.convolution(image_data, output, kernel)
+        # Prepare input: (1, 1, H, W)
+        img = image_data.pixel_data.unsqueeze(0).unsqueeze(0).float()
+
+        # Apply convolution (padding='same')
+        padding = size // 2
+        filtered = F.conv2d(img, kernel, padding=padding)
+
+        # Remove batch/channel dims
+        output.pixel_data = filtered.squeeze(0).squeeze(0)
+        output.width = image_data.width
+        output.height = image_data.height
 
     @staticmethod
-    def _generate_gaussian_kernel(size: int, sigma: float) -> np.ndarray:
-        """
-        Generates a Gaussian kernel.
-
-        Args:
-            size (int): The size of the kernel.
-            sigma (float): The standard deviation of the Gaussian kernel.
-
-        Returns:
-            np.ndarray: The Gaussian kernel.
-        """
+    def _generate_gaussian_kernel(size: int, sigma: float, device="cpu") -> torch.Tensor:
         k = size // 2
-        x = np.arange(-k, k + 1)
-        y = np.arange(-k, k + 1)
-        x, y = np.meshgrid(x, y)
-        kernel = np.exp(-(x**2 + y**2) / (2 * sigma**2))
-        return kernel / np.sum(kernel)
+        x = torch.arange(-k, k + 1, dtype=torch.float32, device=device)
+        y = torch.arange(-k, k + 1, dtype=torch.float32, device=device)
+        yy, xx = torch.meshgrid(y, x, indexing="ij")
+
+        kernel = torch.exp(-(xx ** 2 + yy ** 2) / (2 * sigma ** 2))
+        kernel /= kernel.sum()
+
+        return kernel
+
 
     @staticmethod
-    def median_filter(image_data: Image, output: Image, size: int):
+    def median_filter(image_data: Image, output: Image, size: int, device="cpu"):
         """
-        Applies a median filter to the given image.
+        Applies a median filter using PyTorch.
 
         Args:
-            image_data (Image): The input image data encapsulated in an Image object.
-            output (Image): An Image object to store the filtered image.
-            size (int): The size of the filter window (must be an odd integer).
-
-        Returns:
-            None
+            image_data (Image): The input image.
+            output (Image): Image object to store the filtered result.
+            size (int): Odd kernel/window size.
         """
-        image = image_data.pixel_data
-        pad_size = size // 2
+        if size % 2 == 0:
+            raise ValueError("Median filter size must be an odd integer.")
 
-        # Pad the image
-        padded_image = np.pad(image, pad_size, mode="constant", constant_values=0)
+        img = image_data.pixel_data.to(device).float()  # (H, W)
+        img = img.unsqueeze(0).unsqueeze(0)  # (1, 1, H, W)
 
-        # Initialize the output image
-        filtered_image = np.zeros_like(image)
+        pad = size // 2
 
-        # Perform the median filtering
-        for i in range(image.shape[0]):
-            for j in range(image.shape[1]):
-                region = padded_image[i : i + size, j : j + size]
-                filtered_image[i, j] = np.median(region)
+        # Pad image (same behavior as NumPy zero padding)
+        padded = F.pad(img, (pad, pad, pad, pad), mode="constant", value=0)
 
-        np.copyto(output.pixel_data, filtered_image)
+        # Extract sliding windows:
+        # Unfold height → shape (1, 1, H, W*size)
+        # Then unfold width → shape (1, 1, H, W, size*size)
+        patches = padded.unfold(2, size, 1).unfold(3, size, 1)
+        # patches shape: (1, 1, H, W, size, size)
+
+        # Flatten each window to vector (size*size)
+        patches = patches.contiguous().view(1, 1, img.shape[2], img.shape[3], -1)
+
+        # Compute median along last dimension
+        filtered = patches.median(dim=-1).values  # shape: (1, 1, H, W)
+
+        # Remove dummy dimensions
+        filtered = filtered.squeeze(0).squeeze(0)
+
+        # Save to output image
+        output.pixel_data = filtered
+        output.width = image_data.width
+        output.height = image_data.height
+
 
     @staticmethod
-    def butterworth_kernel(image_data: Image, D_0=21, W=32, n=3) -> np.ndarray:
+    def butterworth_kernel(image_data: Image, output: Image, D_0: float = 21, W: float = 32, n: int = 3, device="cpu"):
         """
-        todo: update Docstring
-        Apply a Butterworth band-pass filter to enhance frequency features.
-        This filter is defined in the Fourier domain.
-        For more:
-           https://en.wikipedia.org/wiki/Butterworth_filter
+        Applies a Butterworth band-pass filter in the frequency domain.
 
         Parameters:
-            input: 2d ndarray to process.
-            D_0: float
-                 cutoff frequency
-            W: float
-               filter bandwidth
-            n: int
-               filter order
-        Returns:
-            band_pass: ndarray
-                       The Butterworth-kernel.
+            image_data (Image): The input image (width/height define coordinate grid).
+            output (Image): Image object where the kernel will be stored.
+            D_0 (float): Cutoff frequency.
+            W (float): Bandwidth of the filter.
+            n (int): Filter order.
+            device (String): device to run in (cpu or cuda).
 
-
-        Examples:
-            >>> a = np.random.randint(0, 5, (3,3))
-            >>> PixelArrayOperation.butterworth_kernel(a)
-            array([[0.78760795, 0.3821997 , 0.3821997 ],
-                  [0.3821997 , 0.00479278, 0.00479278],
-                  [0.3821997 , 0.00479278, 0.00479278]])
-
+        Produces:
+            output.pixel_data: (H, W) Butterworth filter tensor.
         """
-        x = image_data.width
-        y = image_data.height
-        u, v = np.meshgrid(np.arange(x), np.arange(y))
-        D = np.sqrt((u - x / 2) ** 2 + (v - y / 2) ** 2)
-        band_pass = D**2 - D_0**2
-        cuttoff = 8 * W * D
-        denom = 1.0 + (band_pass / cuttoff) ** (2 * n)
-        band_pass = 1.0 / denom
-        return band_pass.transpose()
+
+        height, width = image_data.height, image_data.width
+
+        # Create coordinate grid centered at image center
+        u = torch.arange(width, device=device, dtype=torch.float32)
+        v = torch.arange(height, device=device, dtype=torch.float32)
+        vv, uu = torch.meshgrid(v, u, indexing="ij")
+
+        # Distance from center in the frequency domain
+        D = torch.sqrt((uu - width / 2) ** 2 + (vv - height / 2) ** 2)
+
+        # Butterworth band-pass formula
+        band = D ** 2 - D_0 ** 2
+        cutoff = 8 * W * D
+
+        # Avoid division by zero (for D = 0)
+        cutoff = torch.where(cutoff == 0, torch.tensor(1e-6, device=device), cutoff)
+
+        denominator = 1 + (band / cutoff).pow(2 * n)
+
+        # Final filter kernel (H, W)
+        kernel = 1.0 / denominator
+
+        # Save result
+        output.pixel_data = kernel
+        output.width = width
+        output.height = height
+
+    import torch
 
     @staticmethod
     def difference_of_gaussian(
-        image_data: Image, output: Image, sigma_1: float, sigma_2: float
+            image_data: Image,
+            output: Image,
+            sigma_1: float,
+            sigma_2: float,
+            device="cpu",
     ):
         """
-        Applies the Difference of Gaussian (DoG) filter to the given image.
+        Applies the Difference of Gaussian (DoG) filter to an image.
 
         Args:
-            image_data (Image): The input image data encapsulated in an Image object.
-            output (Image): An Image object to store the filtered image.
-            sigma_1 (float): The standard deviation of the first Gaussian kernel.
-            sigma_2 (float): The standard deviation of the second Gaussian kernel.
-
-        Returns:
-            None
+            image_data (Image): Input image.
+            output (Image): Image object to store the result.
+            sigma_1 (float): Standard deviation of the first Gaussian kernel.
+            sigma_2 (float): Standard deviation of the second Gaussian kernel.
         """
-        image = image_data.pixel_data
-        gaussian1 = Filters.gaussian_filter(image, sigma_1)
-        gaussian2 = Filters.gaussian_filter(image, sigma_2)
-        dog = gaussian1 - gaussian2
+
+
+        # Prepare temporary images
+        g1_img = type(image_data)(image_data.file_path)
+        g2_img = type(image_data)(image_data.file_path)
+
+        # Copy metadata (width/height are needed)
+        g1_img.width = image_data.width
+        g1_img.height = image_data.height
+        g1_img.device = device
+
+        g2_img.width = image_data.width
+        g2_img.height = image_data.height
+        g2_img.device = device
+
+        # Apply Gaussian filters (your PyTorch version writes directly into pixel_data)
+        Filters.gaussian_filter(image_data, g1_img, sigma_1, device)
+        Filters.gaussian_filter(image_data, g2_img, sigma_2, device)
+
+        # Difference of Gaussians
+        dog = g1_img.pixel_data - g2_img.pixel_data
+
+        # Save to output
         output.pixel_data = dog
+        output.width = image_data.width
+        output.height = image_data.height
+
+    import torch
+    import torch.nn.functional as F
 
     @staticmethod
-    def laplacian_of_gaussian(image_data: Image, output: Image, sigma: float):
+    def laplacian_of_gaussian(image_data: Image, output: Image, sigma: float, device="cpu"):
         """
-        Applies the Laplacian of Gaussian (LoG) filter to the given image.
+        Applies the Laplacian of Gaussian (LoG) filter using PyTorch.
+
+        Args:
+            image_data (Image): The input image.
+            output (Image): Image object to store the LoG result.
+            sigma (float): Standard deviation of the Gaussian kernel.
+        """
+
+        # ----- Step 1: Gaussian Blur (same API as your Gaussian filter) -----
+        blurred_img = type(image_data)(image_data.file_path)
+        blurred_img.width = image_data.width
+        blurred_img.height = image_data.height
+        blurred_img.device = device
+
+        Filters.gaussian_filter(image_data, blurred_img, sigma)
+
+        # Blurred pixel data (H, W)
+        g = blurred_img.pixel_data.unsqueeze(0).unsqueeze(0)  # (1,1,H,W)
+
+        # ----- Step 2: Laplacian Kernel -----
+        # Standard 3×3 Laplacian
+        lap_kernel = torch.tensor(
+            [[0, 1, 0],
+             [1, -4, 1],
+             [0, 1, 0]],
+            dtype=torch.float32, device=device
+        ).unsqueeze(0).unsqueeze(0)  # (1,1,3,3)
+
+        # Convolution gives the second derivative ∇²(g)
+        lap = F.conv2d(g, lap_kernel, padding=1)
+
+        # Back to (H, W)
+        lap = lap.squeeze(0).squeeze(0)
+
+        # ----- Step 3: Save result -----
+        output.pixel_data = lap
+        output.width = image_data.width
+        output.height = image_data.height
+
+    @staticmethod
+    def gamma_correction(image_data: Image, output: Image, gamma: float, device="cpu"):
+        """
+        Applies Gamma Correction to the given image.
 
         Args:
             image_data (Image): The input image data encapsulated in an Image object.
-            output (Image): An Image object to store the filtered image.
-            sigma (float): The standard deviation of the Gaussian kernel.
+            output (Image): An Image object to store the corrected image.
+            gamma (float): The gamma correction value.
+            device (str): The device to perform computation on ("cpu" or "cuda").
 
         Returns:
             None
         """
-        image = image_data.pixel_data
-        gaussian = Filters.gaussian_filter(image, sigma)
-        laplacian = (
-            np.gradient(np.gradient(gaussian)[0])[0]
-            + np.gradient(np.gradient(gaussian)[1])[1]
-        )
-        output.pixel_data = laplacian
+        # Move image to the specified device
+        image = image_data.pixel_data.to(device)
 
-    @staticmethod
-    def gamma_correction(image_data: Image, output: Image, gamma):
-        """This function calculates the Gamma Correction of the image in the Dicom file.
-            For more information about the Gamma Correction see this link:
-            https://en.wikipedia.org/wiki/Gamma_correction
+        # Normalize, apply gamma, and rescale
+        corrected = torch.pow(image / 4095.0, gamma) * 4095.0
 
-        Args:
-            pixel_array: pixel_array in the Dicom file.
-            max: Maximum value that can be assigned to a pixel.
-
-        Returns:
-            The return value is the corrected image.
-
-        """
-        image = image_data.pixel_data
-        image = np.power(image / float(4095), gamma)
-        output.pixel_data = image * 4095
+        # Store result in output, keeping device consistent
+        output.pixel_data = corrected.to(image_data.device)
 
     @staticmethod
     def ContrastAdjust(image_data: Image, output: Image, contrast, brightness):
