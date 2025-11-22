@@ -7,9 +7,9 @@ class CustomAlgorithm(Algorithm):
     def __init__(self):
         super().__init__()
         self.gaussian = lambda img, output: Filters.gaussian_filter(
-            image_data=img, output=output, sigma=2.0
+            image_data=img, output=output, sigma=2.0, device=self.device
         )
-        self.otsu = Threshold.otsu_threshold
+        self.otsu = lambda image_data, output: Threshold.otsu_threshold(image_data=image_data, output=output, device=self.device)
 
     # TODO: check garbage collector of Python
     def apply(self, image, output):

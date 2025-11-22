@@ -1,14 +1,17 @@
 from abc import ABC, abstractmethod
 
+import torch
+
 from medical_image.data.image import Image
 
 
 class Algorithm(ABC):
-    def __init__(self):
+    def __init__(self, device: str = None):
         """
         Constructor for the Algorithm class.
         """
         super().__init__()
+        self.device = device if device != None else "cuda" if torch.cuda.is_available() else "cpu"
 
     @abstractmethod
     def apply(self, image: Image, output: Image):

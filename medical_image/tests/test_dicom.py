@@ -59,7 +59,7 @@ class TestDicom:
 
         # Check that the pixel data has been modified
         assert not torch.allclose(
-            dicom_image.pixel_data.float(), output.pixel_data.float()
+            dicom_image.pixel_data.float(), output.pixel_data.detach().cpu().float()
         )
 
         # Check that the output is a binary image (0 or 255)
