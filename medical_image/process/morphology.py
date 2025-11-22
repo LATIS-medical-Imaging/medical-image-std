@@ -7,7 +7,7 @@ from medical_image.data.image import Image
 class MorphologyOperations:
     @staticmethod
     def morphology_closing(
-        image: Image, output: Image, kernel_size: int = 7, device="cpu"
+        image_data: Image, output: Image, kernel_size: int = 7, device="cpu"
     ):
         """
         Performs 2D binary closing on a given image using PyTorch.
@@ -24,7 +24,9 @@ class MorphologyOperations:
         Returns:
             None: The result is stored in `output.pixel_data`.
         """
-        img = image.pixel_data.to(device).float().unsqueeze(0).unsqueeze(0)  # (1,1,H,W)
+        img = (
+            image_data.pixel_data.to(device).float().unsqueeze(0).unsqueeze(0)
+        )  # (1,1,H,W)
         se = torch.ones((1, 1, kernel_size, kernel_size), device=device)
 
         # Dilation
@@ -40,11 +42,11 @@ class MorphologyOperations:
         closed = 1 - eroded
 
         output.pixel_data = closed.squeeze(0).squeeze(0)
-        output.width = image.width
-        output.height = image.height
+        output.width = image_data.width
+        output.height = image_data.height
 
     @staticmethod
-    def region_fill(image: Image, output: Image, device="cpu"):
+    def region_fill(image_data: Image, output: Image, device="cpu"):
         """
         Fills holes in a binary image using PyTorch.
 
@@ -52,14 +54,14 @@ class MorphologyOperations:
         to fill all interior holes not connected to the border.
 
         Args:
-            image (Image): Input binary image (0/1).
+            image_data (Image): Input binary image (0/1).
             output (Image): Output Image object to store the filled result.
             device (str): Device for computation ("cpu" or "cuda").
 
         Returns:
             None: The result is stored in `output.pixel_data`.
         """
-        img = image.pixel_data.to(device).float()
+        img = image_data.pixel_data.to(device).float()
         h, w = img.shape
         # Create mask for flood fill: start from boundary
         mask = torch.zeros((h + 2, w + 2), device=device)
@@ -83,5 +85,5 @@ class MorphologyOperations:
         filled = (filled > 0).float()
 
         output.pixel_data = filled
-        output.width = image.width
-        output.height = image.height
+        output.width = image_data.width
+        output.height = image_data.height

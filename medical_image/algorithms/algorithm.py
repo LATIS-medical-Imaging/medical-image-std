@@ -11,7 +11,9 @@ class Algorithm(ABC):
         Constructor for the Algorithm class.
         """
         super().__init__()
-        self.device = device if device != None else "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = (
+            device if device != None else "cuda" if torch.cuda.is_available() else "cpu"
+        )
 
     @abstractmethod
     def apply(self, image: Image, output: Image):

@@ -16,27 +16,39 @@ class FebdsAlgorithm(Algorithm):
         super().__init__()
         self.method = method
         self.dog = lambda img, output: Filters.difference_of_gaussian(
-            image_data=img, output=output, sigma_1=2.0, sigma_2=1.7
+            image_data=img, output=output, sigma_1=2.0, sigma_2=1.7, device=self.device
         )
         self.log = lambda img, output: Filters.laplacian_of_gaussian(
-            image_data=img, output=output, sigma=2.0
+            image_data=img, output=output, sigma=2.0, device=self.device
         )
-        self.fft = lambda img, output: FrequencyOperations.fft
+        self.fft = lambda img, output: FrequencyOperations.fft(
+            image_data=img, output=output, device=self.device
+        )
 
-        self.butter_kernel = Filters.butterworth_kernel
-        self.inverse_fft = lambda img, output: FrequencyOperations.inverse_fft
+        self.butter_kernel = lambda img, output: Filters.butterworth_kernel(
+            image_data=img, output=output, device=self.device
+        )
+        self.inverse_fft = lambda img, output: FrequencyOperations.inverse_fft(
+            image_data=img, output=output, device=self.device
+        )
         self.median = lambda img, output: Filters.median_filter(
-            image_data=img, output=output, size=5
+            image_data=img, output=output, size=5, device=self.device
         )
         self.gamma = lambda img, output: Filters.gamma_correction(
-            image_data=img, output=output, gamma=1.25
+            image_data=img, output=output, gamma=1.25, device=self.device
         )
         self.binarize = lambda img, output: Threshold.binarize(
-            image_data=img, output=output, alpha=1
+            image_data=img, output=output, alpha=1, device=self.device
         )
         self.otsu = Threshold.otsu_threshold
-        self.mophology_closing = MorphologyOperations.morphoogy_closing
-        self.region_fill = MorphologyOperations.region_fill
+        self.mophology_closing = (
+            lambda img, output: MorphologyOperations.morphology_closing(
+                image_data=img, output=output, device=self.device
+            )
+        )
+        self.region_fill = lambda img, output: MorphologyOperations.region_fill(
+            image_data=img, output=output, device=self.device
+        )
 
     def apply(self, image: Image, output: Image):
         if self.method == "dog":
