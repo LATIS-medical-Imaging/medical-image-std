@@ -109,7 +109,9 @@ class ImageVisualizer:
         plt.show()
 
     @staticmethod
-    def compare(before: Image, after: Image, title_before="Before", title_after="After"):
+    def compare(
+        before: Image, after: Image, title_before="Before", title_after="After"
+    ):
         """
         Side-by-side comparison of two Image objects.
         """
