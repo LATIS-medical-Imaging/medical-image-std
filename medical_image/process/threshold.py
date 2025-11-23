@@ -12,6 +12,8 @@ class Threshold:
         Applies Otsu's thresholding method to a grayscale image using PyTorch.
         Works on CPU or CUDA.
 
+        This implementation adapts automatically to the min/max pixel values of the input image.
+
         Args:
             image_data (Image): Input image with pixel_data as torch.Tensor.
             output (Image, optional): Optional output Image object to store the result.
@@ -20,15 +22,25 @@ class Threshold:
         Returns:
             torch.Tensor: Thresholded binary image (0 or 255) if output is None.
         """
-        image = image_data.pixel_data.to(device).to(torch.int32)
+        # Move image to device
+        image = image_data.pixel_data.to(device).to(torch.float32)
+
+        # Determine the actual range of the image
+        min_val = torch.min(image)
+        max_val = torch.max(image)
+
+        # Choose number of bins
+        bins = 256 if max_val <= 255 else 4096  # adapt to 8-bit or higher bit images
 
         # Compute histogram
-        hist = torch.histc(image.float(), bins=4096, min=0, max=4095)
+        hist = torch.histc(image, bins=bins, min=0, max=bins - 1)
+
+        # Values corresponding to histogram bins
+        bin_edges = torch.linspace(min_val, max_val, bins, device=device)
 
         # Cumulative sums and means
         cumsum = torch.cumsum(hist, dim=0)
-        values = torch.arange(4096, device=device, dtype=torch.float32)
-        cummean = torch.cumsum(hist * values, dim=0)
+        cummean = torch.cumsum(hist * bin_edges, dim=0)
         global_mean = cummean[-1]
 
         # Between-class variance
@@ -37,8 +49,10 @@ class Threshold:
         denom = torch.where(denom == 0, torch.ones_like(denom), denom)
         variance_between = numer / denom
 
-        # Threshold
-        threshold_value = torch.argmax(variance_between).item()
+        # Threshold (value in original scale)
+        threshold_value = bin_edges[torch.argmax(variance_between)].item()
+
+        # Apply threshold
         binary_image = (image > threshold_value).to(torch.uint8) * 255
 
         if output is not None:

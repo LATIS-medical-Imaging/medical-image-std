@@ -134,7 +134,6 @@ class PatchGrid:
 
 
 # TODO: add unit test with plots for this patch detection
-# TODO: ADD a plot method in Image class
 
 # TODO: add these to Patch class
 #   is_empty() (useful for padded patches)

@@ -16,12 +16,14 @@ class Image(ABC):
     Abstract base class for medical images supporting lazy loading and multiple constructors.
     """
 
-    def __init__(self,
-                 file_path: Optional[str] = None,
-                 array: Optional[Union[np.ndarray, torch.Tensor]] = None,
-                 width: Optional[int] = None,
-                 height: Optional[int] = None,
-                 source_image: Optional["Image"] = None):
+    def __init__(
+        self,
+        file_path: Optional[str] = None,
+        array: Optional[Union[np.ndarray, torch.Tensor]] = None,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
+        source_image: Optional["Image"] = None,
+    ):
         """
         Flexible constructor for Image.
         Supports:
@@ -43,7 +45,7 @@ class Image(ABC):
         self.width: Optional[int] = width
         self.height: Optional[int] = height
         self.pixel_data: Optional[torch.Tensor] = None
-        # TODO: comment Annotation
+        # TODO: We should Discuss Annotation
         # self.annotations: Optional[Union[Annotation, List[Annotation]]] = None
 
         if file_path is not None:
@@ -82,7 +84,9 @@ class Image(ABC):
         return cls(array=array)
 
     @classmethod
-    def empty(cls, width: Optional[int] = None, height: Optional[int] = None) -> "Image":
+    def empty(
+        cls, width: Optional[int] = None, height: Optional[int] = None
+    ) -> "Image":
         return cls(width=width, height=height)
 
     @abstractmethod

@@ -7,7 +7,7 @@ from medical_image.data.image import Image
 from medical_image.utils.annotation import AnnotationType
 
 
-# TODO:
+# TODO: A discussion is needed here
 class RegionOfInterest:
     """
     Represents a Region of Interest (ROI) in a medical image, which may be a bounding box,

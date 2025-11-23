@@ -5,7 +5,6 @@ import torch.nn.functional as F
 from medical_image.data.image import Image
 
 
-# TODO: change 4096 to max or a general param
 class Filters:
     @staticmethod
     def convolution(
@@ -245,7 +244,12 @@ class Filters:
             device (str): Device to run computation on.
         """
         img = image_data.pixel_data.to(device)
-        corrected = torch.pow(img / 4095.0, gamma) * 4095.0
+
+        # Choose number of bins
+        bins = (
+            255 if torch.max(img) <= 255 else 4095
+        )  # adapt to 8-bit or higher bit images
+        corrected = torch.pow(img / float(bins), gamma) * float(bins)
         output.pixel_data = corrected.to(device)
         output.width = image_data.width
         output.height = image_data.height
@@ -269,9 +273,12 @@ class Filters:
             device (str): Device to run computation on.
         """
         img = image_data.pixel_data.to(device)
-        alpha = contrast / (4095.0 / 2) + 1.0
+        bins = (
+            255 if torch.max(img) <= 255 else 4095
+        )  # adapt to 8-bit or higher bit images
+        alpha = contrast / (float(bins) / 2) + 1.0
         beta = brightness - contrast
-        adjusted = torch.clamp(img * alpha + beta, 0, 4095)
+        adjusted = torch.clamp(img * alpha + beta, 0, bins)
         output.pixel_data = adjusted.to(device)
         output.width = image_data.width
         output.height = image_data.height
