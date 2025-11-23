@@ -13,7 +13,7 @@ from typing import List, Union, Tuple
 import numpy as np
 
 
-# TODO: move to Torch, and  check Dicom Annotation
+# TODO: check Dicom Annotation
 
 
 class Annotation:

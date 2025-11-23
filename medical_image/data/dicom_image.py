@@ -5,6 +5,7 @@ import torch
 
 from medical_image.data.image import Image
 from medical_image.utils.ErrorHandler import ErrorMessages
+from medical_image.utils.image_utils import TensorConverter
 
 
 class DicomImage(Image):
@@ -17,7 +18,7 @@ class DicomImage(Image):
 
     def load(self):
         self.dicom_data = pydicom.dcmread(self.file_path)
-        self.pixel_data = torch.tensor(self.dicom_data.pixel_array, device=self.device)
+        self.pixel_data = torch.tensor(self.dicom_data.pixel_array)
         self.width = self.dicom_data.Columns
         self.height = self.dicom_data.Rows
 
@@ -27,7 +28,8 @@ class DicomImage(Image):
         filename, extension = os.path.splitext(self.file_path)
         # Update DICOM data pixel array
         # TODO: We should discuss this
-        self.dicom_data.set_pixel_data(self.to_numpy(), "MONOCHROME2", 16)
-
+        self.dicom_data.set_pixel_data(
+            TensorConverter.to_numpy(self), "MONOCHROME2", 16
+        )
         # Save DICOM data back to file
         self.dicom_data.save_as(filename + "_modified.dcm")
