@@ -1,0 +1,42 @@
+[project]
+name = "medical-image-std"
+version = "0.2.8.dev1"
+description = "A standardized Python library for medical image processing."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+
+authors = [
+    {name = "Hamza Gbada", email = "hamza.gbada@gmail.com"},
+]
+
+dependencies = [
+    "pydicom>=2.4.4",
+    "numpy>=1.26.4",
+    "Pillow>=10.3.0",
+    "requests>=2.32.3",
+    "matplotlib",
+    "scipy",
+    "scikit-image",
+    "torch",
+    "torchvision",
+    "transformers",
+    "pandas",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2.2",
+    "black",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+# ---------------------
+# uv configuration
+# ---------------------
+# This is the CORRECT syntax
+[[tool.uv.index]]
+url = "https://download.pytorch.org/whl/cu124"

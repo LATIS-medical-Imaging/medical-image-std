@@ -21,17 +21,32 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install dependencies
-      run: pip install -r requirements.txt
+      # Install uv
+    - name: Install uv
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      # Install Python using uv
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      run: |
+        uv python install ${{ matrix.python-version }}
+        uv python pin ${{ matrix.python-version }}
+
+      # Install project + dev dependencies
+    - name: Install dependencies with uv
+      run: |
+        uv sync --all-groups
 
     - name: Run tests
       run: pytest medical_image/tests/test_dicom.py
 
-    - name: Check code formatting
-      run: black --check .
+    - name: Run Black code formatting check
+      run: |
+        uv run black --check --diff .
 
 #    - name: Publish to PyPI
 #      if: github.ref == 'refs/tags/v*'
 #      run: |
-#        python setup.py sdist bdist_wheel
+#        python test_setup.py sdist bdist_wheel
 #        twine upload dist/*
