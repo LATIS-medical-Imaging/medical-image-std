@@ -1,4 +1,4 @@
-name: Dicom CI
+name: Medical Image Standard CI
 
 on:
   push:
@@ -14,36 +14,30 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-
-      # Install uv
+    # Install uv (manages Python itself)
     - name: Install uv
-      run: |
-        curl -LsSf https://astral.sh/uv/install.sh | sh
+      uses: astral-sh/setup-uv@v2
 
-      # Install Python using uv
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+    # Install correct Python version via uv
+    - name: Install Python with uv
       run: |
         uv python install ${{ matrix.python-version }}
         uv python pin ${{ matrix.python-version }}
 
-      # Install project + dev dependencies
-    - name: Install dependencies with uv
-      run: |
-        uv sync --all-groups
+    # Sync dependencies (project + dev)
+    - name: Install dependencies
+      run: uv sync --all-groups
 
+    # Run tests inside uv virtual environment
     - name: Run tests
-      run: pytest medical_image/tests/test_dicom.py
+      run: uv run pytest medical_image/tests/test_dicom.py
 
-    - name: Run Black code formatting check
-      run: |
-        uv run black --check --diff .
+    # Black formatting check
+    - name: Run Black
+      run: uv run black --check --diff .
+
 
 #    - name: Publish to PyPI
 #      if: github.ref == 'refs/tags/v*'
