@@ -14,7 +14,7 @@ dependencies = [
     "pydicom>=2.4.4",
     "numpy>=1.26.4",
     "Pillow>=10.3.0",
-    "requests>=2.32.3",
+    "requests>=2.28.1",
     "matplotlib",
     "scipy",
     "scikit-image",
