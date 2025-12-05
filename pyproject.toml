@@ -24,11 +24,12 @@ dependencies = [
     "pandas",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
-    "pytest>=8.2.2",
-    "black",
+    "pytest>=7.0.0",
+    "black>=23.0.0",
 ]
+
 
 [build-system]
 requires = ["setuptools"]

@@ -28,7 +28,8 @@ jobs:
 
       # Sync dependencies (project + dev)
     - name: Install dependencies
-      run: uv sync --group dev --group default
+      run: |
+        uv sync --all-groups
 
     # Run tests inside uv virtual environment
     - name: Run tests
