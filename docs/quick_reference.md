@@ -180,11 +180,11 @@ for images, annotations in dataloader:
 ## Annotations
 
 ```python
-from medical_image.utils.annotation import Annotation, AnnotationType
+from medical_image.utils.annotation import Annotation, GeometryType
 
 # Calcification annotation
 annotation = Annotation(
-    annotation_type=AnnotationType.BOUNDING_BOX,
+    annotation_type=GeometryType.BOUNDING_BOX,
     coordinates=[[100, 100, 200, 200]],
     classes=['calcification'],
     image_view='CC',
@@ -196,7 +196,7 @@ annotation = Annotation(
 
 # Mass annotation
 annotation = Annotation(
-    annotation_type=AnnotationType.POLYGON,
+    annotation_type=GeometryType.POLYGON,
     coordinates=[[(100, 100), (200, 100), (200, 200)]],
     classes=['mass'],
     image_view='MLO',

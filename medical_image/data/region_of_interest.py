@@ -2,28 +2,22 @@ import copy
 from typing import Union, List, Tuple
 
 import numpy as np
+import torch
+from skimage.draw import polygon
 
 from medical_image.data.image import Image
-from medical_image.utils.annotation import AnnotationType
+from medical_image.utils.annotation import GeometryType
 
 
-# TODO: A discussion is needed here
 class RegionOfInterest:
     """
-    Represents a Region of Interest (ROI) in a medical image, which may be a bounding box,
-    a polygon, or a binary mask.
+    PyTorch-compatible Region of Interest (ROI) extractor.
+    Coordinates remain NumPy for all ROI types.
 
-    Parameters:
-        image (Image): The Image object the ROI is based on.
-        coordinates (Union[List[int], List[Tuple[int, int]], np.ndarray]): The ROI definition.
-            - Bounding box: [x_min, y_min, x_max, y_max]
-            - Polygon: [(x1, y1), (x2, y2), ..., (xn, yn)]
-            - Mask: 2D NumPy array
-
-    Attributes:
-        image (Image): The original image.
-        coordinates: Coordinates representing the ROI.
-        annotation_type (AnnotationType): The type of ROI (bounding box, polygon, or mask).
+    Supports:
+        - Bounding Box: [x_min, y_min, x_max, y_max]
+        - Polygon: [(x1, y1), ..., (xn, yn)]
+        - Mask: 2D NumPy array
     """
 
     def __init__(
@@ -32,66 +26,96 @@ class RegionOfInterest:
         coordinates: Union[List[int], List[Tuple[int, int]], np.ndarray],
     ):
         self.image = image
-        self.coordinates = coordinates
+        self.coordinates = coordinates  # MUST remain numpy
         self.annotation_type = self._determine_annotation_type()
 
-    def _determine_annotation_type(self) -> AnnotationType:
+    # -------------------------------------------------------------------------
+    # Determine annotation type
+    # -------------------------------------------------------------------------
+    def _determine_annotation_type(self) -> GeometryType:
         if isinstance(self.coordinates, list):
+            # Bounding Box
             if len(self.coordinates) == 4 and all(
                 isinstance(c, int) for c in self.coordinates
             ):
-                return AnnotationType.BOUNDING_BOX
-            elif all(isinstance(c, tuple) and len(c) == 2 for c in self.coordinates):
-                return AnnotationType.POLYGON
-        elif isinstance(self.coordinates, np.ndarray):
-            return AnnotationType.MASK
+                return GeometryType.BOUNDING_BOX
 
-        raise ValueError(
-            "Unsupported or invalid coordinates format for RegionOfInterest"
-        )
+            # Polygon
+            if all(isinstance(pt, tuple) and len(pt) == 2 for pt in self.coordinates):
+                return GeometryType.POLYGON
 
+        # Mask
+        if isinstance(self.coordinates, np.ndarray):
+            return GeometryType.MASK
+
+        raise ValueError("Unsupported ROI coordinates format.")
+
+    # -------------------------------------------------------------------------
+    # Load ROI from image
+    # -------------------------------------------------------------------------
     def load(self) -> Image:
         """
-        Crop the image to the ROI and return a new Image object containing only the ROI.
-
-        Returns:
-            Image: A new Image instance cropped to the region of interest.
+        Crop the image using the ROI definition and return a new Image object.
+        Pixel data will be a torch.Tensor.
         """
-        pixel_data = self.image.pixel_data
+        # Ensure pixel data is loaded and torch.Tensor
+        if self.image.pixel_data is None:
+            self.image.load()
 
-        if self.annotation_type == AnnotationType.BOUNDING_BOX:
+        pixel_t: torch.Tensor = self.image.pixel_data
+
+        # Convert to numpy temporarily for ROI operations requiring numpy
+        pixel_np = pixel_t.cpu().numpy()
+
+        # =====================================================================
+        # BOUNDING BOX
+        # =====================================================================
+        if self.annotation_type == GeometryType.BOUNDING_BOX:
             x_min, y_min, x_max, y_max = self.coordinates
-            cropped_pixel_data = pixel_data[y_min:y_max, x_min:x_max]
+            cropped_np = pixel_np[y_min:y_max, x_min:x_max]
 
-        elif self.annotation_type == AnnotationType.POLYGON:
-            from skimage.draw import polygon  # polygon rasterization
+        # =====================================================================
+        # POLYGON
+        # =====================================================================
+        elif self.annotation_type == GeometryType.POLYGON:
+            mask = np.zeros(pixel_np.shape[:2], dtype=bool)
 
-            mask = np.zeros_like(pixel_data, dtype=bool)
             poly_y, poly_x = zip(*self.coordinates)
             rr, cc = polygon(poly_y, poly_x)
             mask[rr, cc] = True
-            cropped_pixel_data = pixel_data * mask
 
-            y_indices, x_indices = np.nonzero(mask)
-            y_min, y_max = y_indices.min(), y_indices.max() + 1
-            x_min, x_max = x_indices.min(), x_indices.max() + 1
-            cropped_pixel_data = cropped_pixel_data[y_min:y_max, x_min:x_max]
+            cropped_np = pixel_np * mask
 
-        elif self.annotation_type == AnnotationType.MASK:
+            # Auto-crop to bounding box of polygon
+            ys, xs = np.nonzero(mask)
+            y_min, y_max = ys.min(), ys.max() + 1
+            x_min, x_max = xs.min(), xs.max() + 1
+
+            cropped_np = cropped_np[y_min:y_max, x_min:x_max]
+
+        # =====================================================================
+        # MASK
+        # =====================================================================
+        elif self.annotation_type == GeometryType.MASK:
             mask = self.coordinates.astype(bool)
-            cropped_pixel_data = pixel_data * mask
 
-            y_indices, x_indices = np.nonzero(mask)
-            y_min, y_max = y_indices.min(), y_indices.max() + 1
-            x_min, x_max = x_indices.min(), x_indices.max() + 1
-            cropped_pixel_data = cropped_pixel_data[y_min:y_max, x_min:x_max]
+            cropped_np = pixel_np * mask
+
+            ys, xs = np.nonzero(mask)
+            y_min, y_max = ys.min(), ys.max() + 1
+            x_min, x_max = xs.min(), xs.max() + 1
+
+            cropped_np = cropped_np[y_min:y_max, x_min:x_max]
 
         else:
-            raise RuntimeError("Unknown region type.")
+            raise RuntimeError("Unknown ROI annotation type.")
 
-        # Create a new Image instance and copy metadata
+        # Convert NumPy -> torch
+        cropped_tensor = torch.from_numpy(cropped_np).float()
+
+        # Build new Image object (deep copy metadata)
         cropped_image = copy.deepcopy(self.image)
-        cropped_image.pixel_data = cropped_pixel_data
-        cropped_image.height, cropped_image.width = cropped_pixel_data.shape[:2]
+        cropped_image.pixel_data = cropped_tensor
+        cropped_image.height, cropped_image.width = cropped_tensor.shape[:2]
 
         return cropped_image

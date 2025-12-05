@@ -8,7 +8,7 @@ from medical_image.data.dicom_image import DicomImage
 from medical_image.data.image import Image
 from medical_image.data.region_of_interest import RegionOfInterest
 from medical_image.utils.ErrorHandler import ErrorMessages
-from medical_image.utils.annotation import AnnotationType
+from medical_image.utils.annotation import GeometryType
 
 
 class MedicalDataset(Dataset, ABC):
@@ -52,9 +52,9 @@ class MedicalDataset(Dataset, ABC):
 
         # Load label if defined
         if label.annotation_type in {
-            AnnotationType.BOUNDING_BOX,
-            AnnotationType.POLYGON,
-            AnnotationType.MASK,
+            GeometryType.BOUNDING_BOX,
+            GeometryType.POLYGON,
+            GeometryType.MASK,
         }:
             # tODO: Stopped Here continue
             filename = os.path.basename(image_path)

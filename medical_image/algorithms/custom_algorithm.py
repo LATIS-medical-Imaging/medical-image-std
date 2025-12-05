@@ -13,7 +13,7 @@ class CustomAlgorithm(Algorithm):
             image_data=image_data, output=output, device=self.device
         )
 
-    # TODO: check garbage collector of Python
+    #   TODO: check garbage collector of Python
     def apply(self, image, output):
         self.gaussian(img=image, output=output)
         self.gaussian(img=output, output=output)

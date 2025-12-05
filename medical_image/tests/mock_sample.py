@@ -5,7 +5,6 @@ import requests
 from medical_image.data.dicom_image import DicomImage
 
 
-# TODO: Enhance This
 def mock_dicom_image():
     mock_dicom()
     dicom_image = DicomImage("dummy_data/sample.dcm")

@@ -486,11 +486,11 @@ algo.apply(input_image, output_image)
 ### Working with Annotations
 
 ```python
-from medical_image.utils.annotation import Annotation, AnnotationType
+from medical_image.utils.annotation import Annotation, GeometryType
 
 # Create annotation for calcification
 annotation = Annotation(
-    annotation_type=AnnotationType.BOUNDING_BOX,
+    annotation_type=GeometryType.BOUNDING_BOX,
     coordinates=[[100, 100, 200, 200]],
     classes=['calcification'],
     image_view='CC',

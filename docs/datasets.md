@@ -182,8 +182,9 @@ if annotation.abnormality_type == "mass":
 ```python
 from medical_image.data.medical_dataset import MedicalDataset
 from medical_image.data.dicom_image import DicomImage
-from medical_image.utils.annotation import Annotation, AnnotationType
+from medical_image.utils.annotation import Annotation, GeometryType
 import os
+
 
 class MyMammographyDataset(MedicalDataset):
     def __init__(self, base_path, transform=None, train=True):
@@ -193,13 +194,13 @@ class MyMammographyDataset(MedicalDataset):
             transform=transform,
             train=train
         )
-        
+
         # Load image paths
         self.images_path = self._load_image_paths()
-        
+
         # Load annotations (if available)
         self.annotations = self._load_annotations()
-    
+
     def _load_image_paths(self):
         """Scan directory for DICOM files."""
         paths = []
@@ -208,14 +209,14 @@ class MyMammographyDataset(MedicalDataset):
                 if file.endswith('.dcm'):
                     paths.append(os.path.join(root, file))
         return paths
-    
+
     def _load_annotations(self):
         """Load annotation data from CSV or JSON."""
         # Implement based on your annotation format
         annotations = {}
         # ... load annotations
         return annotations
-    
+
     def load_batch(self, batch_size):
         """Load a batch of images into memory."""
         # Implement batch loading logic
@@ -227,13 +228,13 @@ class MyMammographyDataset(MedicalDataset):
                 batch.append(img)
                 self.current_index += 1
         return batch
-    
+
     def destroy_batch(self):
         """Free memory from current batch."""
         self.current_image = None
         import torch
         torch.cuda.empty_cache()
-    
+
     def apply_transform(self, transform, pixel_data, label):
         """Apply transformations to data."""
         if transform:
@@ -312,13 +313,13 @@ The library supports three annotation types:
 #### 1. Bounding Box
 
 ```python
-from medical_image.utils.annotation import AnnotationType
+from medical_image.utils.annotation import GeometryType
 
 # Define bounding box [x_min, y_min, x_max, y_max]
 bbox_coords = [[100, 100, 300, 300]]
 
 annotation = Annotation(
-    annotation_type=AnnotationType.BOUNDING_BOX,
+    annotation_type=GeometryType.BOUNDING_BOX,
     coordinates=bbox_coords,
     classes=['calcification'],
     image_view='CC',

@@ -5,7 +5,6 @@ from typing import Optional, Union, List, TypeVar
 import torch
 from log_manager import logger
 from medical_image.utils.ErrorHandler import ErrorMessages
-from medical_image.utils.annotation import Annotation
 import numpy as np
 
 T = TypeVar("T")
