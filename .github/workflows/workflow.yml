@@ -26,9 +26,6 @@ jobs:
         uv python install ${{ matrix.python-version }}
         uv python pin ${{ matrix.python-version }}
 
-    - name: Debug — list installed packages
-      run: uv run python -m pip list
-
       # Sync dependencies (project + dev)
     - name: Install dependencies
       run: uv sync --group dev --group default
