@@ -1,9 +1,27 @@
+import copy
+from typing import Tuple
+
 import torch
 
 from medical_image.data.image import Image
 
 
 class Patch:
+    """
+    Represents a patch extracted from an image.
+
+    Attributes:
+        parent (Image): The parent image from which this patch is extracted.
+        row_idx (int): Vertical index in the patch grid.
+        col_idx (int): Horizontal index in the patch grid.
+        x (int): Top-left pixel x-coordinate in the original image.
+        y (int): Top-left pixel y-coordinate in the original image.
+        pixel_data (torch.Tensor): Tensor representing patch pixels.
+        is_padded (bool): Whether the patch contains padding.
+        width (int): Width of the patch.
+        height (int): Height of the patch.
+    """
+
     def __init__(
         self,
         parent: Image,
@@ -11,21 +29,9 @@ class Patch:
         col_idx: int,
         x: int,
         y: int,
-        pixel_data: int,
-        is_padded=False,
+        pixel_data: torch.Tensor,
+        is_padded: bool = False,
     ):
-        """
-        Represents a patch extracted from an image.
-
-        Args:
-            parent (Image): Reference to the parent Image object
-            row_idx (int): Patch index in the vertical grid
-            col_idx (int): Patch index in the horizontal grid
-            x (int): Top-left pixel x-coordinate in original image
-            y (int): Top-left pixel y-coordinate in original image
-            pixel_data (torch.Tensor): Patch pixels
-            is_padded (bool): True if patch includes padding
-        """
         self.parent = parent
         self.row_idx = row_idx
         self.col_idx = col_idx
@@ -37,19 +43,39 @@ class Patch:
         self.height = pixel_data.shape[-2]
         self.width = pixel_data.shape[-1]
 
-    def grid_id(self):
-        """Return patch position as (row, col)."""
-        return (self.row_idx, self.col_idx)
+    def grid_id(self) -> Tuple[int, int]:
+        """Return patch position as (row, col) in the grid."""
+        return self.row_idx, self.col_idx
 
-    def pixel_position(self):
-        """Return (x, y) pixel coordinates in original image."""
-        return (self.x, self.y)
+    def pixel_position(self) -> Tuple[int, int]:
+        """Return top-left (x, y) pixel coordinates in the original image."""
+        return self.x, self.y
 
-    def to_numpy(self):
+    def to_numpy(self) -> "np.ndarray":
+        """Convert patch pixel data to a NumPy array."""
         return self.pixel_data.detach().cpu().numpy()
 
+    def load(self) -> Image:
+        """
+        Convert this patch into a new Image instance.
+
+        Returns:
+            Image: A new Image object containing only the patch pixels.
+        """
+        # Deep copy the parent to retain metadata
+        patch_image = copy.deepcopy(self.parent)
+        patch_image.pixel_data = self.pixel_data
+        patch_image.height = self.height
+        patch_image.width = self.width
+        patch_image.file_path = None  # No file associated with this patch
+
+        return patch_image
+
     def __repr__(self):
-        return f"Patch[{self.row_idx},{self.col_idx}] ({self.x},{self.y}) size={self.width}x{self.height}"
+        return (
+            f"Patch[{self.row_idx},{self.col_idx}] "
+            f"({self.x},{self.y}) size={self.width}x{self.height}"
+        )
 
 
 class PatchGrid:
