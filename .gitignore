@@ -7,3 +7,4 @@
 /data/
 __pycache__
 .pytest_cache
+/dummy_plt.py
