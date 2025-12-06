@@ -79,7 +79,7 @@ class Patch:
 
 
 class PatchGrid:
-    def __init__(self, parent_image, patch_size):
+    def __init__(self, parent_image: Image, patch_size):
         """
         Manages a full grid of patches.
 
@@ -101,29 +101,43 @@ class PatchGrid:
 
         H, W = img.shape[-2], img.shape[-1]
 
-        # Compute padding (same logic as divide_raster_band)
+        # Compute padding
         if H % self.patch_h != 0:
             self.pad_bottom = self.patch_h - (H % self.patch_h)
         if W % self.patch_w != 0:
             self.pad_right = self.patch_w - (W % self.patch_w)
 
         if self.pad_bottom or self.pad_right:
-            img = torch.nn.functional.pad(
-                img, (0, self.pad_right, 0, self.pad_bottom), mode="constant", value=0
-            )
+            if img.ndim == 2:
+                img = torch.nn.functional.pad(
+                    img,
+                    (0, self.pad_right, 0, self.pad_bottom),
+                    mode="constant",
+                    value=0,
+                )
+            else:  # multi-channel
+                img = torch.nn.functional.pad(
+                    img,
+                    (0, self.pad_right, 0, self.pad_bottom),
+                    mode="constant",
+                    value=0,
+                )
 
         new_H, new_W = img.shape[-2], img.shape[-1]
         num_rows = new_H // self.patch_h
         num_cols = new_W // self.patch_w
 
-        # Extract patches with coordinates
+        # Extract patches
         for r in range(num_rows):
             row_list = []
             for c in range(num_cols):
                 x = r * self.patch_h
                 y = c * self.patch_w
 
-                patch_tensor = img[:, x : x + self.patch_h, y : y + self.patch_w]
+                if img.ndim == 2:
+                    patch_tensor = img[x : x + self.patch_h, y : y + self.patch_w]
+                else:  # multi-channel
+                    patch_tensor = img[:, x : x + self.patch_h, y : y + self.patch_w]
 
                 is_padded = (r == num_rows - 1 and self.pad_bottom > 0) or (
                     c == num_cols - 1 and self.pad_right > 0
