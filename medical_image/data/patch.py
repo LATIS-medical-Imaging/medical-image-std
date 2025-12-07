@@ -96,26 +96,62 @@ class PatchGrid:
 
         self._split()
 
+    # ---------------------------------------------------------
+    # Infer layout: HW, CHW, HWC
+    # ---------------------------------------------------------
+    def _infer_layout(self, img):
+        if img.ndim == 2:
+            return "HW"
+
+        if img.ndim == 3:
+            H, W, C_last = img.shape
+            C_first, H2, W2 = img.shape[0], img.shape[-2], img.shape[-1]
+
+            # channel-first if first dim is small
+            if C_first in (1, 3, 4):
+                return "CHW"
+
+            # channel-last if last dim is small
+            if C_last in (1, 3, 4):
+                return "HWC"
+
+        raise ValueError(f"Cannot determine channel layout for shape {img.shape}")
+
+    # ---------------------------------------------------------
+    # Main split logic
+    # ---------------------------------------------------------
     def _split(self):
         img = self.parent.pixel_data
+        layout = self._infer_layout(img)
 
-        H, W = img.shape[-2], img.shape[-1]
+        # -------------------------------
+        # Get H, W depending on layout
+        # -------------------------------
+        if layout == "HW":
+            H, W = img.shape
 
-        # Compute padding
+        elif layout == "CHW":
+            _, H, W = img.shape
+
+        elif layout == "HWC":
+            H, W, _ = img.shape
+
+        # -------------------------------
+        # Compute padding needed
+        # -------------------------------
         if H % self.patch_h != 0:
             self.pad_bottom = self.patch_h - (H % self.patch_h)
+
         if W % self.patch_w != 0:
             self.pad_right = self.patch_w - (W % self.patch_w)
 
+        # -------------------------------
+        # Apply padding
+        # -------------------------------
         if self.pad_bottom or self.pad_right:
-            if img.ndim == 2:
-                img = torch.nn.functional.pad(
-                    img,
-                    (0, self.pad_right, 0, self.pad_bottom),
-                    mode="constant",
-                    value=0,
-                )
-            else:  # multi-channel
+
+            if layout in ("HW", "CHW"):
+                # pad only height+width → last two dims
                 img = torch.nn.functional.pad(
                     img,
                     (0, self.pad_right, 0, self.pad_bottom),
@@ -123,22 +159,47 @@ class PatchGrid:
                     value=0,
                 )
 
-        new_H, new_W = img.shape[-2], img.shape[-1]
-        num_rows = new_H // self.patch_h
-        num_cols = new_W // self.patch_w
+            elif layout == "HWC":
+                # F.pad order for 3D = (C), (W), (H)
+                img = torch.nn.functional.pad(
+                    img,
+                    (0, 0, 0, self.pad_right, 0, self.pad_bottom),
+                    mode="constant",
+                    value=0,
+                )
 
+        # recompute padded dims
+        if layout == "HW":
+            H, W = img.shape
+        elif layout == "CHW":
+            _, H, W = img.shape
+        else:  # HWC
+            H, W, _ = img.shape
+
+        num_rows = H // self.patch_h
+        num_cols = W // self.patch_w
+
+        # -------------------------------
         # Extract patches
+        # -------------------------------
         for r in range(num_rows):
             row_list = []
+
             for c in range(num_cols):
                 x = r * self.patch_h
                 y = c * self.patch_w
 
-                if img.ndim == 2:
+                # ---- slicing by layout ----
+                if layout == "HW":
                     patch_tensor = img[x : x + self.patch_h, y : y + self.patch_w]
-                else:  # multi-channel
+
+                elif layout == "CHW":
                     patch_tensor = img[:, x : x + self.patch_h, y : y + self.patch_w]
 
+                elif layout == "HWC":
+                    patch_tensor = img[x : x + self.patch_h, y : y + self.patch_w, :]
+
+                # padded?
                 is_padded = (r == num_rows - 1 and self.pad_bottom > 0) or (
                     c == num_cols - 1 and self.pad_right > 0
                 )
@@ -155,6 +216,7 @@ class PatchGrid:
 
                 row_list.append(patch)
                 self.patches.append(patch)
+
             self.grid.append(row_list)
 
     def reconstruct(self):

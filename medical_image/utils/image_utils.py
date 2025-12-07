@@ -1,5 +1,6 @@
 import os
 import matplotlib
+import numpy as np
 
 # Use a backend that works with PyCharm and plt.show()
 matplotlib.use("TkAgg")
@@ -64,24 +65,26 @@ class ImageExporter:
 
     @staticmethod
     def save_as(image: Image, format="PNG"):
-        """
-        Generic image format converter.
-
-        Args:
-            image (Image)
-            format (str)
-
-        Returns:
-            str: output path
-        """
-        base, _ = os.path.splitext(image.file_path)
+        if image.file_path is not None:
+            base, _ = os.path.splitext(image.file_path)
+        else:
+            base = "dummy_data/sample_saved"
         output = f"{base}.{format.lower()}"
 
         np_img = TensorConverter.to_numpy(image)
+
+        # --- FIX HERE ---
+        # Convert float32 images [0..255] to uint8
+        if np_img.dtype == np.float32 or np_img.dtype == np.float64:
+            np_img = np.clip(np_img, 0, 255).astype("uint8")
+
+        # Pillow requires contiguous array
+        np_img = np.ascontiguousarray(np_img)
+        # --- END FIX ---
+
         PILImage.fromarray(np_img).save(output, format=format)
 
         logger.info(f"Image saved as {output}")
-
         return output
 
 
