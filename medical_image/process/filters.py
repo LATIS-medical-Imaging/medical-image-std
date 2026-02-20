@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -203,34 +205,18 @@ class Filters:
             high_sigma = low_sigma * 1.6
         if high_sigma < low_sigma:
             raise ValueError("high_sigma must be >= low_sigma")
+        img1 = copy.deepcopy(output).pixel_data
+        img2 = copy.deepcopy(output).pixel_data
 
-        # Move input to device and float
-        img = image_data.pixel_data.to(device).float()
-
-        # Temporary buffers (just tensors, no Image object)
-        temp_low = img.clone()
-        temp_high = img.clone()
-
-        # Apply Gaussian filters directly to the tensors
         Filters.gaussian_filter(
-            image_data=image_data,
-            output=ImagePlaceholder(temp_low),
-            sigma=low_sigma,
-            device=device,
-            truncate=truncate,
+            image_data, img1, low_sigma, truncate=truncate, device=device
         )
         Filters.gaussian_filter(
-            image_data=image_data,
-            output=ImagePlaceholder(temp_high),
-            sigma=high_sigma,
-            device=device,
-            truncate=truncate,
+            image_data, img2, high_sigma, truncate=truncate, device=device
         )
-
-        # Compute DoG in-place
-        output.pixel_data = (temp_low - temp_high).to(device)
-        output.width = image_data.width
-        output.height = image_data.height
+        output.pixel_data = img1.pixel_data - img2.pixel_data
+        output.width = img1.width
+        output.height = img1.height
 
     @staticmethod
     def laplacian_of_gaussian(

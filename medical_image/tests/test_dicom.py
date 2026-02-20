@@ -5,6 +5,7 @@ import pytest
 import torch
 import torch.nn.functional as F
 from skimage._shared.filters import gaussian
+from skimage.filters import difference_of_gaussians
 
 # import torchvision.transforms.functional as F
 
@@ -22,6 +23,7 @@ from medical_image.tests.mock_sample import (
     mock_sauvola_threshold,
     mock_png_image,
     mock_kernel,
+    mock_two_sigmas,
 )
 from medical_image.utils.image_utils import ImageExporter, ImageVisualizer
 
@@ -76,6 +78,27 @@ class TestDicom:
         skimage_result = gaussian(
             image, sigma=sigma, mode="nearest", truncate=truncate, preserve_range=False
         ).astype(np.float32)
+
+        np.testing.assert_allclose(
+            output.pixel_data, skimage_result, rtol=1e-4, atol=1e-4
+        )
+
+    @pytest.mark.parametrize("sigma1, sigma2", mock_two_sigmas())
+    def test_DoG_matches_skimage(self, sigma1, sigma2):
+        """
+        Tests that PyTorch Gaussian kernel convolution matches skimage Gaussian filter.
+        """
+
+        image = np.random.rand(8, 8).astype(np.float32)
+        truncate = 4.0
+        image_object = DicomImage.from_array(image)
+        output = copy.deepcopy(image_object)
+
+        Filters.difference_of_gaussian(
+            image_object, output, sigma1, sigma2, truncate=truncate
+        )
+
+        skimage_result = difference_of_gaussians(image, sigma1, sigma2)
 
         np.testing.assert_allclose(
             output.pixel_data, skimage_result, rtol=1e-4, atol=1e-4
