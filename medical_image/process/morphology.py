@@ -12,36 +12,53 @@ class MorphologyOperations:
         """
         Performs 2D binary closing on a given image using PyTorch.
 
-        Closing is defined as a *dilation followed by an erosion* with the same structuring element.
-        This operation fills small holes and smooths boundaries in binary images.
+        Closing = Dilation followed by Erosion with the same structuring element.
+        Works for single-channel images (H,W) or (C,H,W).
 
         Args:
-            image (Image): Input binary image (0/1).
+            image_data (Image): Input binary image (0/1).
             output (Image): Output Image object to store the result.
-            kernel_size (int): Size of the square structuring element. Default is 7.
+            kernel_size (int): Size of the square structuring element.
             device (str): Device for computation ("cpu" or "cuda").
 
         Returns:
-            None: The result is stored in `output.pixel_data`.
+            None: Result stored in `output.pixel_data`.
         """
-        img = (
-            image_data.pixel_data.to(device).float().unsqueeze(0).unsqueeze(0)
-        )  # (1,1,H,W)
-        se = torch.ones((1, 1, kernel_size, kernel_size), device=device)
+        # Ensure image is float tensor on the correct device
+        img = image_data.pixel_data.to(device).float()
+
+        # Make sure img is 4D for conv2d: (N=1, C=1, H, W) or (N=1, C, H, W)
+        if img.ndim == 2:
+            img = img.unsqueeze(0).unsqueeze(0)  # (1,1,H,W)
+        elif img.ndim == 3:
+            img = img.unsqueeze(0)  # (1,C,H,W)
+
+        # Ensure binary (0/1)
+        img = (img > 0).float()
+
+        # Structuring element
+        se = torch.ones((img.shape[1], 1, kernel_size, kernel_size), device=device)
+
+        pad = kernel_size // 2
 
         # Dilation
-        pad = kernel_size // 2
-        dilated = F.conv2d(F.pad(img, (pad, pad, pad, pad)), se, padding=0)
+        dilated = F.conv2d(F.pad(img, (pad, pad, pad, pad)), se, groups=img.shape[1])
         dilated = (dilated > 0).float()
 
-        # Erosion
-        # Use complement trick: erosion = 1 - dilation(1 - img)
-        dilated_padded = F.pad(1 - dilated, (pad, pad, pad, pad))
-        eroded = F.conv2d(dilated_padded, se, padding=0)
+        # Erosion (using complement trick)
+        eroded = F.conv2d(
+            F.pad(1 - dilated, (pad, pad, pad, pad)), se, groups=img.shape[1]
+        )
         eroded = (eroded < kernel_size * kernel_size).float()
         closed = 1 - eroded
 
-        output.pixel_data = closed.squeeze(0).squeeze(0)
+        # Remove batch dimension, keep channels if multi-channel
+        if closed.shape[1] == 1:
+            closed = closed.squeeze(0).squeeze(0)  # (H,W)
+        else:
+            closed = closed.squeeze(0)  # (C,H,W)
+
+        output.pixel_data = closed
         output.width = image_data.width
         output.height = image_data.height
 

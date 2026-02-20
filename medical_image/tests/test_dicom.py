@@ -3,16 +3,25 @@ import copy
 import numpy as np
 import pytest
 import torch
+import torch.nn.functional as F
+from skimage._shared.filters import gaussian
+
+# import torchvision.transforms.functional as F
 
 from log_manager import logger
+from medical_image.algorithms.FEBDS import FebdsAlgorithm
 from medical_image.algorithms.custom_algorithm import CustomAlgorithm
+from medical_image.data.dicom_image import DicomImage
 from medical_image.data.image import Image
-from medical_image.data.patch import PatchGrid, Patch
+
+from medical_image.data.patch import PatchGrid
+from medical_image.process.filters import Filters
 from medical_image.process.threshold import Threshold
 from medical_image.tests.mock_sample import (
     mock_dicom_image,
     mock_sauvola_threshold,
     mock_png_image,
+    mock_kernel,
 )
 from medical_image.utils.image_utils import ImageExporter, ImageVisualizer
 
@@ -50,6 +59,28 @@ class TestDicom:
         out = output.pixel_data
         assert torch.all((out == 0) | (out == 255))
 
+    @pytest.mark.parametrize("size, sigma", mock_kernel())
+    def test_gaussian_kernel_matches_skimage(self, size, sigma):
+        """
+        Tests that PyTorch Gaussian kernel convolution matches skimage Gaussian filter.
+        """
+
+        image = np.random.rand(8, 8).astype(np.float32)
+        sigma = 1.5
+        truncate = 4.0
+        image_object = DicomImage.from_array(image)
+        output = copy.deepcopy(image_object)
+
+        Filters.gaussian_filter(image_object, output, sigma, truncate=truncate)
+
+        skimage_result = gaussian(
+            image, sigma=sigma, mode="nearest", truncate=truncate, preserve_range=False
+        ).astype(np.float32)
+
+        np.testing.assert_allclose(
+            output.pixel_data, skimage_result, rtol=1e-4, atol=1e-4
+        )
+
     @pytest.mark.parametrize("dicom_image", mock_dicom_image())
     def test_custom_algorithm(self, dicom_image):
         # Convert input pixel data to torch.Tensor if not already
@@ -70,6 +101,31 @@ class TestDicom:
             dicom_image.pixel_data.float(), output.pixel_data.detach().cpu().float()
         )
 
+        # Check that the output is a binary image (0 or 255)
+        unique_vals = torch.unique(output.pixel_data)
+        assert set(unique_vals.tolist()).issubset({0, 255})
+
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_fedbs_algorithm(self, dicom_image):
+        # Convert input pixel data to torch.Tensor if not already
+        if not isinstance(dicom_image.pixel_data, torch.Tensor):
+            dicom_image.pixel_data = torch.from_numpy(dicom_image.pixel_data).float()
+        print("image path", dicom_image.file_path)
+        # Prepare output image
+        output = copy.deepcopy(dicom_image)
+        if not isinstance(output.pixel_data, torch.Tensor):
+            output.pixel_data = torch.from_numpy(output.pixel_data).float()
+
+        # Apply the custom algorithm
+        algorithm = FebdsAlgorithm("dog")
+        algorithm(image=dicom_image, output=output)
+
+        # Check that the pixel data has been modified
+        assert not torch.allclose(
+            dicom_image.pixel_data.float(), output.pixel_data.detach().cpu().float()
+        )
+        ImageVisualizer.show(output)
+        ImageVisualizer.compare(dicom_image, output)
         # Check that the output is a binary image (0 or 255)
         unique_vals = torch.unique(output.pixel_data)
         assert set(unique_vals.tolist()).issubset({0, 255})

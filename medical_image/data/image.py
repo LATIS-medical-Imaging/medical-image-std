@@ -40,6 +40,7 @@ class Image(ABC):
             height (int, optional): Image height (for empty image).
             source_image (Image, optional): Another Image to copy.
         """
+        # Only bypass ABC instantiation check if explicitly set
         self.file_path: Optional[str] = None
         self.width: Optional[int] = width
         self.height: Optional[int] = height

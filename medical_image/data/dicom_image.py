@@ -1,5 +1,7 @@
 import os
+from typing import Union
 
+import numpy as np
 import pydicom
 import torch
 
@@ -9,11 +11,26 @@ from medical_image.utils.image_utils import TensorConverter
 
 
 class DicomImage(Image):
-    def __init__(self, file_path):
-        super().__init__(file_path)
-        ext = os.path.splitext(self.file_path)[1].lower()
-        if ext != ".dcm":
-            raise ErrorMessages.unsupported_file_type(ext)
+    def __init__(
+        self,
+        file_path: str = None,
+        array: Union[np.ndarray, torch.Tensor] = None,
+        width: int = None,
+        height: int = None,
+        source_image: Image = None,
+    ):
+        super().__init__(
+            file_path=file_path,
+            array=array,
+            width=width,
+            height=height,
+            source_image=source_image,
+        )
+
+        if file_path:
+            ext = os.path.splitext(self.file_path)[1].lower()
+            if ext != ".dcm":
+                raise ErrorMessages.unsupported_file_type(ext)
         self.dicom_data = None
 
     def load(self):
