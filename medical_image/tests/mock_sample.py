@@ -122,6 +122,7 @@ def mock_median_size():
         15,
     ]
 
+
 def mock_two_sigmas():
     return [
         (1, 1.5),
