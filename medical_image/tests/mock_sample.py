@@ -114,6 +114,14 @@ def mock_kernel():
     ]
 
 
+def mock_median_size():
+    return [
+        5,
+        4,
+        10,
+        15,
+    ]
+
 def mock_two_sigmas():
     return [
         (1, 1.5),

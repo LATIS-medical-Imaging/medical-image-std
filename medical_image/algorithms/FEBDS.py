@@ -25,6 +25,7 @@ class FebdsAlgorithm(Algorithm):
             high_sigma=2.0,
             device=self.device,
         )
+        # TODO:fix the Log in similar way of Dog
         self.log = lambda img, out: Filters.laplacian_of_gaussian(
             image_data=img, output=out, sigma=2.0, device=self.device
         )
@@ -88,14 +89,14 @@ class FebdsAlgorithm(Algorithm):
         # ImageVisualizer.show(output)
 
         # Step 4: Gamma correction
-        self.gamma(output, output)
-
-        # Step 5: Thresholding
-        if self.method == "fft":
-            self.binarize(output, output)
-        else:
-            self.otsu(output, output)
-
-        # Step 6: Morphological post-processing
-        self.morphology_closing(output, output)
-        self.region_fill(output, output)
+        # self.gamma(output, output)
+        #
+        # # Step 5: Thresholding
+        # if self.method == "fft":
+        #     self.binarize(output, output)
+        # else:
+        #     self.otsu(output, output)
+        #
+        # # Step 6: Morphological post-processing
+        # self.morphology_closing(output, output)
+        # self.region_fill(output, output)

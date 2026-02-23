@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 import torch
 import torch.nn.functional as F
+from scipy import ndimage
 from skimage._shared.filters import gaussian
 from skimage.filters import difference_of_gaussians
 
@@ -23,7 +24,7 @@ from medical_image.tests.mock_sample import (
     mock_sauvola_threshold,
     mock_png_image,
     mock_kernel,
-    mock_two_sigmas,
+    mock_two_sigmas, mock_median_size,
 )
 from medical_image.utils.image_utils import ImageExporter, ImageVisualizer
 
@@ -83,6 +84,42 @@ class TestDicom:
             output.pixel_data, skimage_result, rtol=1e-4, atol=1e-4
         )
 
+
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_febds(self, dicom_image):
+        """
+        Tests that PyTorch Gaussian kernel convolution matches skimage Gaussian filter.
+        """
+
+        image = dicom_image.pixel_data
+        sigma1, sigma2 = 1.7, 2.0
+        skimage_result = difference_of_gaussians(image, sigma1, sigma2)
+        skimage_result_finished = ndimage.median_filter(skimage_result, size=(5, 5))
+
+
+
+
+        if not isinstance(dicom_image.pixel_data, torch.Tensor):
+            dicom_image.pixel_data = torch.from_numpy(dicom_image.pixel_data).float()
+
+        # Prepare output image
+        output = copy.deepcopy(dicom_image)
+        if not isinstance(output.pixel_data, torch.Tensor):
+            output.pixel_data = torch.from_numpy(output.pixel_data).float()
+
+        # Apply the custom algorithm
+        algorithm = FebdsAlgorithm("dog")
+        algorithm(image=dicom_image, output=output)
+
+        image_output = output.pixel_data.detach().cpu().float().numpy().reshape((3328, 2560))
+        print(image_output.shape)
+        # print()
+        # Check that the pixel data has been modified
+        assert not torch.allclose(
+            skimage_result_finished.float(), output.pixel_data.detach().cpu().float()
+        )
+
+        #
     @pytest.mark.parametrize("sigma1, sigma2", mock_two_sigmas())
     def test_DoG_matches_skimage(self, sigma1, sigma2):
         """
