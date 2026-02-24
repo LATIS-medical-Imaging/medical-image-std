@@ -100,4 +100,4 @@ class FebdsAlgorithm(Algorithm):
         # #
         # # # Step 6: Morphological post-processing
         self.morphology_closing(output, output)
-        # self.region_fill(output, output)
+        self.region_fill(output, output)

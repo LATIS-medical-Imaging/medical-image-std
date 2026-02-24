@@ -26,6 +26,11 @@ class MorphologyOperations:
         """
         # Ensure image is float tensor on the correct device
         img = image_data.pixel_data.to(device).float()
+        while img.ndim > 2:
+            img = img.squeeze(0)
+
+        if img.ndim != 2:
+            raise ValueError(f"Expected 2D image, got shape {img.shape}")
         H, W = image_data.height, image_data.width
 
         # Ensure shape (1,1,H,W)

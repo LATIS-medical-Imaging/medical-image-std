@@ -116,7 +116,7 @@ class TestDicom:
         # print(out.shape)
         I = morphoogy_closing(out)
         #
-        # fill = region_fill(I)
+        fill = region_fill(I)
 
         if not isinstance(dicom_image.pixel_data, torch.Tensor):
             dicom_image.pixel_data = torch.from_numpy(dicom_image.pixel_data).float()
@@ -130,13 +130,14 @@ class TestDicom:
         algorithm = FebdsAlgorithm("dog")
         algorithm(image=dicom_image, output=output)
 
-        image_output = (
-            output.pixel_data.detach().cpu().float().numpy().reshape((3328, 2560))
-        )
+        image_output = output.pixel_data.detach().cpu().numpy().reshape((3328, 2560))
         print(image_output.shape)
         # print()
         # Check that the pixel data has been modified
-        assert not torch.allclose(fi, output.pixel_data.detach().cpu().float())
+        # TODO why output.pixel return float
+        assert not torch.allclose(
+            torch.tensor(I).float(), output.pixel_data.detach().cpu()
+        )
 
     @pytest.mark.parametrize("kernel_size", mock_kernel_sizes())
     def test_morphology_closing_matches_ndimage(self, kernel_size):
@@ -151,6 +152,7 @@ class TestDicom:
         output_object = copy.deepcopy(image_object)
 
         # Apply PyTorch closing
+
         MorphologyOperations.morphology_closing(
             image_object, output_object, kernel_size=kernel_size[0], device="cpu"
         )
