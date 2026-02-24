@@ -265,8 +265,7 @@ class Filters:
             device (str): Device to run computation on.
         """
         img = image_data.pixel_data.to(device).float()
-        max_val = img.max()
-        corrected = (img / max_val) ** gamma * max_val
+        corrected = (img / 4095) ** gamma * 4095.0
         output.pixel_data = corrected
         output.width = image_data.width
         output.height = image_data.height

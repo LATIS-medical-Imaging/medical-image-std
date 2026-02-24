@@ -138,3 +138,13 @@ class ImageVisualizer:
         axes[1].axis("off")
 
         plt.show()
+
+
+class MathematicalOperations:
+    @staticmethod
+    def abs(image_data: Image, out: Image):
+        img = image_data.pixel_data.float()
+
+        out.pixel_data = torch.abs(img)
+        out.width = image_data.width
+        out.height = image_data.height

@@ -4,9 +4,10 @@ import numpy as np
 import pytest
 import torch
 import torch.nn.functional as F
+from matplotlib import pyplot as plt
 from scipy import ndimage
 from skimage._shared.filters import gaussian
-from skimage.filters import difference_of_gaussians
+from skimage.filters import difference_of_gaussians, threshold_otsu
 
 # import torchvision.transforms.functional as F
 
@@ -18,6 +19,7 @@ from medical_image.data.image import Image
 
 from medical_image.data.patch import PatchGrid
 from medical_image.process.filters import Filters
+from medical_image.process.morphology import MorphologyOperations
 from medical_image.process.threshold import Threshold
 from medical_image.tests.mock_sample import (
     mock_dicom_image,
@@ -26,8 +28,17 @@ from medical_image.tests.mock_sample import (
     mock_kernel,
     mock_two_sigmas,
     mock_median_size,
+    mock_kernel_sizes,
 )
 from medical_image.utils.image_utils import ImageExporter, ImageVisualizer
+
+
+def morphoogy_closing(input):
+    return ndimage.binary_closing(input, structure=np.ones((7, 7))).astype(np.int64)
+
+
+def region_fill(input):
+    return ndimage.binary_fill_holes(input, structure=np.ones((7, 7))).astype(int)
 
 
 class TestDicom:
@@ -94,7 +105,18 @@ class TestDicom:
         image = dicom_image.pixel_data
         sigma1, sigma2 = 1.7, 2.0
         skimage_result = difference_of_gaussians(image, sigma1, sigma2)
-        skimage_result_finished = ndimage.median_filter(skimage_result, size=(5, 5))
+        skimage_result_finished = ndimage.median_filter(
+            np.abs(skimage_result), size=(5, 5)
+        )
+        fi = np.power(skimage_result_finished / 4095.0, 1.25)
+        fi = fi * 4095
+        x = threshold_otsu(fi)
+        out = np.zeros_like(fi)
+        out[fi > x] = 1
+        # print(out.shape)
+        I = morphoogy_closing(out)
+        #
+        # fill = region_fill(I)
 
         if not isinstance(dicom_image.pixel_data, torch.Tensor):
             dicom_image.pixel_data = torch.from_numpy(dicom_image.pixel_data).float()
@@ -114,11 +136,33 @@ class TestDicom:
         print(image_output.shape)
         # print()
         # Check that the pixel data has been modified
-        assert not torch.allclose(
-            skimage_result_finished.float(), output.pixel_data.detach().cpu().float()
+        assert not torch.allclose(fi, output.pixel_data.detach().cpu().float())
+
+    @pytest.mark.parametrize("kernel_size", mock_kernel_sizes())
+    def test_morphology_closing_matches_ndimage(self, kernel_size):
+        """
+        Test that PyTorch morphology_closing_torch matches ndimage.binary_closing exactly.
+        """
+
+        # Random binary image
+        image = (np.random.rand(16, 16) > 0.5).astype(np.int64)
+
+        image_object = DicomImage.from_array(image)
+        output_object = copy.deepcopy(image_object)
+
+        # Apply PyTorch closing
+        MorphologyOperations.morphology_closing(
+            image_object, output_object, kernel_size=kernel_size[0], device="cpu"
         )
 
-        #
+        output_object.pixel_data = output_object.pixel_data.to(torch.int64)
+        # Apply SciPy closing
+        ndimage_result = ndimage.binary_closing(
+            image, structure=np.ones((kernel_size[0], kernel_size[0]))
+        ).astype(np.int64)
+
+        # Assert exact match
+        np.testing.assert_array_equal(output_object.pixel_data.numpy(), ndimage_result)
 
     @pytest.mark.parametrize("sigma1, sigma2", mock_two_sigmas())
     def test_DoG_matches_skimage(self, sigma1, sigma2):

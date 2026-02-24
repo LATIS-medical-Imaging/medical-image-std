@@ -105,6 +105,10 @@ def download_png():
         print("Error downloading the PNG file:", e)
 
 
+def mock_kernel_sizes():
+    return [(3,), (5,), (7,)]
+
+
 def mock_kernel():
     return [
         (3, 1.5),

@@ -5,7 +5,7 @@ from medical_image.process.filters import Filters
 from medical_image.process.frequency import FrequencyOperations
 from medical_image.process.morphology import MorphologyOperations
 from medical_image.process.threshold import Threshold
-from medical_image.utils.image_utils import ImageVisualizer
+from medical_image.utils.image_utils import ImageVisualizer, MathematicalOperations
 
 
 # TODO: Apply on ROI
@@ -35,7 +35,7 @@ class FebdsAlgorithm(Algorithm):
         self.gamma = lambda img, out: Filters.gamma_correction(
             image_data=img, output=out, gamma=1.25, device=self.device
         )
-
+        self.abs = lambda img, out: MathematicalOperations.abs(image_data=img, out=out)
         # Frequency domain
         self.fft = lambda img, out: FrequencyOperations.fft(
             image_data=img, output=out, device=self.device
@@ -83,20 +83,21 @@ class FebdsAlgorithm(Algorithm):
             self.inverse_fft(image, output)
 
         # Step 2: Denoise and smoothing
+        self.abs(output, output)
         self.median(output, output)
 
         # Step 3: Show intermediate result
         # ImageVisualizer.show(output)
 
         # Step 4: Gamma correction
-        # self.gamma(output, output)
+        self.gamma(output, output)
         #
         # # Step 5: Thresholding
-        # if self.method == "fft":
-        #     self.binarize(output, output)
-        # else:
-        #     self.otsu(output, output)
-        #
-        # # Step 6: Morphological post-processing
-        # self.morphology_closing(output, output)
+        if self.method == "fft":
+            self.binarize(output, output)
+        else:
+            self.otsu(output, output)
+        # #
+        # # # Step 6: Morphological post-processing
+        self.morphology_closing(output, output)
         # self.region_fill(output, output)

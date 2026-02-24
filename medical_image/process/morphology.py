@@ -26,39 +26,39 @@ class MorphologyOperations:
         """
         # Ensure image is float tensor on the correct device
         img = image_data.pixel_data.to(device).float()
+        H, W = image_data.height, image_data.width
 
-        # Make sure img is 4D for conv2d: (N=1, C=1, H, W) or (N=1, C, H, W)
-        if img.ndim == 2:
-            img = img.unsqueeze(0).unsqueeze(0)  # (1,1,H,W)
-        elif img.ndim == 3:
-            img = img.unsqueeze(0)  # (1,C,H,W)
-
-        # Ensure binary (0/1)
-        img = (img > 0).float()
-
-        # Structuring element
-        se = torch.ones((img.shape[1], 1, kernel_size, kernel_size), device=device)
+        # Ensure shape (1,1,H,W)
+        img = img.unsqueeze(0).unsqueeze(0)
 
         pad = kernel_size // 2
 
-        # Dilation
-        dilated = F.conv2d(F.pad(img, (pad, pad, pad, pad)), se, groups=img.shape[1])
-        dilated = (dilated > 0).float()
-
-        # Erosion (using complement trick)
-        eroded = F.conv2d(
-            F.pad(1 - dilated, (pad, pad, pad, pad)), se, groups=img.shape[1]
+        # -----------------------
+        # DILATION (max pooling)
+        # -----------------------
+        dilated = F.max_pool2d(
+            F.pad(img, (pad, pad, pad, pad), mode="constant", value=0),
+            kernel_size,
+            stride=1,
         )
-        eroded = (eroded < kernel_size * kernel_size).float()
-        closed = 1 - eroded
 
-        # Remove batch dimension, keep channels if multi-channel
-        if closed.shape[1] == 1:
-            closed = closed.squeeze(0).squeeze(0)  # (H,W)
-        else:
-            closed = closed.squeeze(0)  # (C,H,W)
+        # -----------------------
+        # EROSION (true min pooling)
+        # -----------------------
+        eroded = -F.max_pool2d(
+            F.pad(-dilated, (pad, pad, pad, pad), mode="constant", value=0),
+            kernel_size,
+            stride=1,
+        )
 
-        output.pixel_data = closed
+        # Crop back to original size
+        closed = eroded[:, :, :H, :W]
+
+        # Remove batch/channel dims
+        closed = closed.squeeze(0).squeeze(0)
+
+        # Store result as int64
+        output.pixel_data = closed.to(torch.int64)
         output.width = image_data.width
         output.height = image_data.height
 

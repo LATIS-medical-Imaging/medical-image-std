@@ -28,32 +28,25 @@ class Threshold:
         # Determine the actual range of the image
         min_val = torch.min(image)
         max_val = torch.max(image)
+        bins = 256 if max_val <= 255 else 4096
 
-        # Choose number of bins
-        bins = 256 if max_val <= 255 else 4096  # adapt to 8-bit or higher bit images
+        hist = torch.histc(image, bins=bins, min=min_val.item(), max=max_val.item())
+        bin_centers = torch.linspace(min_val, max_val, steps=bins, device=device)
 
-        # Compute histogram
-        hist = torch.histc(image, bins=bins, min=0, max=bins - 1)
-
-        # Values corresponding to histogram bins
-        bin_edges = torch.linspace(min_val, max_val, bins, device=device)
-
-        # Cumulative sums and means
-        cumsum = torch.cumsum(hist, dim=0)
-        cummean = torch.cumsum(hist * bin_edges, dim=0)
-        global_mean = cummean[-1]
+        # Cumulative sums
+        weight1 = torch.cumsum(hist, dim=0)
+        weight2 = hist.sum() - weight1
+        mean1 = torch.cumsum(hist * bin_centers, dim=0) / torch.clamp(weight1, min=1e-6)
+        mean2 = (hist * bin_centers).sum() - torch.cumsum(hist * bin_centers, dim=0)
+        mean2 = mean2 / torch.clamp(weight2, min=1e-6)
 
         # Between-class variance
-        denom = cumsum * (cumsum[-1] - cumsum)
-        numer = (global_mean * cumsum - cummean) ** 2
-        denom = torch.where(denom == 0, torch.ones_like(denom), denom)
-        variance_between = numer / denom
+        variance_between = weight1 * weight2 * (mean1 - mean2) ** 2
+        threshold_idx = torch.argmax(variance_between)
+        threshold_value = bin_centers[threshold_idx]
 
-        # Threshold (value in original scale)
-        threshold_value = bin_edges[torch.argmax(variance_between)].item()
-
-        # Apply threshold
-        binary_image = (image > threshold_value).to(torch.uint8) * 255
+        # Apply threshold → 0/1 like skimage
+        binary_image = (image > threshold_value).to(torch.uint8)
 
         if output is not None:
             output.pixel_data = binary_image
