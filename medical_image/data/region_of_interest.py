@@ -29,6 +29,42 @@ class RegionOfInterest:
         self.coordinates = coordinates  # MUST remain numpy
         self.annotation_type = self._determine_annotation_type()
 
+    @classmethod
+    def from_center(
+        cls,
+        image: Image,
+        cx: int,
+        cy: int,
+        half_size: int,
+    ) -> "RegionOfInterest":
+        """
+        Create a bounding-box ROI from center coordinates and half-size.
+
+        The bounding box is [cx - half_size, cy - half_size,
+                             cx + half_size + 1, cy + half_size + 1],
+        clamped to image dimensions.
+
+        Args:
+            image: Source Image.
+            cx: Center row (y-axis in image space).
+            cy: Center column (x-axis in image space).
+            half_size: Half-size of the square ROI.
+
+        Returns:
+            RegionOfInterest with bounding box coordinates.
+        """
+        if image.pixel_data is None:
+            image.load()
+
+        H, W = image.pixel_data.shape[:2]
+
+        x_min = max(0, cy - half_size)
+        y_min = max(0, cx - half_size)
+        x_max = min(W, cy + half_size + 1)
+        y_max = min(H, cx + half_size + 1)
+
+        return cls(image=image, coordinates=[x_min, y_min, x_max, y_max])
+
     # -------------------------------------------------------------------------
     # Determine annotation type
     # -------------------------------------------------------------------------
@@ -119,3 +155,22 @@ class RegionOfInterest:
         cropped_image.height, cropped_image.width = cropped_tensor.shape[:2]
 
         return cropped_image
+
+    @staticmethod
+    def normalize(image: Image, divisor: float = 4095.0) -> Image:
+        """
+        Normalize pixel values by dividing by a constant (e.g. 4095 for 12-bit).
+
+        Modifies the image in-place and returns it.
+
+        Args:
+            image: Image to normalize.
+            divisor: Value to divide by (default: 4095.0 for 12-bit DICOM).
+
+        Returns:
+            The same Image with normalized pixel_data.
+        """
+        image.pixel_data = torch.clamp(
+            image.pixel_data.float() / divisor, 0.0, 1.0
+        )
+        return image

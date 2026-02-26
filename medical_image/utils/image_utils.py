@@ -148,3 +148,32 @@ class MathematicalOperations:
         out.pixel_data = torch.abs(img)
         out.width = image_data.width
         out.height = image_data.height
+
+    @staticmethod
+    def euclidean_distance_sq(Z: torch.Tensor, V: torch.Tensor) -> torch.Tensor:
+        """
+        Compute squared Euclidean distances between N data points and c centroids.
+
+        Args:
+            Z: (N, d) data matrix.
+            V: (c, d) centroid matrix.
+
+        Returns:
+            D2: (c, N) squared distances.
+        """
+        # V[:, None, :] → (c, 1, d);  Z[None, :, :] → (1, N, d)
+        diff = V.unsqueeze(1) - Z.unsqueeze(0)  # (c, N, d)
+        return (diff ** 2).sum(dim=2)  # (c, N)
+
+    @staticmethod
+    def normalize_12bit(image_data: Image, out: Image):
+        """
+        Normalize a 12-bit DICOM image to [0, 1] by dividing by 4095.
+
+        Args:
+            image_data: Input Image with raw 12-bit pixel values.
+            out: Output Image to store the normalized result.
+        """
+        out.pixel_data = torch.clamp(image_data.pixel_data.float() / 4095.0, 0.0, 1.0)
+        out.width = image_data.width
+        out.height = image_data.height
