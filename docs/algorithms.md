@@ -174,6 +174,144 @@ plt.show()
 
 ---
 
+## Segmentation Algorithms
+
+### K-Means Clustering
+
+**Purpose:** Hard partitioning of image pixels into $k$ distinct clusters based on intensity features.
+
+**Mathematical Definition / Logic:**
+K-Means minimizes the within-cluster sum of squares (WCSS). It aims to partition $N$ observations into $K$ clusters $S = \{S_1, S_2, ..., S_k\}$ to minimize:
+```
+J = Σ_{i=1}^{k} Σ_{x ∈ S_i} ||x - μ_i||²
+```
+Where $μ_i$ is the mean (centroid) of points in $S_i$.
+
+**Properties:**
+- Hard clustering: Each pixel belongs to exactly one cluster.
+- Rapid convergence.
+- Highly sensitive to outliers.
+
+**Pipeline Stage overview:**
+1. Determine valid features from flattened image.
+2. Initialize centroids either randomly or via K-Means++.
+3. Assign each pixel to the nearest centroid using Euclidean distance.
+4. Update centroids to the mean of the assigned pixels.
+5. Repeat assignment/update until convergence.
+6. Return labels reconstructed to image shape.
+
+**Usage Example:**
+```python
+from medical_image.algorithms.kmeans import KMeansAlgorithm
+from medical_image.data.dicom_image import DicomImage
+import matplotlib.pyplot as plt
+
+image = DicomImage("input.dcm")
+image.load()
+
+output_labels = DicomImage("kmeans_output.dcm")
+
+kmeans = KMeansAlgorithm(num_clusters=4, max_iter=100, tol=1e-4)
+kmeans.apply(image, output_labels)
+
+plt.imshow(output_labels.to_numpy(), cmap='nipy_spectral')
+plt.title("K-Means Segmentation")
+plt.show()
+```
+
+### Fuzzy C-Means (FCM)
+
+**Purpose:** Soft partitioning segmentation utilizing fuzzy logic to assign membership degrees to pixels. Ideal for handling uncertain region boundaries common in medical imaging.
+
+**Reference:** Quintanilla-Domínguez et al., "Image segmentation by fuzzy and possibilistic clustering algorithms for the identification of microcalcifications" (2011).
+
+**Mathematical Definition / Logic:**
+Fuzzy C-Means minimizes the objective function:
+```
+J_m = Σ_{i=1}^{N} Σ_{j=1}^{C} u_{ij}^m ||x_i - c_j||²
+```
+Where:
+- $u_{ij}$: Degree of membership of pixel $x_i$ to cluster $j$.
+- $c_j$: Centroid of cluster $j$.
+- $m$: Fuzziness parameter (typically $>1$, often $2.0$).
+
+**Pipeline Stage overview:**
+1. Extract features (intensities) and initialize the fuzzy membership matrix $U$ using Dirichlet distribution.
+2. Calculate/update cluster centroids based on $U$.
+3. Re-calculate $U$ memberships based on Euclidean distances to the new centroids.
+4. Check convergence (using max variation in $U$). Repeated until convergence.
+5. Extract the "hard" segmentation map by taking the argmax of the memberships.
+6. Post-process to yield the segmented image map.
+
+**Usage Example:**
+```python
+from medical_image.algorithms.fcm import FCMAlgorithm
+
+fcm = FCMAlgorithm(num_clusters=3, m=2.0)
+fcm.apply(image, output_labels)
+```
+
+### Possibilistic Fuzzy C-Means (PFCM)
+
+**Purpose:** Enhances FCM by generating robust memberships resilient to imaging artifacts and noise using "typicality" distributions.
+
+**Reference:** Quintanilla-Domínguez et al. (2011).
+
+**Mathematical Definition / Logic:**
+Minimizes a combined objective function incorporating both fuzzy memberships ($u_{ij}$) and possibilistic typicality values ($t_{ij}$):
+```
+J_{PFCM} = Σ_{i=1}^{N} Σ_{j=1}^{C} (a * u_{ij}^m + b * t_{ij}^eta) ||x_i - c_j||² + Σ_{j=1}^{C} γ_j Σ_{i=1}^{N} (1 - t_{ij})^eta
+```
+Where $η$ controls possibilistic fuzziness, and $a, b$ balance fuzzy vs. typicality contributions.
+
+**Pipeline Stage overview:**
+1. Initialize centroid matrix $V$, membership matrix $U$, and typicality matrix $T$.
+2. Compute prototype variances $\gamma$ for each cluster.
+3. Iteratively execute the loop:
+   - Update Centroids $V$.
+   - Update Memberships $U$ under a summation-to-one constraint.
+   - Update Typicalities $T$ under no summation constraint (absolute typicality).
+4. Extract the typicality and membership fields.
+
+**Usage Example:**
+```python
+from medical_image.algorithms.pfcm import PFCMAlgorithm
+
+pfcm = PFCMAlgorithm(num_clusters=4, m=2.0, eta=2.0, a=1.0, b=1.0)
+pfcm.apply(image, output_labels)
+
+# The PFCM algorithm also returns atypicality, viewable dynamically inside typicality distributions.
+```
+
+### Top-Hat Transform
+
+**Purpose:** Morphological extraction of small bright elements (like microcalcifications) relative to alternating larger dark backgrounds.
+
+**Reference:** Quintanilla-Domínguez et al. (2011).
+
+**Mathematical Definition / Logic:**
+The White Top-Hat Transform calculates the residual between the original image and its opening:
+```
+T_{w}(I) = I - (I ∘ B)
+```
+Where $I$ is the input image and $B$ is a structuring element.
+
+**Pipeline Stage overview:**
+1. Construct morphological disk structuring element (kernel) with the defined `disk_radius`.
+2. Convert spatial pixels to PyTorch tensors.
+3. Compute morphological opening over the image space via min-max pooling approximations or OpenCV equivalent if utilized.
+4. Subtract the morphology opening from the original image tensor to yield enhancements.
+
+**Usage Example:**
+```python
+from medical_image.algorithms.top_hat import TopHatAlgorithm
+
+tophat = TopHatAlgorithm(disk_radius=10)
+tophat.apply(image, output_labels)
+```
+
+---
+
 ## Filtering Algorithms
 
 ### Gaussian Filter

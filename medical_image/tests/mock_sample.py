@@ -134,3 +134,68 @@ def mock_two_sigmas():
         # (11, 1.7),
         (1.5, 1.8),
     ]
+
+
+# ===========================================================================
+# MC Algorithm mocks
+# ===========================================================================
+
+
+def _make_synthetic_array(size: int = 64):
+    """Create synthetic 2D array with bright MC spots, values in [0, 1]."""
+    import numpy as np
+
+    arr = np.random.RandomState(42).rand(size, size).astype(np.float32) * 0.3
+    arr[20:23, 20:23] = 0.9
+    arr[40:42, 45:47] = 0.85
+    arr[10:12, 50:52] = 0.95
+    return arr
+
+
+def mock_synthetic_image():
+    """Returns list of (DicomImage,) for @pytest.mark.parametrize."""
+    arr = _make_synthetic_array(64)
+    return [DicomImage(array=arr)]
+
+
+def mock_12bit_image():
+    """Returns list of (DicomImage,) with 12-bit range values."""
+    import numpy as np
+
+    arr = np.random.RandomState(42).rand(64, 64).astype(np.float32) * 1500
+    arr[20:23, 20:23] = 3800
+    arr[40:42, 45:47] = 3600
+    return [DicomImage(array=arr)]
+
+
+def mock_tophat_radius():
+    """Returns list of (radius,) for TopHat parametrize."""
+    return [(3,), (4,), (5,)]
+
+
+def mock_kmeans_k():
+    """Returns list of (k,) for KMeans parametrize."""
+    return [(2,), (3,), (4,), (5,)]
+
+
+def mock_fcm_c():
+    """Returns list of (c,) for FCM parametrize."""
+    return [(2,), (3,), (4,), (5,)]
+
+
+def mock_pfcm_params():
+    """Returns list of (c, tau) for PFCM parametrize."""
+    return [
+        (2, 0.04),
+        (2, 0.10),
+        (2, 0.50),
+    ]
+
+
+def mock_roi_center():
+    """Returns list of (cx, cy, half_size) for ROI parametrize."""
+    return [
+        (50, 50, 10),
+        (2, 2, 10),  # near edge → clamped
+        (30, 30, 5),
+    ]

@@ -170,7 +170,5 @@ class RegionOfInterest:
         Returns:
             The same Image with normalized pixel_data.
         """
-        image.pixel_data = torch.clamp(
-            image.pixel_data.float() / divisor, 0.0, 1.0
-        )
+        image.pixel_data = torch.clamp(image.pixel_data.float() / divisor, 0.0, 1.0)
         return image

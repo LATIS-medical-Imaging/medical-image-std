@@ -241,36 +241,37 @@ classDiagram
     
     class FebdsAlgorithm {
         +method: str
-        +dog: Callable
-        +log: Callable
-        +fft: Callable
-        +median: Callable
-        +gamma: Callable
-        +binarize: Callable
-        +otsu: Callable
-        +morphology_closing: Callable
-        +region_fill: Callable
-        
         +__init__(method: str)
         +apply(image: Image, output: Image)
     }
     
-    class CustomAlgorithm {
-        +param1
-        +param2
-        +process1: Callable
-        +process2: Callable
-        
-        +__init__(param1, param2)
+    class KMeansAlgorithm {
+        +__init__(num_clusters: int, max_iter: int, tol: float)
+        +apply(image: Image, output: Image)
+    }
+    
+    class FCMAlgorithm {
+        +__init__(num_clusters: int, m: float, max_iter: int, tol: float)
+        +apply(image: Image, output: Image)
+    }
+    
+    class PFCMAlgorithm {
+        +__init__(num_clusters: int, m: float, eta: float, a: float, b: float, max_iter: int, tol: float)
+        +apply(image: Image, output: Image)
+    }
+
+    class TopHatAlgorithm {
+        +__init__(disk_radius: int)
         +apply(image: Image, output: Image)
     }
     
     Algorithm <|-- FebdsAlgorithm
-    Algorithm <|-- CustomAlgorithm
+    Algorithm <|-- KMeansAlgorithm
+    Algorithm <|-- FCMAlgorithm
+    Algorithm <|-- PFCMAlgorithm
+    Algorithm <|-- TopHatAlgorithm
     
     note for Algorithm "Template Method Pattern:\n__init__: Define steps as lambdas\napply: Execute sequence"
-    
-    note for FebdsAlgorithm "Lambda functions wrap\nstatic processing methods"
 ```
 
 #### Algorithm Pattern
@@ -495,9 +496,11 @@ class FebdsAlgorithm(Algorithm):
         self.step2()
 ```
 
-### 3. Strategy Pattern
+### 3. Strategy / Template Method Pattern
 
-**Used in**: FEBDS method selection
+**Used in**: Algorithms and FEBDS method selection
+
+The `Algorithm` base class dictates a common interface via `apply()`. Subclasses like `KMeansAlgorithm` instantiate the steps of the process inside `__init__()`. Some algorithms (like `FebdsAlgorithm`) leverage internal strategy switching to execute operations.
 
 ```python
 class FebdsAlgorithm:
@@ -509,6 +512,19 @@ class FebdsAlgorithm:
             self.log(image, output)
         elif self.method == "fft":
             self.fft(image, output)
+
+class KMeansAlgorithm(Algorithm):
+    def __init__(self, num_clusters=2, max_iter=100, tol=1e-4):
+        # Define steps using templates
+        self.flatten = lambda: ...
+        self.initialize_centroids = lambda: ...
+        self.assign_labels = lambda: ...
+        self.update_centroids = lambda: ...
+        self.segmentize = lambda: ...
+
+    def apply(self, image, output):
+        # Execute template strictly in order
+        ...
 ```
 
 ### 4. Lazy Initialization Pattern

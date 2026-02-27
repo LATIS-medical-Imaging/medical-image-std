@@ -163,7 +163,7 @@ class MathematicalOperations:
         """
         # V[:, None, :] → (c, 1, d);  Z[None, :, :] → (1, N, d)
         diff = V.unsqueeze(1) - Z.unsqueeze(0)  # (c, N, d)
-        return (diff ** 2).sum(dim=2)  # (c, N)
+        return (diff**2).sum(dim=2)  # (c, N)
 
     @staticmethod
     def normalize_12bit(image_data: Image, out: Image):

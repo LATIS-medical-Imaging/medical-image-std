@@ -37,6 +37,13 @@ medical_image/
 └── utils/               # Error handling, annotations
 ```
 
+### Design Patterns 
+
+The `medical-image-std` library extensively leverages several core design patterns:
+- **Strategy & Template Patterns (Algorithms):** Algorithms are implemented by inheriting from a base `Algorithm` class and defining their specific execution steps (often using lambda definitions in `__init__`) and standardizing evaluation through the `apply()` template method. This allows strategies like `FEBDS` or `FCM` to be swapped interchangeably.
+- **Lazy Loading (Data Management):** Image data classes like `DicomImage` initially store only file paths upon creation and defer heavy I/O and memory usage until `.load()` is invoked.
+- **Static Factories (Processing Operations):** Modules like `Filters`, `Threshold`, and `MorphologyOperations` operate statically taking Image inputs without maintaining internal state, ensuring reusability.
+
 **📖 Detailed Architecture**: See [docs/architecture.md](docs/architecture.md)
 
 ---
@@ -159,6 +166,41 @@ class MyAlgorithm(Algorithm):
 - **Automatic splitting**: `_split()` called in `__init__()`
 - **Automatic padding**: Handles non-divisible dimensions
 - **Easy reconstruction**: `reconstruct()` removes padding
+
+---
+
+## Visual Examples
+
+The following section demonstrates the utilization of all clustering and morphological algorithms included with the library on a sample mammogram section (`20527054.dcm`), capturing an ROI with center `(cx=1250, cy=2000)` and a half-size of `127`.
+
+### Base Region Of Interest (ROI)
+
+![Original ROI](docs/images/roi.png)
+
+### Algorithm Outputs
+
+Below are the intermediate output visualizations produced by each algorithm when isolating microcalcification structure.
+
+#### Top-Hat Transform
+![Top-Hat Output](docs/images/01_tophat.png)
+Enhances brighter elements matching the disk structural element radius.
+
+#### K-Means Clustering Sequence
+![K-Means Output](docs/images/02_kmeans_sequence.png)
+Identifies calcifications by hard partitioning pixel frequency and marking the brightest cluster.
+
+#### FCM Clustering Sequence
+![FCM Output](docs/images/03_fcm_sequence.png)
+Similar to K-Means, but assigns fuzzy membership probabilities to elements to better separate border intensities.
+
+#### PFCM Typicality Mapping
+![PFCM Output](docs/images/04_pfcm_atypicality.png)
+Averages across noise using cluster typicality measurements, masking out all "atypical" calcified structures apart from dark backgrounds.
+
+#### FEBDS Output
+![FEBDS Array Output](docs/images/array.png)
+
+Uses a hybrid approach of localized difference-of-gaussian (or frequency band-pass) filters and adaptive binarizations.
 
 ---
 

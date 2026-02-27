@@ -128,12 +128,10 @@ class MorphologyOperations:
             torch.arange(size, device=device) - radius,
             indexing="ij",
         )
-        return (x ** 2 + y ** 2 <= radius ** 2).float()
+        return (x**2 + y**2 <= radius**2).float()
 
     @staticmethod
-    def erosion(
-        image_data: Image, output: Image, radius: int = 4, device: str = "cpu"
-    ):
+    def erosion(image_data: Image, output: Image, radius: int = 4, device: str = "cpu"):
         """
         Grayscale erosion using a flat disk SE.
 
@@ -215,6 +213,7 @@ class MorphologyOperations:
             device: Torch device.
         """
         import copy
+
         # Step 1: Erosion
         eroded = copy.deepcopy(image_data)
         MorphologyOperations.erosion(image_data, eroded, radius=radius, device=device)

@@ -12,6 +12,62 @@ from medical_image.utils.image_utils import ImageVisualizer, MathematicalOperati
 
 
 class FebdsAlgorithm(Algorithm):
+    """
+    Fourier Enhancement and Band-pass Filtering Algorithm for Microcalcification Segmentation.
+
+    References:
+        @article{article,
+        author = {Lopez, Elizabeth and Urcid, Gonzalo},
+        year = {2016},
+        month = {05},
+        pages = {},
+        title = {Mammograms calcifications segmentation based on band-pass Fourier filtering and adaptive statistical thresholding},
+        volume = {5}
+        }
+
+    Math and Logic:
+        This algorithm aims to enhance microcalcifications by highlighting high-frequency
+        components while removing noise and low-frequency background signals.
+        It supports filtering in the spatial domain using Difference of Gaussians (DoG)
+        or Laplacian of Gaussian (LoG), or in the frequency domain using a Fast
+        Fourier Transform (FFT) with a Butterworth band-pass filter.
+        After enhancement, the image is denoised via median filtering and gamma correction
+        is applied to amplify the calcifications, followed by adaptive thresholding
+        (like Otsu's) or binarization, and morphological closing to reconstruct regions.
+
+    Pipeline:
+        1. Apply base enhancement filter depending on the method ('dog', 'log', 'fft').
+        2. Denoise and smooth by taking the absolute value and applying a median filter.
+        3. Apply gamma correction to increase the contrast of microcalcifications.
+        4. Apply global thresholding (binarize for 'fft', Otsu for 'dog'/'log').
+        5. Apply morphological closing and region filling to restore shape and connectivity.
+
+    Example Usage:
+        ```python
+        import copy
+        import numpy as np
+        import matplotlib.pyplot as plt
+        from medical_image.algorithms.FEBDS import FebdsAlgorithm
+        from medical_image.data.dicom_image import DicomImage
+
+        # Load and prepare image
+        img = DicomImage("20527054.dcm")
+        img.load()
+
+        # Initialize algorithm and output
+        algo = FebdsAlgorithm(method="dog", device="cpu")
+        output = copy.deepcopy(img)
+
+        # Apply algorithm
+        algo(img, output)
+
+        # Plot output
+        plt.imshow(output.pixel_data.numpy(), cmap='gray')
+        plt.title('FEBDS Output')
+        plt.show()
+        ```
+    """
+
     def __init__(self, method: str, device: str = "cpu"):
         super().__init__()
         self.method = method

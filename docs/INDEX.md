@@ -43,6 +43,7 @@ Welcome to the Medical Image Standard Library documentation!
 
 5. **[Algorithm Reference](algorithms.md)** - Algorithm details
    - FEBDS algorithm (with paper reference)
+   - Segmentation algorithms (K-Means, FCM, PFCM, Top-Hat)
    - Filtering algorithms
    - Thresholding algorithms
    - Morphological algorithms

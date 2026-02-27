@@ -546,6 +546,99 @@ Apply FEBDS algorithm to detect microcalcifications.
 
 ---
 
+### `medical_image.algorithms.kmeans`
+
+#### `KMeansAlgorithm`
+
+K-Means hard clustering segmentation.
+
+**Inherits:** `Algorithm`
+
+**Methods:**
+
+##### `__init__(num_clusters: int = 2, max_iter: int = 100, tol: float = 1e-4)`
+Initialize K-Means algorithm.
+
+**Parameters:**
+- `num_clusters` (int): Number of clusters to segment into.
+- `max_iter` (int): Maximum iterations.
+- `tol` (float): Convergence tolerance.
+
+##### `apply(image: Image, output: Image)`
+Segment image into background/foreground clusters.
+
+---
+
+### `medical_image.algorithms.fcm`
+
+#### `FCMAlgorithm`
+
+Fuzzy C-Means soft clustering segmentation.
+
+**Inherits:** `Algorithm`
+
+**Methods:**
+
+##### `__init__(num_clusters: int = 2, m: float = 2.0, max_iter: int = 100, tol: float = 1e-4)`
+Initialize FCM algorithm.
+
+**Parameters:**
+- `num_clusters` (int): Number of clusters to segment into.
+- `m` (float): Fuzziness exponent.
+- `max_iter` (int): Max iterations.
+- `tol` (float): Error tolerance.
+
+##### `apply(image: Image, output: Image)`
+Produce "hard" segmentation from largest fuzzy memberships.
+
+---
+
+### `medical_image.algorithms.pfcm`
+
+#### `PFCMAlgorithm`
+
+Possibilistic Fuzzy C-Means robust segmentation.
+
+**Inherits:** `Algorithm`
+
+**Methods:**
+
+##### `__init__(num_clusters: int = 2, m: float = 2.0, eta: float = 2.0, a: float = 1.0, b: float = 1.0, max_iter: int = 100, tol: float = 1e-4)`
+Initialize PFCM algorithm.
+
+**Parameters:**
+- `num_clusters` (int): Expected clusters.
+- `m` (float): Fuzziness.
+- `eta` (float): Typicality fuzziness.
+- `a` (float), `b` (float): Weighting coefficients for probability and typicality.
+- `max_iter` (int), `tol` (float): Iteration controllers.
+
+##### `apply(image: Image, output: Image)`
+Apply PFCM, calculating centroids using both standard memberships and global typicalities to extract a clean segmentation map.
+
+---
+
+### `medical_image.algorithms.top_hat`
+
+#### `TopHatAlgorithm`
+
+White Top-Hat transform for extracting brilliant sub-regions.
+
+**Inherits:** `Algorithm`
+
+**Methods:**
+
+##### `__init__(disk_radius: int = 15)`
+Initialize Top-Hat Morphology algorithm.
+
+**Parameters:**
+- `disk_radius` (int): Standard radius for the disk structuring element representing target feature scale.
+
+##### `apply(image: Image, output: Image)`
+Perform filtering enhancement on input.
+
+---
+
 ## Utils Module
 
 ### `medical_image.utils.ErrorHandler`

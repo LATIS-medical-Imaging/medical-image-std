@@ -479,6 +479,68 @@ algo = MyCustomAlgorithm(param1=100, param2=0.5)
 algo.apply(input_image, output_image)
 ```
 
+### Segmentation Algorithms Overview
+
+#### K-Means Clustering
+
+```python
+from medical_image.algorithms.kmeans import KMeansAlgorithm
+from medical_image.data.dicom_image import DicomImage
+import matplotlib.pyplot as plt
+
+img = DicomImage("sample_image.dcm")
+img.load()
+
+# Create KMeans segmentation with 3 clusters
+kmeans = KMeansAlgorithm(num_clusters=3, max_iter=100)
+kmeans_output = DicomImage("kmeans_segmented.dcm")
+
+kmeans.apply(img, kmeans_output)
+plt.imshow(kmeans_output.to_numpy(), cmap='viridis')
+plt.title("K-Means Mask")
+plt.show()
+```
+
+#### Fuzzy C-Means (FCM)
+
+```python
+from medical_image.algorithms.fcm import FCMAlgorithm
+
+fcm = FCMAlgorithm(num_clusters=3, m=2.0)
+fcm_output = DicomImage("fcm_segmented.dcm")
+
+fcm.apply(img, fcm_output)
+plt.imshow(fcm_output.to_numpy(), cmap='gray')
+plt.title("FCM Segmentation")
+plt.show()
+```
+
+#### Possibilistic Fuzzy C-Means (PFCM)
+
+```python
+from medical_image.algorithms.pfcm import PFCMAlgorithm
+
+# PFCM parameters:
+# eta: Possibilistic typicality fuzziness factor.
+# a, b: Controls balancing of typicalities inside centroid update routines.
+pfcm = PFCMAlgorithm(num_clusters=3, m=2.0, eta=2.0, a=1.0, b=1.0)
+pfcm_output = DicomImage("pfcm_segmented.dcm")
+
+pfcm.apply(img, pfcm_output)
+```
+
+#### Top-Hat Morphological Transform
+
+```python
+from medical_image.algorithms.top_hat import TopHatAlgorithm
+
+# Disk radius specifies the structure element size spanning over targeted elements
+tophat = TopHatAlgorithm(disk_radius=10)
+tophat_output = DicomImage("tophat_enhanced.dcm")
+
+tophat.apply(img, tophat_output)
+```
+
 ---
 
 ## Advanced Topics
