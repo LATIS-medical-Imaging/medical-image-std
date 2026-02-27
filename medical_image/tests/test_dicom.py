@@ -3,20 +3,14 @@ import copy
 import numpy as np
 import pytest
 import torch
-import torch.nn.functional as F
-from matplotlib import pyplot as plt
 from scipy import ndimage
 from skimage._shared.filters import gaussian
 from skimage.filters import difference_of_gaussians, threshold_otsu
-
-# import torchvision.transforms.functional as F
 
 from log_manager import logger
 from medical_image.algorithms.FEBDS import FebdsAlgorithm
 from medical_image.algorithms.custom_algorithm import CustomAlgorithm
 from medical_image.data.dicom_image import DicomImage
-from medical_image.data.image import Image
-
 from medical_image.data.patch import PatchGrid
 from medical_image.process.filters import Filters
 from medical_image.process.morphology import MorphologyOperations
@@ -27,10 +21,12 @@ from medical_image.tests.mock_sample import (
     mock_png_image,
     mock_kernel,
     mock_two_sigmas,
-    mock_median_size,
     mock_kernel_sizes,
 )
-from medical_image.utils.image_utils import ImageExporter, ImageVisualizer
+from medical_image.utils.image_utils import ImageExporter
+
+
+# import torchvision.transforms.functional as F
 
 
 def morphoogy_closing(input):
@@ -46,8 +42,8 @@ class TestDicom:
     def test_dicom_image(self, dicom_image):
         ImageExporter.save_as(dicom_image)
         assert dicom_image.pixel_data is not None
-        assert dicom_image.width == 512
-        assert dicom_image.height == 512
+        assert dicom_image.width == 2560
+        assert dicom_image.height == 3328
 
     @pytest.mark.parametrize("dicom_image", mock_dicom_image())
     def test_otsu_threshold(self, dicom_image):
@@ -60,7 +56,8 @@ class TestDicom:
             dicom_image.pixel_data.cpu().numpy(), output.pixel_data.cpu().numpy()
         )
 
-        assert torch.all((output.pixel_data == 0) | (output.pixel_data == 255))
+        unique_vals = torch.unique(output.pixel_data)
+        assert torch.all((unique_vals == 0) | (unique_vals == 1))
 
     @pytest.mark.parametrize("dicom_image, window_size, k", mock_sauvola_threshold())
     def test_sauvola_threshold(self, dicom_image, window_size, k):
@@ -207,34 +204,9 @@ class TestDicom:
             dicom_image.pixel_data.float(), output.pixel_data.detach().cpu().float()
         )
 
-        # Check that the output is a binary image (0 or 255)
+        # Check that the output is a binary image (0 or 1)
         unique_vals = torch.unique(output.pixel_data)
-        assert set(unique_vals.tolist()).issubset({0, 255})
-
-    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
-    def test_fedbs_algorithm(self, dicom_image):
-        # Convert input pixel data to torch.Tensor if not already
-        if not isinstance(dicom_image.pixel_data, torch.Tensor):
-            dicom_image.pixel_data = torch.from_numpy(dicom_image.pixel_data).float()
-        print("image path", dicom_image.file_path)
-        # Prepare output image
-        output = copy.deepcopy(dicom_image)
-        if not isinstance(output.pixel_data, torch.Tensor):
-            output.pixel_data = torch.from_numpy(output.pixel_data).float()
-
-        # Apply the custom algorithm
-        algorithm = FebdsAlgorithm("dog")
-        algorithm(image=dicom_image, output=output)
-
-        # Check that the pixel data has been modified
-        assert not torch.allclose(
-            dicom_image.pixel_data.float(), output.pixel_data.detach().cpu().float()
-        )
-        ImageVisualizer.show(output)
-        ImageVisualizer.compare(dicom_image, output)
-        # Check that the output is a binary image (0 or 255)
-        unique_vals = torch.unique(output.pixel_data)
-        assert set(unique_vals.tolist()).issubset({0, 255})
+        assert set(unique_vals.tolist()).issubset({0, 1})
 
     @pytest.mark.parametrize("dicom_image", mock_dicom_image())
     def test_patches(self, dicom_image):

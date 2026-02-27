@@ -5,7 +5,7 @@ from medical_image.process.filters import Filters
 from medical_image.process.frequency import FrequencyOperations
 from medical_image.process.morphology import MorphologyOperations
 from medical_image.process.threshold import Threshold
-from medical_image.utils.image_utils import ImageVisualizer, MathematicalOperations
+from medical_image.utils.image_utils import MathematicalOperations
 
 
 # TODO: Apply on ROI
@@ -141,9 +141,6 @@ class FebdsAlgorithm(Algorithm):
         # Step 2: Denoise and smoothing
         self.abs(output, output)
         self.median(output, output)
-
-        # Step 3: Show intermediate result
-        # ImageVisualizer.show(output)
 
         # Step 4: Gamma correction
         self.gamma(output, output)

@@ -2,8 +2,6 @@ import os
 import matplotlib
 import numpy as np
 
-# Use a backend that works with PyCharm and plt.show()
-matplotlib.use("TkAgg")
 import torch
 from PIL import Image as PILImage
 from matplotlib import pyplot as plt
