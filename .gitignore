@@ -8,3 +8,5 @@
 __pycache__
 .pytest_cache
 /dummy_plt.py
+/medical_image_std.egg-info/
+/dist/
