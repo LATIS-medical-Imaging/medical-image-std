@@ -4,23 +4,25 @@ import torch.nn.functional as F
 from medical_image.data.image import Image, requires_loaded
 from medical_image.data.in_memory_image import InMemoryImage
 from medical_image.process.metrics import Metrics
+from medical_image.utils.device import resolve_device
 
 
 class Threshold:
     @staticmethod
     @requires_loaded
-    def otsu_threshold(image: Image, output: Image = None, device="cpu") -> Image:
+    def otsu_threshold(image: Image, output: Image = None, device=None) -> Image:
         """
         Applies Otsu's thresholding method to a grayscale image using PyTorch.
 
         Args:
             image: Input image with pixel_data as torch.Tensor.
             output: Optional output Image object to store the result.
-            device: Device to perform computation.
+            device: Device to perform computation (None = infer from image).
 
         Returns:
             The output Image (or a new InMemoryImage if output is None).
         """
+        device = resolve_device(image, explicit=device)
         img = image.pixel_data.to(device).to(torch.float32)
 
         min_val = torch.min(img)
@@ -56,7 +58,7 @@ class Threshold:
         window_size: int = 10,
         k: float = 0.5,
         r: int = 128,
-        device="cpu",
+        device=None,
     ) -> Image:
         """
         Applies Sauvola adaptive thresholding to a grayscale image using PyTorch.
@@ -67,11 +69,12 @@ class Threshold:
             window_size: Odd size of the local window.
             k: Scaling factor in threshold formula.
             r: Dynamic range of standard deviation.
-            device: Device for computation.
+            device: Device for computation (None = infer from image).
 
         Returns:
             The output Image (or a new InMemoryImage if output is None).
         """
+        device = resolve_device(image, explicit=device)
         img = image.pixel_data.to(device).float()
         if window_size % 2 == 0:
             raise ValueError("Window size must be an odd integer.")
@@ -103,7 +106,7 @@ class Threshold:
 
     @staticmethod
     @requires_loaded
-    def binarize(image: Image, output: Image, alpha: float, device="cpu") -> Image:
+    def binarize(image: Image, output: Image, alpha: float, device=None) -> Image:
         """
         Binarizes an image based on local and global variance using PyTorch.
 
@@ -114,11 +117,12 @@ class Threshold:
             image: Input grayscale image.
             output: Output Image object for storing result.
             alpha: Scaling factor relating local and global variances.
-            device: Device for computation.
+            device: Device for computation (None = infer from image).
 
         Returns:
             The output Image.
         """
+        device = resolve_device(image, explicit=device)
         img = image.pixel_data.to(device).float()
 
         # Local variance

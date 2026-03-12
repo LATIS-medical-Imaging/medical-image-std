@@ -118,6 +118,12 @@ class Image(ABC):
             raise DicomDataNotLoadedError("Call .load() first")
         return self
 
+    def pin_memory(self) -> "Image":
+        """Pin pixel_data to page-locked memory for faster GPU transfers."""
+        if self.pixel_data is not None and not self.pixel_data.is_pinned():
+            self.pixel_data = self.pixel_data.pin_memory()
+        return self
+
     # ------------------------------------------------------------------
     # Clone (lightweight alternative to copy.deepcopy)
     # ------------------------------------------------------------------

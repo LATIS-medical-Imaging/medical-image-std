@@ -1,16 +1,16 @@
-import numpy as np
 import torch
 import torch.nn.functional as F
 
 from medical_image.data.image import Image, requires_loaded
 from medical_image.data.in_memory_image import InMemoryImage
+from medical_image.utils.device import resolve_device, get_dtype
 
 
 class Filters:
     @staticmethod
     @requires_loaded
     def convolution(
-        image: Image, output: Image, kernel: torch.Tensor, device="cpu"
+        image: Image, output: Image, kernel: torch.Tensor, device=None
     ) -> Image:
         """
         Applies a convolution filter to the given image using PyTorch.
@@ -19,11 +19,12 @@ class Filters:
             image: Input image object.
             output: Output image object.
             kernel: 2D convolution kernel.
-            device: Device to perform computation on.
+            device: Device to perform computation on (None = infer from image).
 
         Returns:
             The output Image.
         """
+        device = resolve_device(image, explicit=device)
         img = image.pixel_data.to(device).float()
 
         if not isinstance(kernel, torch.Tensor):
@@ -48,10 +49,11 @@ class Filters:
         image: Image,
         output: Image,
         sigma: float,
-        device="cpu",
+        device=None,
         truncate: float = 4.0,
     ) -> Image:
         """Applies Gaussian filter."""
+        device = resolve_device(image, explicit=device)
         dtype = torch.float32
         output.pixel_data = image.pixel_data.clone()
 
@@ -72,9 +74,10 @@ class Filters:
 
     @staticmethod
     def _generate_gaussian_kernel(
-        sigma: float, dtype=torch.float32, truncate: float = 4.0, device="cpu"
+        sigma: float, dtype=torch.float32, truncate: float = 4.0, device=None
     ) -> torch.Tensor:
         """Generates a 2D Gaussian kernel."""
+        device = device or torch.device("cpu")
         radius = int(truncate * sigma + 0.5)
         size = 2 * radius + 1
         coords = torch.arange(size, dtype=dtype, device=device) - radius
@@ -86,7 +89,7 @@ class Filters:
 
     @staticmethod
     @requires_loaded
-    def median_filter(image: Image, output: Image, size: int, device="cpu") -> Image:
+    def median_filter(image: Image, output: Image, size: int, device=None) -> Image:
         """
         Applies a median filter using PyTorch.
 
@@ -94,11 +97,12 @@ class Filters:
             image: Input image.
             output: Output image.
             size: Odd kernel size.
-            device: Device to run computation on.
+            device: Device to run computation on (None = infer from image).
 
         Returns:
             The output Image.
         """
+        device = resolve_device(image, explicit=device)
         if size % 2 == 0:
             raise ValueError("Median filter size must be odd")
 
@@ -127,7 +131,7 @@ class Filters:
         D_0: float = 21,
         W: float = 32,
         n: int = 3,
-        device="cpu",
+        device=None,
     ) -> Image:
         """
         Applies a Butterworth band-pass filter in the frequency domain.
@@ -138,11 +142,12 @@ class Filters:
             D_0: Cutoff frequency.
             W: Bandwidth.
             n: Filter order.
-            device: Device to run computation on.
+            device: Device to run computation on (None = infer from image).
 
         Returns:
             The output Image.
         """
+        device = resolve_device(image, explicit=device)
         H, Wd = image.height, image.width
         u = torch.arange(Wd, device=device, dtype=torch.float32)
         v = torch.arange(H, device=device, dtype=torch.float32)
@@ -164,7 +169,7 @@ class Filters:
         output: Image,
         low_sigma: float,
         high_sigma: float | None = None,
-        device="cpu",
+        device=None,
         truncate=4.0,
     ) -> Image:
         """
@@ -175,11 +180,12 @@ class Filters:
             output: Output image.
             low_sigma: First Gaussian sigma.
             high_sigma: Second Gaussian sigma.
-            device: Device to run computation on.
+            device: Device to run computation on (None = infer from image).
 
         Returns:
             The output Image.
         """
+        device = resolve_device(image, explicit=device)
         if low_sigma <= 0:
             raise ValueError("low_sigma must be > 0")
 
@@ -188,7 +194,6 @@ class Filters:
         if high_sigma < low_sigma:
             raise ValueError("high_sigma must be >= low_sigma")
 
-        # Use InMemoryImage instead of deepcopy — fixes the type mismatch bug
         img1 = InMemoryImage(array=image.pixel_data.clone())
         img2 = InMemoryImage(array=image.pixel_data.clone())
 
@@ -204,7 +209,7 @@ class Filters:
     @staticmethod
     @requires_loaded
     def laplacian_of_gaussian(
-        image: Image, output: Image, sigma: float, device="cpu"
+        image: Image, output: Image, sigma: float, device=None
     ) -> Image:
         """
         Applies Laplacian of Gaussian (LoG) filter.
@@ -213,11 +218,12 @@ class Filters:
             image: Input image.
             output: Output image.
             sigma: Gaussian sigma.
-            device: Device to run computation on.
+            device: Device to run computation on (None = infer from image).
 
         Returns:
             The output Image.
         """
+        device = resolve_device(image, explicit=device)
         temp = InMemoryImage(array=image.pixel_data.clone())
         Filters.gaussian_filter(image, temp, sigma=sigma, device=device)
 
@@ -240,7 +246,7 @@ class Filters:
     @staticmethod
     @requires_loaded
     def gamma_correction(
-        image: Image, output: Image, gamma: float, device="cpu"
+        image: Image, output: Image, gamma: float, device=None
     ) -> Image:
         """
         Applies Gamma Correction.
@@ -249,11 +255,12 @@ class Filters:
             image: Input image.
             output: Output image.
             gamma: Gamma value.
-            device: Device to run computation on.
+            device: Device to run computation on (None = infer from image).
 
         Returns:
             The output Image.
         """
+        device = resolve_device(image, explicit=device)
         img = image.pixel_data.to(device).float()
         corrected = (img / 4095) ** gamma * 4095.0
         output.pixel_data = corrected
@@ -266,7 +273,7 @@ class Filters:
         output: Image,
         contrast: float,
         brightness: float,
-        device="cpu",
+        device=None,
     ) -> Image:
         """
         Adjusts contrast and brightness.
@@ -276,11 +283,12 @@ class Filters:
             output: Output image.
             contrast: Contrast coefficient.
             brightness: Brightness coefficient.
-            device: Device to run computation on.
+            device: Device to run computation on (None = infer from image).
 
         Returns:
             The output Image.
         """
+        device = resolve_device(image, explicit=device)
         img = image.pixel_data.to(device)
         img = img.to(torch.int32)
         bins = 255 if torch.max(img) <= 255 else 4095
@@ -289,3 +297,37 @@ class Filters:
         adjusted = torch.clamp(img * alpha + beta, 0, bins)
         output.pixel_data = adjusted.to(device)
         return output
+
+    # ------------------------------------------------------------------
+    # Batch variants
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def gaussian_filter_batch(
+        images: torch.Tensor,
+        sigma: float,
+        device=None,
+        truncate: float = 4.0,
+    ) -> torch.Tensor:
+        """
+        Apply Gaussian filter to a batch of images.
+
+        Args:
+            images: Batched tensor (B, C, H, W).
+            sigma: Gaussian sigma.
+            device: Target device.
+            truncate: Kernel truncation factor.
+
+        Returns:
+            Filtered batch (B, C, H, W).
+        """
+        device = device or images.device
+        images = images.to(device).float()
+        kernel = Filters._generate_gaussian_kernel(
+            sigma, truncate=truncate, device=device
+        )
+        kernel = kernel.unsqueeze(0).unsqueeze(0)
+
+        pad = kernel.shape[-1] // 2
+        padded = F.pad(images, (pad, pad, pad, pad), mode="replicate")
+        return F.conv2d(padded, kernel)

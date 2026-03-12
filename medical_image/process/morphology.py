@@ -2,13 +2,14 @@ import torch
 import torch.nn.functional as F
 
 from medical_image.data.image import Image, requires_loaded
+from medical_image.utils.device import resolve_device
 
 
 class MorphologyOperations:
     @staticmethod
     @requires_loaded
     def morphology_closing(
-        image: Image, output: Image, kernel_size: int = 7, device="cpu"
+        image: Image, output: Image, kernel_size: int = 7, device=None
     ) -> Image:
         """
         Performs 2D binary closing on a given image using PyTorch.
@@ -19,11 +20,12 @@ class MorphologyOperations:
             image: Input binary image (0/1).
             output: Output Image object to store the result.
             kernel_size: Size of the square structuring element.
-            device: Device for computation.
+            device: Device for computation (None = infer from image).
 
         Returns:
             The output Image.
         """
+        device = resolve_device(image, explicit=device)
         img = image.pixel_data.to(device).float()
         while img.ndim > 2:
             img = img.squeeze(0)
@@ -57,18 +59,19 @@ class MorphologyOperations:
 
     @staticmethod
     @requires_loaded
-    def region_fill(image: Image, output: Image, device="cpu") -> Image:
+    def region_fill(image: Image, output: Image, device=None) -> Image:
         """
         Fills holes in a binary image using PyTorch.
 
         Args:
             image: Input binary image (0/1).
             output: Output Image object to store the filled result.
-            device: Device for computation.
+            device: Device for computation (None = infer from image).
 
         Returns:
             The output Image.
         """
+        device = resolve_device(image, explicit=device)
         img = image.pixel_data.to(device).float()
         h, w = img.shape
         mask = torch.zeros((h + 2, w + 2), device=device)
@@ -93,7 +96,7 @@ class MorphologyOperations:
         return output
 
     @staticmethod
-    def _disk_footprint(radius: int, device: str = "cpu") -> torch.Tensor:
+    def _disk_footprint(radius: int, device=None) -> torch.Tensor:
         """
         Create a flat circular disk structuring element.
 
@@ -104,6 +107,7 @@ class MorphologyOperations:
         Returns:
             (2*radius+1, 2*radius+1) float tensor.
         """
+        device = device or torch.device("cpu")
         size = 2 * radius + 1
         y, x = torch.meshgrid(
             torch.arange(size, device=device) - radius,
@@ -114,7 +118,7 @@ class MorphologyOperations:
 
     @staticmethod
     @requires_loaded
-    def erosion(image: Image, output: Image, radius: int = 4, device: str = "cpu") -> Image:
+    def erosion(image: Image, output: Image, radius: int = 4, device=None) -> Image:
         """
         Grayscale erosion using a flat disk SE.
 
@@ -122,11 +126,12 @@ class MorphologyOperations:
             image: Input Image (2D float).
             output: Output Image to store result.
             radius: Disk SE radius.
-            device: Torch device.
+            device: Torch device (None = infer from image).
 
         Returns:
             The output Image.
         """
+        device = resolve_device(image, explicit=device)
         img = image.pixel_data.to(device).float()
         while img.ndim > 2:
             img = img.squeeze(0)
@@ -146,7 +151,7 @@ class MorphologyOperations:
     @staticmethod
     @requires_loaded
     def dilation(
-        image: Image, output: Image, radius: int = 4, device: str = "cpu"
+        image: Image, output: Image, radius: int = 4, device=None
     ) -> Image:
         """
         Grayscale dilation using a flat disk SE.
@@ -155,11 +160,12 @@ class MorphologyOperations:
             image: Input Image (2D float).
             output: Output Image to store result.
             radius: Disk SE radius.
-            device: Torch device.
+            device: Torch device (None = infer from image).
 
         Returns:
             The output Image.
         """
+        device = resolve_device(image, explicit=device)
         img = image.pixel_data.to(device).float()
         while img.ndim > 2:
             img = img.squeeze(0)
@@ -179,7 +185,7 @@ class MorphologyOperations:
     @staticmethod
     @requires_loaded
     def white_top_hat(
-        image: Image, output: Image, radius: int = 4, device: str = "cpu"
+        image: Image, output: Image, radius: int = 4, device=None
     ) -> Image:
         """
         White Top-Hat transform: TopHat(I) = I - opening(I).
@@ -191,11 +197,12 @@ class MorphologyOperations:
             image: Input Image (2D float, e.g. normalized to [0,1]).
             output: Output Image to store result.
             radius: Disk SE radius (default 4 -> 9x9, matching MATLAB).
-            device: Torch device.
+            device: Torch device (None = infer from image).
 
         Returns:
             The output Image.
         """
+        device = resolve_device(image, explicit=device)
         # Step 1: Erosion
         eroded = image.clone()
         MorphologyOperations.erosion(image, eroded, radius=radius, device=device)

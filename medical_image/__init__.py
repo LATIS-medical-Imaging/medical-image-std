@@ -40,6 +40,17 @@ from medical_image.utils.image_utils import (
     MathematicalOperations,
 )
 from medical_image.utils.annotation import Annotation, GeometryType
+from medical_image.utils.device import (
+    resolve_device,
+    Precision,
+    set_default_precision,
+    get_default_precision,
+    get_dtype,
+    DeviceContext,
+    gpu_safe,
+    AsyncGPUPipeline,
+    MultiGPUAlgorithm,
+)
 
 __all__ = [
     # Data
@@ -71,4 +82,14 @@ __all__ = [
     "Annotation",
     "GeometryType",
     "requires_loaded",
+    # GPU utilities
+    "resolve_device",
+    "Precision",
+    "set_default_precision",
+    "get_default_precision",
+    "get_dtype",
+    "DeviceContext",
+    "gpu_safe",
+    "AsyncGPUPipeline",
+    "MultiGPUAlgorithm",
 ]

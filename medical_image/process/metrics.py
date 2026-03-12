@@ -3,23 +3,25 @@ from typing import Union
 import torch
 
 from medical_image.data.image import Image, requires_loaded
+from medical_image.utils.device import resolve_device
 
 
 class Metrics:
     @staticmethod
     @requires_loaded
-    def entropy(image: Image, decimals=4, device="cpu") -> float:
+    def entropy(image: Image, decimals=4, device=None) -> float:
         """
         Calculates the Shannon entropy of an image using PyTorch.
 
         Args:
             image: Input image.
             decimals: Number of decimal places to round to.
-            device: Device to perform computation on.
+            device: Device to perform computation on (None = infer from image).
 
         Returns:
             Shannon entropy of the image.
         """
+        device = resolve_device(image, explicit=device)
         img = image.pixel_data.to(device).flatten()
         hist = torch.histc(
             img,
@@ -34,7 +36,7 @@ class Metrics:
 
     @staticmethod
     @requires_loaded
-    def joint_entropy(image1: Image, image2: Image, decimals=4, device="cpu") -> float:
+    def joint_entropy(image1: Image, image2: Image, decimals=4, device=None) -> float:
         """
         Calculates the joint Shannon entropy of two images.
 
@@ -42,11 +44,12 @@ class Metrics:
             image1: First input image.
             image2: Second input image.
             decimals: Decimal precision.
-            device: Device for computation.
+            device: Device for computation (None = infer from image).
 
         Returns:
             Joint entropy value.
         """
+        device = resolve_device(image1, image2, explicit=device)
         img1 = image1.pixel_data.to(device).flatten()
         img2 = image2.pixel_data.to(device).flatten()
         min1, max1 = float(img1.min()), float(img1.max())
@@ -64,7 +67,7 @@ class Metrics:
     @staticmethod
     @requires_loaded
     def mutual_information(
-        image1: Image, image2: Image, decimals=4, device="cpu"
+        image1: Image, image2: Image, decimals=4, device=None
     ) -> float:
         """
         Computes the mutual information between two images.
@@ -73,7 +76,7 @@ class Metrics:
             image1: First image.
             image2: Second image.
             decimals: Decimal precision.
-            device: Device for computation.
+            device: Device for computation (None = infer from image).
 
         Returns:
             Mutual information value.
@@ -88,7 +91,7 @@ class Metrics:
     @staticmethod
     @requires_loaded
     def local_variance(
-        image: Image, output: Image, kernel: Union[int, tuple], device="cpu"
+        image: Image, output: Image, kernel: Union[int, tuple], device=None
     ) -> Image:
         """
         Computes the local variance for each sub-region of the image.
@@ -97,11 +100,12 @@ class Metrics:
             image: Input image.
             output: Image object to store local variance.
             kernel: Window size for local variance.
-            device: Device for computation.
+            device: Device for computation (None = infer from image).
 
         Returns:
             The output Image.
         """
+        device = resolve_device(image, explicit=device)
         img = image.pixel_data.to(device).float()
         img_unfold = img.unsqueeze(0).unsqueeze(0)
         if isinstance(kernel, int):
@@ -116,18 +120,19 @@ class Metrics:
 
     @staticmethod
     @requires_loaded
-    def variance(image: Image, output: Image, device="cpu") -> Image:
+    def variance(image: Image, output: Image, device=None) -> Image:
         """
         Computes the global variance of an image.
 
         Args:
             image: Input image.
             output: Image object to store the variance as a scalar tensor.
-            device: Device for computation.
+            device: Device for computation (None = infer from image).
 
         Returns:
             The output Image.
         """
+        device = resolve_device(image, explicit=device)
         img = image.pixel_data.to(device).float()
         var_val = torch.var(img)
         output.pixel_data = var_val
