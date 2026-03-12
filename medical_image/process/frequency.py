@@ -1,67 +1,43 @@
 import torch
 
-from medical_image.data.image import Image
+from medical_image.data.image import Image, requires_loaded
 
 
 class FrequencyOperations:
     @staticmethod
-    def fft(image_data: Image, output: Image, device="cpu"):
+    @requires_loaded
+    def fft(image: Image, output: Image, device="cpu") -> Image:
         """
         Computes the 2-dimensional Fast Fourier Transform (FFT) of an image.
 
-        This function transforms the spatial domain image into the frequency domain
-        using PyTorch's FFT implementation.
-
         Args:
-            image_data (Image): Input image.
-            output (Image): Output image to store the complex FFT result.
-            device (str): Device to perform computation on ("cpu" or "cuda").
+            image: Input image.
+            output: Output image to store the complex FFT result.
+            device: Device to perform computation on.
 
         Returns:
-            None. The result is stored in output.pixel_data as a complex tensor.
-
-        Example:
-            >>> from medical_image.data.image import Image
-            >>> fft_result = FrequencyOperations.fft(image, output, device="cuda")
+            The output Image.
         """
-        # Move image to specified device
-        img = image_data.pixel_data.to(device).float()
-
-        # Compute 2D FFT
+        img = image.pixel_data.to(device).float()
         fft_result = torch.fft.fft2(img)
-
-        # Store result in output
         output.pixel_data = fft_result.to(device)
-        output.width = image_data.width
-        output.height = image_data.height
+        return output
 
     @staticmethod
-    def inverse_fft(image_data: Image, output: Image, device="cpu"):
+    @requires_loaded
+    def inverse_fft(image: Image, output: Image, device="cpu") -> Image:
         """
         Computes the inverse 2-dimensional Fast Fourier Transform (IFFT) of an image.
 
-        This function transforms a frequency domain image back to the spatial domain
-        using PyTorch's IFFT implementation.
-
         Args:
-            image_data (Image): Input image in the frequency domain (complex tensor).
-            output (Image): Output image to store the inverse FFT result.
-            device (str): Device to perform computation on ("cpu" or "cuda").
+            image: Input image in the frequency domain (complex tensor).
+            output: Output image to store the inverse FFT result.
+            device: Device to perform computation on.
 
         Returns:
-            None. The result is stored in output.pixel_data as a complex or float tensor.
-
-        Example:
-            >>> from medical_image.data.image import Image
-            >>> ifft_result = FrequencyOperations.inverse_fft(image, output, device="cuda")
+            The output Image.
         """
-        # Move image to specified device
-        img = image_data.pixel_data.to(device)
-
-        # Compute inverse 2D FFT
+        img = image.pixel_data.to(device)
         ifft_result = torch.fft.ifft2(img)
-
-        # Store result in output
         output.pixel_data = ifft_result.to(device)
-        output.width = image_data.width
-        output.height = image_data.height
+        return output

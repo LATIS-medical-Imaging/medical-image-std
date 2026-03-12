@@ -7,26 +7,28 @@ from medical_image.data.image import Image
 
 class Algorithm(ABC):
     def __init__(self, device: str = None):
-        """
-        Constructor for the Algorithm class.
-        """
         super().__init__()
         self.device = (
-            device if device != None else "cuda" if torch.cuda.is_available() else "cpu"
+            device if device is not None else "cuda" if torch.cuda.is_available() else "cpu"
         )
 
     @abstractmethod
-    def apply(self, image: Image, output: Image):
+    def apply(self, image: Image, output: Image) -> Image:
         """
         Apply the defined operations to the input image.
 
-        Parameters:
-        image: The input image to which the operations will be applied.
+        Args:
+            image: The input image.
+            output: The output image to store results.
 
         Returns:
-        The processed image after applying the operations.
+            The output image after applying the operations.
         """
         pass
 
-    def __call__(self, image: Image, output: Image):
+    def __call__(self, image: Image, output: Image) -> Image:
         self.apply(image, output)
+        return output
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(device='{self.device}')"

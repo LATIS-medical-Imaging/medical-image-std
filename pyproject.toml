@@ -1,6 +1,6 @@
 [project]
 name = "medical-image-std"
-version = "0.1.0"
+version = "0.2.0"
 description = "A standardized Python framework for medical image processing."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -24,12 +24,10 @@ dependencies = [
     "pandas",
 ]
 
-[dependency-groups]
-dev = [
-    "pytest>=7.0.0",
-    "black>=23.0.0",
-]
-
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "black>=23.0", "ruff", "mypy"]
+gpu = ["torch", "torchvision"]
+all = ["medical-image-std[dev,gpu]"]
 
 [build-system]
 requires = ["setuptools"]
@@ -37,14 +35,15 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["medical_image"]
+include = ["medical_image*"]
+
+[tool.setuptools.package-data]
+medical_image = ["py.typed"]
 
 # ---------------------
 # uv configuration
 # ---------------------
-# This is the CORRECT syntax
 [[tool.uv.index]]
 name = "pytorch-cu124"
 url = "https://download.pytorch.org/whl/cu124"
 explicit = true
-

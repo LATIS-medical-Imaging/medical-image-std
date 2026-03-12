@@ -1,4 +1,3 @@
-import copy
 from typing import Optional, List
 
 import torch
@@ -27,46 +26,19 @@ class PFCMAlgorithm(Algorithm):
 
     Math and Logic:
         PFCM extends FCM by adding typicality values that measure how "typical"
-        a sample is for each cluster, reducing susceptibility to noise.
-        Microcalcifications are detected as **atypical** pixels — those with a low maximum
-        typicality across all clusters, excluding those belonging to the darkest cluster
-        (background).
+        a sample is for each cluster. Microcalcifications are detected as
+        **atypical** pixels — those with a low maximum typicality.
 
     Pipeline:
         1. Run standard FCM to warm-start cluster centroids and memberships.
         2. Compute initial gamma values and typicality matrix T.
         3. Iteratively update prototypes, memberships, gammas, and typicalities.
         4. Detect MCs by thresholding the maximum typicality map (atypical pixels).
-        5. Exclude the darkest background cluster from the detected atypical pixels.
-
-    Example Usage:
-        ```python
-        import copy
-        import numpy as np
-        import matplotlib.pyplot as plt
-        from medical_image.algorithms.pfcm import PFCMAlgorithm
-        from medical_image.data.dicom_image import DicomImage
-
-        # Load and prepare image
-        img = DicomImage("20527054.dcm")
-        img.load()
-
-        # Initialize algorithm and output
-        algo = PFCMAlgorithm(c=2, tau=0.04, device="cpu")
-        output = copy.deepcopy(img)
-
-        # Apply algorithm
-        algo(img, output)
-
-        # Plot output
-        plt.imshow(output.pixel_data.numpy(), cmap='gray')
-        plt.title('PFCM Output')
-        plt.show()
-        ```
+        5. Exclude the darkest background cluster.
 
     Attributes after apply():
         typicality:   (c, N) typicality matrix T.
-        T_max_map:    (H, W) max typicality per pixel (low = atypical = MC).
+        T_max_map:    (H, W) max typicality per pixel.
         centroids:    (c, d) cluster centroids.
         membership:   (c, N) fuzzy membership matrix.
         labels:       (H, W) int hard cluster assignments.
@@ -100,7 +72,6 @@ class PFCMAlgorithm(Algorithm):
         self.fcm_max_iter = fcm_max_iter
         self.random_state = random_state
 
-        # Operations (FEBDS-style lambdas)
         self.compute_distances = (
             lambda Z, V: MathematicalOperations.euclidean_distance_sq(Z=Z, V=V)
         )
@@ -128,13 +99,8 @@ class PFCMAlgorithm(Algorithm):
         self.n_iter: int = 0
         self.converged: bool = False
 
-    # ------------------------------------------------------------------
-    # PFCM-specific update rules
-    # ------------------------------------------------------------------
-
     @staticmethod
     def _compute_gamma(U: torch.Tensor, D2: torch.Tensor, m: float) -> torch.Tensor:
-        """γ_i = Σ_k μ_ik^m D²_ik / Σ_k μ_ik^m → (c,)"""
         Um = U**m
         return (Um * D2).sum(dim=1) / (Um.sum(dim=1) + 1e-10)
 
@@ -145,7 +111,6 @@ class PFCMAlgorithm(Algorithm):
         b: float,
         eta: float,
     ) -> torch.Tensor:
-        """t_ik = 1 / (1 + (b/γ_i · D²_ik)^{1/(η-1)}) → (c, N)"""
         eps = 1e-10
         exp = 1.0 / (eta - 1.0)
         ratio = (b / (gamma.unsqueeze(1) + eps)) * D2
@@ -161,28 +126,20 @@ class PFCMAlgorithm(Algorithm):
         a: float,
         b: float,
     ) -> torch.Tensor:
-        """v_i = Σ(a μ^m + b t^η) z / Σ(a μ^m + b t^η) → (c, d)"""
         W = a * (U**m) + b * (T**eta)
         denom = W.sum(dim=1, keepdim=True) + 1e-10
         return (W @ Z) / denom
 
-    # ------------------------------------------------------------------
-    # Main apply
-    # ------------------------------------------------------------------
-
-    def apply(self, image: Image, output: Image):
+    def apply(self, image: Image, output: Image) -> Image:
         """
         Apply PFCM: warm-start from FCM, iterate PFCM, detect MCs by atypicality.
 
-        Pipeline:
-            1. Warm-start from FCM (run internally)
-            2. Compute gamma + initial typicality T
-            3. Iterate: prototypes → distances → membership → gamma → typicality
-            4. MC mask = atypical pixels (max_T < tau), excluding darkest cluster
-
         Args:
-            image: Input Image (2D float tensor, e.g. top-hat result).
+            image: Input Image (2D float tensor).
             output: Output Image — pixel_data = binary MC mask.
+
+        Returns:
+            The output Image.
         """
         device = self.device
         img = image.pixel_data.to(device).float()
@@ -203,7 +160,7 @@ class PFCMAlgorithm(Algorithm):
             random_state=self.random_state,
             device=device,
         )
-        fcm_output = copy.deepcopy(image)
+        fcm_output = image.clone()
         fcm.apply(image, fcm_output)
 
         U = fcm.membership.clone()
@@ -263,5 +220,4 @@ class PFCMAlgorithm(Algorithm):
         self.converged = converged
 
         output.pixel_data = binary_mask.float()
-        output.width = W
-        output.height = H
+        return output

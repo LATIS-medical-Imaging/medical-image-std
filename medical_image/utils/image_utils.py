@@ -1,25 +1,23 @@
 import os
-import matplotlib
-import numpy as np
 
+import numpy as np
 import torch
 from PIL import Image as PILImage
 from matplotlib import pyplot as plt
 
-from log_manager import logger
-from medical_image.data.image import Image
+from medical_image.utils.logging import logger
+from medical_image.data.image import Image, requires_loaded
 from medical_image.utils.ErrorHandler import ErrorMessages
 
 
-# TODO: perform unit test
 class TensorConverter:
     @staticmethod
-    def to_numpy(image: Image):
+    def to_numpy(image: Image) -> np.ndarray:
         """
         Convert Image.pixel_data (torch tensor) to NumPy array on CPU.
 
         Args:
-            image (Image): Image instance containing pixel_data.
+            image: Image instance containing pixel_data.
 
         Returns:
             np.ndarray
@@ -32,17 +30,17 @@ class TensorConverter:
         return tensor.detach().cpu().numpy()
 
     @staticmethod
-    def ensure_tensor(image: Image, device=None, dtype=None):
+    def ensure_tensor(image: Image, device=None, dtype=None) -> torch.Tensor:
         """
         Move Image.pixel_data to target device and dtype.
 
         Args:
-            image (Image)
-            device (str): 'cpu' or 'cuda'. Defaults to image.device.
-            dtype: torch dtype.
+            image: Image instance.
+            device: Target device.
+            dtype: Target dtype.
 
         Returns:
-            torch.Tensor (updated inside image.pixel_data)
+            The updated tensor.
         """
         tensor = image.pixel_data
 
@@ -57,12 +55,10 @@ class TensorConverter:
 
 
 class ImageExporter:
-    """
-    Export an Image object to PNG/JPG/TIFF using clean separation of concerns.
-    """
+    """Export an Image object to PNG/JPG/TIFF."""
 
     @staticmethod
-    def save_as(image: Image, format="PNG"):
+    def save_as(image: Image, format="PNG") -> str:
         if image.file_path is not None:
             base, _ = os.path.splitext(image.file_path)
         else:
@@ -71,14 +67,10 @@ class ImageExporter:
 
         np_img = TensorConverter.to_numpy(image)
 
-        # --- FIX HERE ---
-        # Convert float32 images [0..255] to uint8
         if np_img.dtype == np.float32 or np_img.dtype == np.float64:
             np_img = np.clip(np_img, 0, 255).astype("uint8")
 
-        # Pillow requires contiguous array
         np_img = np.ascontiguousarray(np_img)
-        # --- END FIX ---
 
         PILImage.fromarray(np_img).save(output, format=format)
 
@@ -87,20 +79,10 @@ class ImageExporter:
 
 
 class ImageVisualizer:
-    """
-    Visualization utilities for Image objects.
-    """
+    """Visualization utilities for Image objects."""
 
     @staticmethod
     def show(image: Image, cmap="gray", title=None):
-        """
-        Display Image.pixel_data with matplotlib.
-
-        Args:
-            image (Image)
-            cmap (str)
-            title (str)
-        """
         if image.pixel_data is None:
             raise ErrorMessages.invalid_pixel_data()
 
@@ -116,9 +98,6 @@ class ImageVisualizer:
     def compare(
         before: Image, after: Image, title_before="Before", title_after="After"
     ):
-        """
-        Side-by-side comparison of two Image objects.
-        """
         if before.pixel_data is None or after.pixel_data is None:
             raise ErrorMessages.invalid_pixel_data()
 
@@ -140,12 +119,11 @@ class ImageVisualizer:
 
 class MathematicalOperations:
     @staticmethod
-    def abs(image_data: Image, out: Image):
-        img = image_data.pixel_data.float()
-
+    @requires_loaded
+    def abs(image: Image, out: Image) -> Image:
+        img = image.pixel_data.float()
         out.pixel_data = torch.abs(img)
-        out.width = image_data.width
-        out.height = image_data.height
+        return out
 
     @staticmethod
     def euclidean_distance_sq(Z: torch.Tensor, V: torch.Tensor) -> torch.Tensor:
@@ -159,19 +137,21 @@ class MathematicalOperations:
         Returns:
             D2: (c, N) squared distances.
         """
-        # V[:, None, :] → (c, 1, d);  Z[None, :, :] → (1, N, d)
-        diff = V.unsqueeze(1) - Z.unsqueeze(0)  # (c, N, d)
-        return (diff**2).sum(dim=2)  # (c, N)
+        diff = V.unsqueeze(1) - Z.unsqueeze(0)
+        return (diff**2).sum(dim=2)
 
     @staticmethod
-    def normalize_12bit(image_data: Image, out: Image):
+    @requires_loaded
+    def normalize_12bit(image: Image, out: Image) -> Image:
         """
         Normalize a 12-bit DICOM image to [0, 1] by dividing by 4095.
 
         Args:
-            image_data: Input Image with raw 12-bit pixel values.
+            image: Input Image with raw 12-bit pixel values.
             out: Output Image to store the normalized result.
+
+        Returns:
+            The output Image.
         """
-        out.pixel_data = torch.clamp(image_data.pixel_data.float() / 4095.0, 0.0, 1.0)
-        out.width = image_data.width
-        out.height = image_data.height
+        out.pixel_data = torch.clamp(image.pixel_data.float() / 4095.0, 0.0, 1.0)
+        return out

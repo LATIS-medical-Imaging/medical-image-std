@@ -1,4 +1,3 @@
-import copy
 from typing import Tuple
 
 import torch
@@ -18,8 +17,6 @@ class Patch:
         y (int): Top-left pixel y-coordinate in the original image.
         pixel_data (torch.Tensor): Tensor representing patch pixels.
         is_padded (bool): Whether the patch contains padding.
-        width (int): Width of the patch.
-        height (int): Height of the patch.
     """
 
     def __init__(
@@ -40,8 +37,13 @@ class Patch:
         self.pixel_data = pixel_data
         self.is_padded = is_padded
 
-        self.height = pixel_data.shape[-2]
-        self.width = pixel_data.shape[-1]
+    @property
+    def height(self) -> int:
+        return self.pixel_data.shape[-2]
+
+    @property
+    def width(self) -> int:
+        return self.pixel_data.shape[-1]
 
     def grid_id(self) -> Tuple[int, int]:
         """Return patch position as (row, col) in the grid."""
@@ -62,13 +64,9 @@ class Patch:
         Returns:
             Image: A new Image object containing only the patch pixels.
         """
-        # Deep copy the parent to retain metadata
-        patch_image = copy.deepcopy(self.parent)
+        patch_image = self.parent.clone()
         patch_image.pixel_data = self.pixel_data
-        patch_image.height = self.height
-        patch_image.width = self.width
-        patch_image.file_path = None  # No file associated with this patch
-
+        patch_image.file_path = None
         return patch_image
 
     def __repr__(self):
@@ -89,78 +87,53 @@ class PatchGrid:
         """
         self.parent = parent_image
         self.patch_h, self.patch_w = patch_size
-        self.patches = []  # flat list
-        self.grid = []  # 2D grid-like structure
+        self.patches = []
+        self.grid = []
         self.pad_bottom = 0
         self.pad_right = 0
 
         self._split()
 
-    # ---------------------------------------------------------
-    # Infer layout: HW, CHW, HWC
-    # ---------------------------------------------------------
     def _infer_layout(self, img):
         if img.ndim == 2:
             return "HW"
 
         if img.ndim == 3:
             H, W, C_last = img.shape
-            C_first, H2, W2 = img.shape[0], img.shape[-2], img.shape[-1]
+            C_first = img.shape[0]
 
-            # channel-first if first dim is small
             if C_first in (1, 3, 4):
                 return "CHW"
-
-            # channel-last if last dim is small
             if C_last in (1, 3, 4):
                 return "HWC"
 
         raise ValueError(f"Cannot determine channel layout for shape {img.shape}")
 
-    # ---------------------------------------------------------
-    # Main split logic
-    # ---------------------------------------------------------
     def _split(self):
         img = self.parent.pixel_data
         layout = self._infer_layout(img)
 
-        # -------------------------------
-        # Get H, W depending on layout
-        # -------------------------------
         if layout == "HW":
             H, W = img.shape
-
         elif layout == "CHW":
             _, H, W = img.shape
-
         elif layout == "HWC":
             H, W, _ = img.shape
 
-        # -------------------------------
-        # Compute padding needed
-        # -------------------------------
         if H % self.patch_h != 0:
             self.pad_bottom = self.patch_h - (H % self.patch_h)
-
         if W % self.patch_w != 0:
             self.pad_right = self.patch_w - (W % self.patch_w)
 
-        # -------------------------------
-        # Apply padding
-        # -------------------------------
         if self.pad_bottom or self.pad_right:
-
             if layout in ("HW", "CHW"):
-                # pad only height+width → last two dims
                 img = torch.nn.functional.pad(
                     img,
                     (0, self.pad_right, 0, self.pad_bottom),
                     mode="constant",
                     value=0,
                 )
-
             elif layout == "HWC":
-                # F.pad order for 3D = (C), (W), (H)
                 img = torch.nn.functional.pad(
                     img,
                     (0, 0, 0, self.pad_right, 0, self.pad_bottom),
@@ -168,38 +141,29 @@ class PatchGrid:
                     value=0,
                 )
 
-        # recompute padded dims
         if layout == "HW":
             H, W = img.shape
         elif layout == "CHW":
             _, H, W = img.shape
-        else:  # HWC
+        else:
             H, W, _ = img.shape
 
         num_rows = H // self.patch_h
         num_cols = W // self.patch_w
 
-        # -------------------------------
-        # Extract patches
-        # -------------------------------
         for r in range(num_rows):
             row_list = []
-
             for c in range(num_cols):
                 x = r * self.patch_h
                 y = c * self.patch_w
 
-                # ---- slicing by layout ----
                 if layout == "HW":
                     patch_tensor = img[x : x + self.patch_h, y : y + self.patch_w]
-
                 elif layout == "CHW":
                     patch_tensor = img[:, x : x + self.patch_h, y : y + self.patch_w]
-
                 elif layout == "HWC":
                     patch_tensor = img[x : x + self.patch_h, y : y + self.patch_w, :]
 
-                # padded?
                 is_padded = (r == num_rows - 1 and self.pad_bottom > 0) or (
                     c == num_cols - 1 and self.pad_right > 0
                 )
@@ -219,28 +183,16 @@ class PatchGrid:
 
             self.grid.append(row_list)
 
-    def reconstruct(self):
+    def reconstruct(self) -> torch.Tensor:
         """Reassemble the full image from patches (removing padding)."""
         rows = []
         for row in self.grid:
             rows.append(torch.cat([p.pixel_data for p in row], dim=-1))
         reconstructed = torch.cat(rows, dim=-2)
 
-        # remove padding
         if self.pad_bottom:
             reconstructed = reconstructed[:, : -self.pad_bottom, :]
         if self.pad_right:
             reconstructed = reconstructed[:, :, : -self.pad_right]
 
         return reconstructed
-
-
-# TODO: add unit test with plots for this patch detection
-
-# TODO: add these to Patch class
-#   is_empty() (useful for padded patches)
-#   to_mask() if patch includes segmentation labels
-#   reproject_to_parent() → maps patch coordinates back to original image
-#   and produce:
-#   A SlidingWindowPatchGrid for overlapping patches (stride < patch_size)
-#   and GPU-accelerated patch extraction using torch.unfold

@@ -2,25 +2,23 @@ from typing import Union
 
 import torch
 
-from medical_image.data.image import Image
+from medical_image.data.image import Image, requires_loaded
 
 
 class Metrics:
     @staticmethod
+    @requires_loaded
     def entropy(image: Image, decimals=4, device="cpu") -> float:
         """
         Calculates the Shannon entropy of an image using PyTorch.
 
         Args:
-            image (Image): Input image.
-            decimals (int, optional): Number of decimal places to round to. Default is 4.
-            device (str): Device to perform computation on ("cpu" or "cuda").
+            image: Input image.
+            decimals: Number of decimal places to round to.
+            device: Device to perform computation on.
 
         Returns:
-            float: Shannon entropy of the image.
-
-        Notes:
-            Uses base-2 logarithm (bits).
+            Shannon entropy of the image.
         """
         img = image.pixel_data.to(device).flatten()
         hist = torch.histc(
@@ -35,22 +33,22 @@ class Metrics:
         return round(entropy_val.item(), decimals)
 
     @staticmethod
+    @requires_loaded
     def joint_entropy(image1: Image, image2: Image, decimals=4, device="cpu") -> float:
         """
         Calculates the joint Shannon entropy of two images.
 
         Args:
-            image1 (Image): First input image.
-            image2 (Image): Second input image.
-            decimals (int, optional): Decimal precision. Default is 4.
-            device (str): Device for computation ("cpu" or "cuda").
+            image1: First input image.
+            image2: Second input image.
+            decimals: Decimal precision.
+            device: Device for computation.
 
         Returns:
-            float: Joint entropy value.
+            Joint entropy value.
         """
         img1 = image1.pixel_data.to(device).flatten()
         img2 = image2.pixel_data.to(device).flatten()
-        # 2D histogram
         min1, max1 = float(img1.min()), float(img1.max())
         min2, max2 = float(img2.min()), float(img2.max())
         bins1 = int(max1 - min1 + 1)
@@ -64,6 +62,7 @@ class Metrics:
         return round(joint_entropy_val.item(), decimals)
 
     @staticmethod
+    @requires_loaded
     def mutual_information(
         image1: Image, image2: Image, decimals=4, device="cpu"
     ) -> float:
@@ -71,13 +70,13 @@ class Metrics:
         Computes the mutual information between two images.
 
         Args:
-            image1 (Image): First image.
-            image2 (Image): Second image.
-            decimals (int, optional): Decimal precision. Default is 4.
-            device (str): Device for computation ("cpu" or "cuda").
+            image1: First image.
+            image2: Second image.
+            decimals: Decimal precision.
+            device: Device for computation.
 
         Returns:
-            float: Mutual information value.
+            Mutual information value.
         """
         mi = (
             Metrics.entropy(image1, decimals, device)
@@ -87,42 +86,49 @@ class Metrics:
         return mi
 
     @staticmethod
+    @requires_loaded
     def local_variance(
         image: Image, output: Image, kernel: Union[int, tuple], device="cpu"
-    ):
+    ) -> Image:
         """
-        Computes the local variance for each sub-region of the image using a sliding window.
+        Computes the local variance for each sub-region of the image.
 
         Args:
-            image (Image): Input image.
-            output (Image): Image object to store local variance.
-            kernel (int or tuple): Window size for local variance.
-            device (str): Device for computation ("cpu" or "cuda").
+            image: Input image.
+            output: Image object to store local variance.
+            kernel: Window size for local variance.
+            device: Device for computation.
+
+        Returns:
+            The output Image.
         """
         img = image.pixel_data.to(device).float()
-        # Add batch & channel dims for unfolding
         img_unfold = img.unsqueeze(0).unsqueeze(0)
         if isinstance(kernel, int):
             kh, kw = kernel, kernel
         else:
             kh, kw = kernel
-        patches = img_unfold.unfold(2, kh, 1).unfold(3, kw, 1)  # (1,1,H,W,kh,kw)
+        patches = img_unfold.unfold(2, kh, 1).unfold(3, kw, 1)
         patches = patches.contiguous().view(1, 1, img.shape[0], img.shape[1], -1)
         local_var = patches.var(dim=-1)
         output.pixel_data = local_var.squeeze(0).squeeze(0)
-        output.width = image.width
-        output.height = image.height
+        return output
 
     @staticmethod
-    def variance(image: Image, output: Image, device="cpu"):
+    @requires_loaded
+    def variance(image: Image, output: Image, device="cpu") -> Image:
         """
         Computes the global variance of an image.
 
         Args:
-            image (Image): Input image.
-            output (Image): Image object to store the variance as a scalar tensor.
-            device (str): Device for computation ("cpu" or "cuda").
+            image: Input image.
+            output: Image object to store the variance as a scalar tensor.
+            device: Device for computation.
+
+        Returns:
+            The output Image.
         """
         img = image.pixel_data.to(device).float()
         var_val = torch.var(img)
         output.pixel_data = var_val
+        return output

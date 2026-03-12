@@ -1,24 +1,9 @@
 from enum import Enum, auto
+from typing import List, Tuple, Union, Optional
+
+import numpy as np
 
 from medical_image.utils.ErrorHandler import ErrorMessages
-
-
-class GeometryType(Enum):
-    BOUNDING_BOX = auto()
-    POLYGON = auto()
-    MASK = auto()
-
-
-from typing import List, Union, Tuple
-import numpy as np
-
-
-# TODO: check Dicom Annotation
-
-
-from enum import Enum, auto
-from typing import List, Tuple, Union, Optional
-import numpy as np
 
 
 class GeometryType(Enum):

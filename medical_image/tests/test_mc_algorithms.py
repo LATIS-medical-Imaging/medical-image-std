@@ -12,8 +12,6 @@ Tests use synthetic data (no DICOM dependency) to validate:
   - Full pipeline integration
 """
 
-import copy
-
 import numpy as np
 import pytest
 import torch
@@ -65,7 +63,7 @@ class TestMathematicalOperations:
 
     @pytest.mark.parametrize("image_12bit", mock_12bit_image())
     def test_normalize_12bit(self, image_12bit):
-        out = copy.deepcopy(image_12bit)
+        out = image_12bit.clone()
         MathematicalOperations.normalize_12bit(image_12bit, out)
         assert float(out.pixel_data.min()) >= 0.0
         assert float(out.pixel_data.max()) <= 1.0
@@ -79,32 +77,32 @@ class TestMathematicalOperations:
 class TestMorphologyOperations:
     @pytest.mark.parametrize("image", mock_synthetic_image())
     def test_erosion_reduces_values(self, image):
-        out = copy.deepcopy(image)
+        out = image.clone()
         MorphologyOperations.erosion(image, out, radius=2)
         assert float(out.pixel_data.max()) <= float(image.pixel_data.max()) + 1e-5
 
     @pytest.mark.parametrize("image", mock_synthetic_image())
     def test_dilation_increases_values(self, image):
-        out = copy.deepcopy(image)
+        out = image.clone()
         MorphologyOperations.dilation(image, out, radius=2)
         assert float(out.pixel_data.max()) >= float(image.pixel_data.max()) - 1e-5
 
     @pytest.mark.parametrize("radius", mock_tophat_radius())
     def test_white_top_hat_non_negative(self, radius):
         img = mock_synthetic_image()[0]
-        out = copy.deepcopy(img)
+        out = img.clone()
         MorphologyOperations.white_top_hat(img, out, radius=radius[0])
         assert float(out.pixel_data.min()) >= 0.0
 
     @pytest.mark.parametrize("image", mock_synthetic_image())
     def test_white_top_hat_highlights_bright_spots(self, image):
-        out = copy.deepcopy(image)
+        out = image.clone()
         MorphologyOperations.white_top_hat(image, out, radius=4)
         assert float(out.pixel_data[20:23, 20:23].mean()) > float(out.pixel_data.mean())
 
     @pytest.mark.parametrize("image", mock_synthetic_image())
     def test_white_top_hat_shape_preserved(self, image):
-        out = copy.deepcopy(image)
+        out = image.clone()
         MorphologyOperations.white_top_hat(image, out, radius=3)
         assert out.pixel_data.shape == image.pixel_data.shape
         assert out.width == image.width
@@ -147,7 +145,7 @@ class TestTopHatAlgorithm:
     @pytest.mark.parametrize("radius", mock_tophat_radius())
     def test_apply(self, radius):
         img = mock_synthetic_image()[0]
-        out = copy.deepcopy(img)
+        out = img.clone()
         algo = TopHatAlgorithm(radius=radius[0], device="cpu")
         algo(img, out)
         assert out.pixel_data is not None
@@ -156,7 +154,7 @@ class TestTopHatAlgorithm:
 
     @pytest.mark.parametrize("image", mock_synthetic_image())
     def test_highlights_mc(self, image):
-        out = copy.deepcopy(image)
+        out = image.clone()
         algo = TopHatAlgorithm(radius=3, device="cpu")
         algo(image, out)
         mc_mean = float(out.pixel_data[20:23, 20:23].mean())
@@ -173,7 +171,7 @@ class TestKMeansAlgorithm:
     @pytest.mark.parametrize("k", mock_kmeans_k())
     def test_apply_basic(self, k):
         img = mock_synthetic_image()[0]
-        out = copy.deepcopy(img)
+        out = img.clone()
         km = KMeansAlgorithm(k=k[0], device="cpu")
         km(img, out)
 
@@ -186,7 +184,7 @@ class TestKMeansAlgorithm:
     @pytest.mark.parametrize("k", mock_kmeans_k())
     def test_binary_output(self, k):
         img = mock_synthetic_image()[0]
-        out = copy.deepcopy(img)
+        out = img.clone()
         km = KMeansAlgorithm(k=k[0], device="cpu")
         km(img, out)
 
@@ -196,7 +194,7 @@ class TestKMeansAlgorithm:
     @pytest.mark.parametrize("k", mock_kmeans_k())
     def test_stats_populated(self, k):
         img = mock_synthetic_image()[0]
-        out = copy.deepcopy(img)
+        out = img.clone()
         km = KMeansAlgorithm(k=k[0], device="cpu")
         km(img, out)
 
@@ -207,7 +205,7 @@ class TestKMeansAlgorithm:
 
     @pytest.mark.parametrize("image", mock_synthetic_image())
     def test_mc_in_brightest_cluster(self, image):
-        out = copy.deepcopy(image)
+        out = image.clone()
         km = KMeansAlgorithm(k=3, device="cpu")
         km(image, out)
 
@@ -217,7 +215,7 @@ class TestKMeansAlgorithm:
     @pytest.mark.parametrize("k", mock_kmeans_k())
     def test_quantized_range(self, k):
         img = mock_synthetic_image()[0]
-        out = copy.deepcopy(img)
+        out = img.clone()
         km = KMeansAlgorithm(k=k[0], device="cpu")
         km(img, out)
 
@@ -234,7 +232,7 @@ class TestFCMAlgorithm:
     @pytest.mark.parametrize("c", mock_fcm_c())
     def test_apply_basic(self, c):
         img = mock_synthetic_image()[0]
-        out = copy.deepcopy(img)
+        out = img.clone()
         fcm = FCMAlgorithm(c=c[0], device="cpu")
         fcm(img, out)
 
@@ -246,7 +244,7 @@ class TestFCMAlgorithm:
     @pytest.mark.parametrize("c", mock_fcm_c())
     def test_binary_output(self, c):
         img = mock_synthetic_image()[0]
-        out = copy.deepcopy(img)
+        out = img.clone()
         fcm = FCMAlgorithm(c=c[0], device="cpu")
         fcm(img, out)
 
@@ -255,7 +253,7 @@ class TestFCMAlgorithm:
 
     @pytest.mark.parametrize("image", mock_synthetic_image())
     def test_mc_in_brightest_cluster(self, image):
-        out = copy.deepcopy(image)
+        out = image.clone()
         fcm = FCMAlgorithm(c=3, device="cpu")
         fcm(image, out)
 
@@ -265,7 +263,7 @@ class TestFCMAlgorithm:
     @pytest.mark.parametrize("c", mock_fcm_c())
     def test_quantized_range(self, c):
         img = mock_synthetic_image()[0]
-        out = copy.deepcopy(img)
+        out = img.clone()
         fcm = FCMAlgorithm(c=c[0], device="cpu")
         fcm(img, out)
 
@@ -275,7 +273,7 @@ class TestFCMAlgorithm:
     @pytest.mark.parametrize("c", mock_fcm_c())
     def test_stats_populated(self, c):
         img = mock_synthetic_image()[0]
-        out = copy.deepcopy(img)
+        out = img.clone()
         fcm = FCMAlgorithm(c=c[0], device="cpu")
         fcm(img, out)
 
@@ -294,7 +292,7 @@ class TestPFCMAlgorithm:
     @pytest.mark.parametrize("c, tau", mock_pfcm_params())
     def test_apply_basic(self, c, tau):
         img = mock_synthetic_image()[0]
-        out = copy.deepcopy(img)
+        out = img.clone()
         pfcm = PFCMAlgorithm(c=c, tau=tau, device="cpu")
         pfcm(img, out)
 
@@ -306,7 +304,7 @@ class TestPFCMAlgorithm:
     @pytest.mark.parametrize("c, tau", mock_pfcm_params())
     def test_binary_output(self, c, tau):
         img = mock_synthetic_image()[0]
-        out = copy.deepcopy(img)
+        out = img.clone()
         pfcm = PFCMAlgorithm(c=c, tau=tau, device="cpu")
         pfcm(img, out)
 
@@ -316,7 +314,7 @@ class TestPFCMAlgorithm:
     @pytest.mark.parametrize("c, tau", mock_pfcm_params())
     def test_typicality_range(self, c, tau):
         img = mock_synthetic_image()[0]
-        out = copy.deepcopy(img)
+        out = img.clone()
         pfcm = PFCMAlgorithm(c=c, tau=tau, device="cpu")
         pfcm(img, out)
 
@@ -325,7 +323,7 @@ class TestPFCMAlgorithm:
 
     @pytest.mark.parametrize("image", mock_synthetic_image())
     def test_atypical_detection(self, image):
-        out = copy.deepcopy(image)
+        out = image.clone()
         pfcm = PFCMAlgorithm(c=2, tau=0.5, device="cpu")
         pfcm(image, out)
         assert float(out.pixel_data.sum()) > 0
@@ -333,7 +331,7 @@ class TestPFCMAlgorithm:
     @pytest.mark.parametrize("c, tau", mock_pfcm_params())
     def test_centroids_shape(self, c, tau):
         img = mock_synthetic_image()[0]
-        out = copy.deepcopy(img)
+        out = img.clone()
         pfcm = PFCMAlgorithm(c=c, tau=tau, device="cpu")
         pfcm(img, out)
 
@@ -349,11 +347,11 @@ class TestPFCMAlgorithm:
 class TestFullPipeline:
     @pytest.mark.parametrize("image", mock_synthetic_image())
     def test_top_hat_then_fcm(self, image):
-        """TopHat → FCM pipeline."""
-        th_out = copy.deepcopy(image)
+        """TopHat -> FCM pipeline."""
+        th_out = image.clone()
         TopHatAlgorithm(radius=3, device="cpu")(image, th_out)
 
-        fcm_out = copy.deepcopy(th_out)
+        fcm_out = th_out.clone()
         fcm = FCMAlgorithm(c=3, device="cpu")
         fcm(th_out, fcm_out)
 
@@ -362,11 +360,11 @@ class TestFullPipeline:
 
     @pytest.mark.parametrize("image", mock_synthetic_image())
     def test_top_hat_then_kmeans(self, image):
-        """TopHat → KMeans pipeline."""
-        th_out = copy.deepcopy(image)
+        """TopHat -> KMeans pipeline."""
+        th_out = image.clone()
         TopHatAlgorithm(radius=3, device="cpu")(image, th_out)
 
-        km_out = copy.deepcopy(th_out)
+        km_out = th_out.clone()
         km = KMeansAlgorithm(k=3, device="cpu")
         km(th_out, km_out)
 
@@ -375,11 +373,11 @@ class TestFullPipeline:
 
     @pytest.mark.parametrize("image", mock_synthetic_image())
     def test_top_hat_then_pfcm(self, image):
-        """TopHat → PFCM pipeline."""
-        th_out = copy.deepcopy(image)
+        """TopHat -> PFCM pipeline."""
+        th_out = image.clone()
         TopHatAlgorithm(radius=3, device="cpu")(image, th_out)
 
-        pfcm_out = copy.deepcopy(th_out)
+        pfcm_out = th_out.clone()
         pfcm = PFCMAlgorithm(c=2, tau=0.1, device="cpu")
         pfcm(th_out, pfcm_out)
 
@@ -388,15 +386,15 @@ class TestFullPipeline:
 
     @pytest.mark.parametrize("dicom_image", mock_dicom_image())
     def test_roi_then_pipeline(self, dicom_image):
-        """ROI extraction → normalize → TopHat → FCM on real DICOM."""
+        """ROI extraction -> normalize -> TopHat -> FCM on real DICOM."""
         roi = RegionOfInterest.from_center(dicom_image, cx=1250, cy=2000, half_size=127)
         roi_img = roi.load()
         RegionOfInterest.normalize(roi_img, divisor=4095.0)
 
-        th_out = copy.deepcopy(roi_img)
+        th_out = roi_img.clone()
         TopHatAlgorithm(radius=3, device="cpu")(roi_img, th_out)
 
-        fcm_out = copy.deepcopy(th_out)
+        fcm_out = th_out.clone()
         fcm = FCMAlgorithm(c=3, device="cpu")
         fcm(th_out, fcm_out)
 
