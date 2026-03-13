@@ -10,3 +10,4 @@ __pycache__
 /dummy_plt.py
 /medical_image_std.egg-info/
 /dist/
+/dummy_data

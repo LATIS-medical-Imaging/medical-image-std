@@ -2,7 +2,7 @@
 
 Welcome to the Medical Image Standard Library documentation!
 
-## 📚 Documentation Structure
+## Documentation Structure
 
 ### Getting Started
 
@@ -24,10 +24,10 @@ Welcome to the Medical Image Standard Library documentation!
    - Performance considerations
 
 3. **[API Reference](api_reference.md)** - Complete API documentation
-   - Data module (Image, Patch, ROI, etc.)
+   - Data module (Image, Patch, ROI, InMemoryImage, etc.)
    - Process module (Filters, Threshold, Metrics, etc.)
    - Algorithms module
-   - Utils module
+   - Utils module (including device and logging)
    - Type hints and error handling
 
 4. **[User Guide](user_guide.md)** - Practical tutorials
@@ -36,6 +36,7 @@ Welcome to the Medical Image Standard Library documentation!
    - Patch-based processing
    - Working with datasets
    - Using algorithms
+   - GPU acceleration
    - Best practices
    - Troubleshooting
 
@@ -63,7 +64,7 @@ Welcome to the Medical Image Standard Library documentation!
    - Development setup
    - Code standards (Black formatting)
    - Testing requirements
-   - **CI validation requirements** ⚠️
+   - CI validation requirements
    - Pull request process
    - Issue reporting
 
@@ -75,34 +76,34 @@ Welcome to the Medical Image Standard Library documentation!
 
 ---
 
-## 🎯 Quick Navigation
+## Quick Navigation
 
 ### I want to...
 
 **Get started quickly**
-→ [README.md](../README.md) → [Quick Reference](quick_reference.md)
+-> [README.md](../README.md) -> [Quick Reference](quick_reference.md)
 
 **Understand the architecture**
-→ [Architecture](architecture.md)
+-> [Architecture](architecture.md)
 
 **Learn how to use the library**
-→ [User Guide](user_guide.md)
+-> [User Guide](user_guide.md)
 
 **Look up specific APIs**
-→ [API Reference](api_reference.md)
+-> [API Reference](api_reference.md)
 
 **Understand algorithms**
-→ [Algorithm Reference](algorithms.md)
+-> [Algorithm Reference](algorithms.md)
 
 **Work with datasets**
-→ [Dataset Guide](datasets.md)
+-> [Dataset Guide](datasets.md)
 
 **Contribute code**
-→ [Contributing Guide](contributing.md)
+-> [Contributing Guide](contributing.md)
 
 ---
 
-## 📖 Reading Paths
+## Reading Paths
 
 ### For New Users
 
@@ -115,7 +116,8 @@ Welcome to the Medical Image Standard Library documentation!
 1. [README.md](../README.md) - Architecture overview
 2. [Architecture](architecture.md) - Design details
 3. [API Reference](api_reference.md) - Complete API
-4. [Contributing Guide](contributing.md) - Development workflow
+4. [User Guide](user_guide.md) - GPU Acceleration
+5. [Contributing Guide](contributing.md) - Development workflow
 
 ### For Researchers
 
@@ -125,7 +127,7 @@ Welcome to the Medical Image Standard Library documentation!
 
 ---
 
-## 🔑 Key Concepts
+## Key Concepts
 
 ### Lazy Loading Pattern
 Images follow lazy loading: `__init__()` stores path, `load()` loads data.
@@ -143,9 +145,17 @@ See: [Architecture](architecture.md#algorithms-package-medicalimagealgorithms)
 `PatchGrid` splits images into patches with automatic padding.
 See: [User Guide](user_guide.md#working-with-patches)
 
+### GPU Acceleration
+The library supports GPU-accelerated processing through a device management
+layer. `DeviceContext` provides a context manager for selecting compute devices
+(CPU or CUDA). The `device.py` utility handles device detection, selection, and
+mixed precision support, allowing algorithms to transparently run on available
+hardware.
+See: [User Guide](user_guide.md#gpu-acceleration)
+
 ---
 
-## 🎨 Diagrams
+## Diagrams
 
 The documentation includes several types of diagrams:
 
@@ -165,7 +175,7 @@ The documentation includes several types of diagrams:
 
 ---
 
-## ⚙️ CI/CD Information
+## CI/CD Information
 
 ### GitHub Actions Workflow
 
@@ -173,6 +183,7 @@ The project uses automated CI/CD:
 - **Trigger**: Push to `master` branch
 - **Tests**: Python 3.11 and 3.12
 - **Checks**: pytest + Black formatting
+- **Test suites**: `test_gpu.py` (GPU/device tests), `test_mc_algorithms.py` (algorithm tests), `test_dicom.py` (DICOM loading tests)
 
 See: [README.md - GitHub CI Workflow](../README.md#github-ci-workflow)
 
@@ -180,20 +191,20 @@ See: [README.md - GitHub CI Workflow](../README.md#github-ci-workflow)
 
 ```bash
 # Ensure tests pass
-pytest medical_image/tests/test_dicom.py
+pytest medical_image/tests/
 
 # Ensure formatting is correct
 black --check .
 
 # Or run both
-pytest medical_image/tests/test_dicom.py && black --check .
+pytest medical_image/tests/ && black --check .
 ```
 
 See: [Contributing Guide - CI Requirements](contributing.md#ci-requirements)
 
 ---
 
-## 📦 Package Structure
+## Package Structure
 
 ```
 medical-image-std/
@@ -209,16 +220,29 @@ medical-image-std/
 │   └── quick_reference.md       # Quick reference
 ├── medical_image/               # Source code
 │   ├── data/                    # Data structures
+│   │   ├── dicom_image.py       # DICOM image handling
+│   │   ├── image.py             # Base image class
+│   │   ├── in_memory_image.py   # In-memory image support
+│   │   ├── patch.py             # Patch and PatchGrid
+│   │   ├── png_image.py         # PNG image handling
+│   │   └── region_of_interest.py
 │   ├── process/                 # Processing methods
 │   ├── algorithms/              # Algorithm framework
 │   ├── utils/                   # Utilities
+│   │   ├── annotation.py        # Annotation helpers
+│   │   ├── device.py            # GPU/device management
+│   │   ├── image_utils.py       # Image utility functions
+│   │   └── logging.py           # Logging configuration
 │   └── tests/                   # Unit tests
-└── setup.py                     # Package setup
+│       ├── test_dicom.py        # DICOM tests
+│       ├── test_gpu.py          # GPU and device tests
+│       └── test_mc_algorithms.py # Algorithm tests
+└── pyproject.toml               # Package configuration
 ```
 
 ---
 
-## 🔗 External Resources
+## External Resources
 
 - **Repository**: https://github.com/LATIS-DocumentAI-Group/medical-image-std
 - **CBIS-DDSM Dataset**: https://wiki.cancerimagingarchive.net/display/Public/CBIS-DDSM
@@ -227,7 +251,7 @@ medical-image-std/
 
 ---
 
-## 📝 Documentation Standards
+## Documentation Standards
 
 All documentation follows:
 - **Markdown format** with GitHub Flavored Markdown
@@ -238,7 +262,7 @@ All documentation follows:
 
 ---
 
-## 🆘 Getting Help
+## Getting Help
 
 - **Questions**: Open a discussion on GitHub
 - **Bugs**: Create an issue with bug report template
@@ -247,11 +271,11 @@ All documentation follows:
 
 ---
 
-## 📄 License
+## License
 
 MIT License - See LICENSE file for details
 
 ---
 
-**Last Updated**: 2025-11-19  
-**Version**: 0.2.8.dev1
+**Last Updated**: 2026-03-12
+**Version**: 0.2.0

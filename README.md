@@ -1,6 +1,6 @@
 # Medical Image Standard Library
 
-A standardized Python library for medical image processing, providing abstract interfaces and extensible implementations for DICOM and other medical image formats.
+A standardized Python framework for medical image processing with GPU acceleration, built on PyTorch tensors. Provides abstract interfaces, extensible algorithm pipelines, and automatic device management for DICOM and other medical image formats.
 
 ---
 
@@ -10,14 +10,14 @@ Provide **standardized abstractions** for medical image processing workflows:
 
 - **Abstract base classes** defining core interfaces (`Image`, `Algorithm`)
 - **Lazy loading pattern** for memory-efficient image handling
-- **Static processing methods** for filters, thresholding, and morphology
+- **Static processing methods** for filters, thresholding, morphology, and metrics
 - **Extensible algorithm framework** using lambda composition
 - **Patch-based processing** for large images
-- **GPU acceleration** via PyTorch tensors
+- **GPU acceleration** via PyTorch with automatic device inference, OOM fallback, mixed precision, and batch processing
 
 ---
 
-##  Architecture Overview
+## Architecture Overview
 
 ### Core Design Principles
 
@@ -25,43 +25,54 @@ Provide **standardized abstractions** for medical image processing workflows:
 2. **Lazy Loading**: `__init__()` stores metadata, `load()` loads data
 3. **Static Methods**: Stateless processing operations
 4. **Composition**: Build algorithms from lambda functions
-5. **Extensibility**: Easy to add formats, algorithms, and operations
+5. **Device-Aware**: Processing follows the image's device automatically
+6. **Extensibility**: Easy to add formats, algorithms, and operations
 
 ### Package Structure
 
 ```
 medical_image/
-├── data/                # Abstract Image, Patch, PatchGrid, ROI
-├── process/             # Static methods: Filters, Threshold, Metrics
-├── algorithms/          # Abstract Algorithm, FEBDS implementation
-└── utils/               # Error handling, annotations
+├── data/                # Image ABC, DicomImage, PNGImage, InMemoryImage, Patch, ROI
+├── process/             # Filters, Threshold, Morphology, Metrics, Frequency
+├── algorithms/          # Algorithm ABC, FEBDS, FCM, PFCM, KMeans, TopHat
+└── utils/               # device (GPU), logging, annotations, image_utils
 ```
 
-### Design Patterns 
+### Design Patterns
 
-The `medical-image-std` library extensively leverages several core design patterns:
-- **Strategy & Template Patterns (Algorithms):** Algorithms are implemented by inheriting from a base `Algorithm` class and defining their specific execution steps (often using lambda definitions in `__init__`) and standardizing evaluation through the `apply()` template method. This allows strategies like `FEBDS` or `FCM` to be swapped interchangeably.
-- **Lazy Loading (Data Management):** Image data classes like `DicomImage` initially store only file paths upon creation and defer heavy I/O and memory usage until `.load()` is invoked.
-- **Static Factories (Processing Operations):** Modules like `Filters`, `Threshold`, and `MorphologyOperations` operate statically taking Image inputs without maintaining internal state, ensuring reusability.
-
-**📖 Detailed Architecture**: See [docs/architecture.md](docs/architecture.md)
+- **Strategy & Template (Algorithms):** Algorithms inherit from `Algorithm` ABC, define steps as lambdas in `__init__`, and execute via the `apply()` template method. Strategies like FEBDS, FCM, KMeans are swappable.
+- **Lazy Loading (Data):** Image classes store file paths on creation; `.load()` defers I/O until needed.
+- **Static Factories (Processing):** `Filters`, `Threshold`, `MorphologyOperations` operate statelessly on Image inputs.
+- **Device Flow (GPU):** All processing methods infer the device from input images by default. Explicit `device=` overrides are still supported.
 
 ---
 
 ## Installation
 
 ### Requirements
-- Python 3.11 or 3.12
+- Python 3.11+
 - Linux OS
-- CUDA GPU (optional)
+- CUDA GPU (optional, for GPU acceleration)
 
 ### Install
 
 ```bash
 git clone https://github.com/LATIS-DocumentAI-Group/medical-image-std.git
 cd medical-image-std
-pip install -r requirements.txt
 pip install -e .
+```
+
+### Optional Dependencies
+
+```bash
+# Development tools (pytest, black, ruff, mypy)
+pip install -e ".[dev]"
+
+# GPU support
+pip install -e ".[gpu]"
+
+# Everything
+pip install -e ".[all]"
 ```
 
 ---
@@ -71,115 +82,302 @@ pip install -e .
 ### 1. Load Image (Lazy Loading)
 
 ```python
-from medical_image.data.dicom_image import DicomImage
+from medical_image import DicomImage
 
 # Create object (no data loaded yet)
 image = DicomImage("mammogram.dcm")
+image.load()  # Lazy loading
 
-# Load data when needed
-image.load()  # ← Lazy loading
-
-# Display and visualize
 image.display_info()
-image.plot()
 ```
 
 ### 2. Apply Processing
 
 ```python
-from medical_image.process.filters import Filters
-from medical_image.process.threshold import Threshold
+from medical_image import Filters, Threshold
 
-# Create output image
-output = DicomImage("output.dcm")
+output = image.clone()
 
-# Apply filters (static methods)
+# device is inferred from image automatically (no device= needed)
 Filters.gaussian_filter(image, output, sigma=2.0)
 Threshold.otsu_threshold(output, output)
-
-# Save result
-output.to_png()
 ```
 
 ### 3. Use Algorithms
 
 ```python
-from medical_image.algorithms.FEBDS import FebdsAlgorithm
+from medical_image import FebdsAlgorithm
 
-# Create algorithm (lambda functions defined in __init__)
-febds = FebdsAlgorithm(method="dog")
-
-# Apply algorithm sequence
-febds.apply(image, output)
+algo = FebdsAlgorithm(method="dog")
+output = image.clone()
+algo(image, output)  # __call__ returns output
 ```
 
 ### 4. Patch-based Processing
 
 ```python
-from medical_image.data.patch import PatchGrid
+from medical_image import PatchGrid
 
-# Create patch grid (calls _split() automatically)
 patch_grid = PatchGrid(image, patch_size=(256, 256))
 
-# Process each patch
 for patch in patch_grid.patches:
-    # Process patch.pixel_data
-    pass
-
-# Reconstruct
-reconstructed = patch_grid.reconstruct()
+    p = patch.load()
+    # process p.pixel_data
 ```
+
+---
+
+## GPU Acceleration
+
+### Automatic Device Inference
+
+All processing methods use `device=None` by default. The device is resolved automatically from the input image:
+
+```python
+# Move image to GPU once — all operations follow
+image.to("cuda")
+output = image.clone()
+
+# No device= parameter needed — inferred from image
+Filters.gaussian_filter(image, output, sigma=2.0)
+Filters.median_filter(output, output, size=5)
+Threshold.otsu_threshold(output, output)
+
+# Explicit override still works
+Filters.gaussian_filter(image, output, sigma=2.0, device="cpu")
+```
+
+The `resolve_device()` helper implements the priority: explicit parameter > image device > CPU fallback.
+
+```python
+from medical_image import resolve_device
+
+device = resolve_device(image, explicit=None)  # returns image.pixel_data.device
+```
+
+### DeviceContext Manager
+
+Manages GPU memory with automatic cache clearing and OOM fallback:
+
+```python
+from medical_image import DeviceContext
+
+with DeviceContext("cuda", verbose=True) as ctx:
+    image.to(ctx.device)
+    output = image.clone()
+    algo = FebdsAlgorithm(method="dog", device=str(ctx.device))
+    algo(image, output)
+    print(ctx.memory_stats())
+# GPU cache automatically cleared on exit
+```
+
+If CUDA is not available, `DeviceContext` falls back to CPU automatically.
+
+### OOM Fallback with `@gpu_safe`
+
+The `@gpu_safe` decorator catches CUDA Out-of-Memory errors and retries on CPU:
+
+```python
+from medical_image import gpu_safe
+
+@gpu_safe
+def my_processing(image, output, device=None):
+    Filters.gaussian_filter(image, output, sigma=2.0, device=device)
+    return output
+
+# If GPU runs out of memory, automatically retries on CPU
+result = my_processing(image, output, device="cuda")
+```
+
+### Mixed Precision
+
+Control floating-point precision globally. Medical imaging at 12-bit depth (0-4095) fits within float16 range (max 65504), enabling 2x throughput with half the memory:
+
+```python
+from medical_image import Precision, set_default_precision, get_dtype
+
+# Default is float32
+set_default_precision(Precision.HALF)      # float16 — 2x faster
+set_default_precision(Precision.BFLOAT16)  # bfloat16 — 2x faster, better range
+set_default_precision(Precision.FULL)      # float32 — default
+
+# Algorithms use autocast when precision != FULL on GPU
+algo = FebdsAlgorithm(method="dog", device="cuda")
+algo.precision = Precision.HALF
+algo(image, output)  # runs under torch.cuda.amp.autocast
+```
+
+### Batch Processing
+
+Process multiple images in a single GPU kernel launch:
+
+```python
+from medical_image import Filters
+
+# Batch of images as (B, C, H, W) tensor
+batch = torch.randn(8, 1, 256, 256, device="cuda")
+filtered = Filters.gaussian_filter_batch(batch, sigma=2.0)
+
+# Algorithm-level batching
+from medical_image import TopHatAlgorithm
+
+algo = TopHatAlgorithm(radius=4, device="cuda")
+results = algo.apply_batch(images, outputs)  # default: loops; subclasses can override
+```
+
+### Pinned Memory
+
+For faster CPU-to-GPU transfers:
+
+```python
+image.pin_memory()  # page-locked memory
+image.to("cuda")    # faster transfer
+```
+
+### Async GPU Pipeline
+
+Overlap disk I/O and GPU compute using CUDA streams:
+
+```python
+from medical_image import AsyncGPUPipeline
+
+pipeline = AsyncGPUPipeline(device="cuda")
+results = pipeline.process_images(loaded_images, algorithm)
+```
+
+### Multi-GPU Support
+
+Distribute processing across multiple GPUs:
+
+```python
+from medical_image import MultiGPUAlgorithm, FebdsAlgorithm
+
+multi = MultiGPUAlgorithm(FebdsAlgorithm, gpu_ids=[0, 1], method="dog")
+outputs = multi.apply_batch(images, [img.clone() for img in images])
+```
+
+---
+
+## Algorithms
+
+### Available Algorithms
+
+| Algorithm | Class | Description |
+|-----------|-------|-------------|
+| **Top-Hat** | `TopHatAlgorithm` | White top-hat transform highlighting bright structures smaller than the SE |
+| **K-Means** | `KMeansAlgorithm` | Hard clustering with k-means++, isolates brightest cluster |
+| **FCM** | `FCMAlgorithm` | Fuzzy C-Means with soft membership, isolates brightest cluster |
+| **PFCM** | `PFCMAlgorithm` | Possibilistic FCM detecting microcalcifications via atypicality |
+| **FEBDS** | `FebdsAlgorithm` | Fourier Enhancement + Band-pass filtering with DoG/LoG/FFT modes |
+
+### Custom Algorithm
+
+```python
+from medical_image import Algorithm, Filters, Threshold
+
+class MyAlgorithm(Algorithm):
+    def __init__(self, device=None):
+        super().__init__(device=device)
+        self.blur = lambda img, out: Filters.gaussian_filter(img, out, sigma=2.0, device=self.device)
+        self.thresh = lambda img, out: Threshold.otsu_threshold(img, out, device=self.device)
+
+    def apply(self, image, output):
+        self.blur(image, output)
+        self.thresh(output, output)
+        return output
+```
+
+---
+
+## Processing Modules
+
+### Filters
+- `gaussian_filter` — Gaussian blur
+- `median_filter` — Median denoising
+- `convolution` — Generic 2D convolution
+- `difference_of_gaussian` — DoG band-pass filter
+- `laplacian_of_gaussian` — LoG edge detection
+- `butterworth_kernel` — Frequency-domain band-pass
+- `gamma_correction` — Gamma correction
+- `contrast_adjust` — Contrast and brightness adjustment
+- `gaussian_filter_batch` — Batched Gaussian filter (B, C, H, W)
+
+### Threshold
+- `otsu_threshold` — Global Otsu binarization
+- `sauvola_threshold` — Adaptive local thresholding
+- `binarize` — Local/global variance-based binarization
+
+### Morphology
+- `morphology_closing` — Binary closing (dilation + erosion)
+- `region_fill` — Binary hole filling
+- `erosion` — Grayscale erosion with disk SE
+- `dilation` — Grayscale dilation with disk SE
+- `white_top_hat` — White top-hat transform
+
+### Metrics
+- `entropy` — Shannon entropy
+- `joint_entropy` — Joint Shannon entropy
+- `mutual_information` — Mutual information between two images
+- `local_variance` — Per-region local variance
+- `variance` — Global variance
+
+### Frequency
+- `fft` — 2D Fast Fourier Transform
+- `inverse_fft` — 2D Inverse FFT
 
 ---
 
 ## Key Concepts
 
 ### Lazy Loading Pattern
-- **Object Creation**: `image = DicomImage("path.dcm")` → Only stores path
-- **Data Loading**: `image.load()` → Loads pixel data to memory
-- **Memory Efficient**: Load only when needed, clear when done
+- **Object Creation**: `image = DicomImage("path.dcm")` — only stores path
+- **Data Loading**: `image.load()` — loads pixel data to memory
+- **Memory Efficient**: load only when needed, clone lightweight copies
 
-### Static Processing Methods
-All processing operations are static methods:
-- **Filters**: `Filters.gaussian_filter()`, `Filters.median_filter()`, etc.
-- **Threshold**: `Threshold.otsu_threshold()`, `Threshold.sauvola_threshold()`, etc.
-- **Metrics**: `Metrics.entropy()`, `Metrics.mutual_information()`, etc.
+### Image Lifecycle
 
-### Algorithm Framework
-Algorithms define processing pipelines:
-- **`__init__`**: Define steps as lambda functions
-- **`apply`**: Execute sequence of lambdas
-
-Example:
 ```python
-class MyAlgorithm(Algorithm):
-    def __init__(self):
-        self.step1 = lambda img, out: Filters.gaussian_filter(img, out, sigma=2.0)
-        self.step2 = lambda img, out: Threshold.otsu_threshold(img, out)
-    
-    def apply(self, image, output):
-        self.step1(image, output)
-        self.step2(output, output)
+image = DicomImage("scan.dcm")   # metadata only
+image.load()                      # pixel_data loaded as torch.Tensor
+image.to("cuda")                  # move to GPU
+output = image.clone()            # lightweight clone (no heavy DICOM objects)
+output.pin_memory()               # page-lock for fast transfers
 ```
 
-### PatchGrid System
-- **Automatic splitting**: `_split()` called in `__init__()`
-- **Automatic padding**: Handles non-divisible dimensions
-- **Easy reconstruction**: `reconstruct()` removes padding
+### Device Flow
+
+All ~30 processing methods follow the same pattern:
+
+```python
+def some_filter(image, output, ..., device=None):
+    device = resolve_device(image, explicit=device)  # infer from image
+    img = image.pixel_data.to(device).float()
+    # ... processing ...
+    output.pixel_data = result
+```
+
+### Logging
+
+The library uses Python's standard `logging` with `NullHandler` (no output by default):
+
+```python
+from medical_image.utils.logging import configure_logging
+
+# Enable console + file logging
+configure_logging(level=logging.DEBUG, log_file="processing.log")
+```
 
 ---
 
 ## Visual Examples
 
-The following section demonstrates the utilization of all clustering and morphological algorithms included with the library on a sample mammogram section (`20527054.dcm`), capturing an ROI with center `(cx=1250, cy=2000)` and a half-size of `127`.
+The following demonstrates all algorithms on a mammogram ROI (`20527054.dcm`, center `cx=1250, cy=2000`, half-size `127`).
 
 ### Base Region Of Interest (ROI)
 
 ![Original ROI](docs/images/roi.png)
 
 ### Algorithm Outputs
-
-Below are the intermediate output visualizations produced by each algorithm when isolating microcalcification structure.
 
 #### Top-Hat Transform
 ![Top-Hat Output](docs/images/01_tophat.png)
@@ -199,8 +397,33 @@ Averages across noise using cluster typicality measurements, masking out all "at
 
 #### FEBDS Output
 ![FEBDS Array Output](docs/images/array.png)
-
 Uses a hybrid approach of localized difference-of-gaussian (or frequency band-pass) filters and adaptive binarizations.
+
+---
+
+## Testing
+
+```bash
+# Run all tests
+pytest medical_image/tests/
+
+# Run specific test suites
+pytest medical_image/tests/test_dicom.py          # DICOM + processing tests
+pytest medical_image/tests/test_mc_algorithms.py   # Algorithm unit tests
+pytest medical_image/tests/test_gpu.py             # GPU + device inference tests
+
+# Tests auto-detect CUDA — GPU tests run on both CPU and CUDA when available
+# Tests that require CUDA are skipped on CPU-only machines
+```
+
+### Test Coverage
+
+| Suite | Tests | What it covers |
+|-------|:-----:|----------------|
+| `test_dicom.py` | 18 | DICOM loading, filters vs scikit-image, morphology vs scipy, FEBDS pipeline, patches |
+| `test_mc_algorithms.py` | 71 | KMeans, FCM, PFCM, TopHat, full pipeline integration, ROI extraction |
+| `test_gpu.py` | 47 | Device inference, DeviceContext, Precision, pin_memory, all modules on CPU+CUDA, batch ops |
+| **Total** | **136+** | |
 
 ---
 
@@ -219,55 +442,20 @@ Uses a hybrid approach of localized difference-of-gaussian (or frequency band-pa
 
 ---
 
-## Testing
-
-### Run Tests
-
-```bash
-# Run all tests
-pytest
-
-# Run CI tests
-pytest medical_image/tests/test_dicom.py
-
-# Check formatting
-black --check .
-```
-
-### CI Requirements
-
-All code must pass CI before merging:
-- ✅ Tests pass: `pytest medical_image/tests/test_dicom.py`
-- ✅ Black formatting: `black --check .`
-
-**Pre-push validation**:
-```bash
-pytest medical_image/tests/test_dicom.py && black --check .
-```
-
-**📖 CI Details**: See [docs/contributing.md](docs/contributing.md#ci-requirements)
-
----
-
 ## Development
 
 ### Code Formatting
 
 ```bash
-# Format code
 black medical_image/
-
-# Check formatting (CI requirement)
-black --check .
+black --check .        # CI check
 ```
 
 ### Adding Features
 
-- **New Image Format**: Extend `Image` abstract class
-- **New Processing Method**: Add static method to appropriate class
-- **New Algorithm**: Extend `Algorithm` abstract class
-
-**📖 Extension Guide**: See [docs/architecture.md](docs/architecture.md#extension-points)
+- **New Image Format**: Extend `Image` ABC, implement `load()` and `save()`
+- **New Processing Method**: Add static method to the appropriate class, use `device=None` + `resolve_device()`
+- **New Algorithm**: Extend `Algorithm` ABC, implement `apply()`, use lambda composition in `__init__`
 
 ---
 
@@ -277,10 +465,8 @@ black --check .
 2. Create feature branch
 3. Follow code standards (Black formatting)
 4. Write tests following existing structure
-5. Ensure CI passes locally
+5. Ensure CI passes locally: `pytest medical_image/tests/ && black --check .`
 6. Submit pull request
-
-**📖 Full Guide**: See [docs/contributing.md](docs/contributing.md)
 
 ---
 
@@ -299,12 +485,4 @@ MIT License - See [LICENSE](LICENSE) file
 
 ## Version
 
-**Current**: 0.2.8.dev1
-
----
-
-## Quick Navigation
-
-**Getting Started** → [Installation](#-installation) → [Quick Start](#-quick-start)  
-**Learn More** → [Documentation](#-documentation) → [Architecture](docs/architecture.md)  
-**Contribute** → [Contributing Guide](docs/contributing.md) → [CI Requirements](docs/contributing.md#ci-requirements)
+**Current**: 0.2.0

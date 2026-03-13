@@ -57,19 +57,18 @@ pip install --upgrade pip
 ### Install Dependencies
 
 ```bash
-# Install all dependencies including dev tools
-pip install -r requirements.txt
-
-# Install package in editable mode
-pip install -e .
+# Install package in editable mode with dev dependencies
+pip install -e ".[dev]"
 ```
 
-### Install Development Tools
+### Development Tools
 
-```bash
-# Install additional development tools
-pip install black pytest pytest-cov flake8 mypy
-```
+The `[dev]` extra installs the following tools (defined in `pyproject.toml`):
+
+- **pytest** (>=7.0) -- test runner
+- **black** (>=23.0) -- code formatter
+- **ruff** -- linter
+- **mypy** -- static type checker
 
 ---
 
@@ -103,26 +102,36 @@ All functions should include type hints:
 ```python
 from typing import Optional, List, Tuple
 import torch
+from medical_image.utils.device import resolve_device
 
 def process_image(
     image: Image,
     output: Image,
-    sigma: float = 2.0
+    sigma: float = 2.0,
+    device: Optional[str] = None
 ) -> torch.Tensor:
     """
     Process an image with Gaussian filter.
-    
+
     Args:
         image: Input image
         output: Output image object
         sigma: Standard deviation for Gaussian kernel
-        
+        device: Target device (None to auto-resolve from input image)
+
     Returns:
         Processed image tensor
     """
+    target = resolve_device(image, explicit=device)
     # Implementation
     pass
 ```
+
+**Conventions for processing methods:**
+
+- Use the parameter name `image`, not `image_data`.
+- Default `device=None` and call `resolve_device()` to determine the target
+  device at runtime.
 
 ### Docstrings
 
@@ -226,8 +235,8 @@ class TestFilters:
 
 #### 1. Tests Must Pass
 ```bash
-# Run the same tests that CI runs
-pytest medical_image/tests/test_dicom.py
+# Run all tests
+pytest medical_image/tests/
 
 # Ensure all your new tests pass
 pytest medical_image/tests/test_your_feature.py
@@ -248,7 +257,7 @@ black .
 #### 3. CI Validation Checklist
 
 Before pushing, ensure:
-- [ ] All tests pass locally: `pytest`
+- [ ] All tests pass locally: `pytest medical_image/tests/`
 - [ ] Code is formatted with Black: `black --check .`
 - [ ] New tests follow existing structure
 - [ ] Tests are in `medical_image/tests/`
@@ -258,22 +267,21 @@ Before pushing, ensure:
 
 ```bash
 # Run all tests
-pytest
+pytest medical_image/tests/
 
-# Run tests that CI runs
+# Run specific test files
 pytest medical_image/tests/test_dicom.py
+pytest medical_image/tests/test_mc_algorithms.py
+pytest medical_image/tests/test_gpu.py
 
 # Run with coverage
-pytest --cov=medical_image --cov-report=html
-
-# Run specific test file
-pytest medical_image/tests/test_filters.py
+pytest medical_image/tests/ --cov=medical_image --cov-report=html
 
 # Run specific test
 pytest medical_image/tests/test_filters.py::TestFilters::test_gaussian_filter
 
 # Run with verbose output
-pytest -v
+pytest medical_image/tests/ -v
 ```
 
 ### Test Coverage
@@ -294,14 +302,14 @@ firefox htmlcov/index.html
 The CI pipeline runs automatically on push to `master`:
 
 1. **Matrix Testing**: Tests run on Python 3.11 and 3.12
-2. **Test Execution**: `pytest medical_image/tests/test_dicom.py`
+2. **Test Execution**: `pytest medical_image/tests/`
 3. **Format Check**: `black --check .`
 4. **Result**: Build fails if either tests fail OR formatting is incorrect
 
 **To ensure CI passes:**
 ```bash
 # Run this before pushing
-pytest medical_image/tests/test_dicom.py && black --check .
+pytest medical_image/tests/ && black --check .
 ```
 
 ---
@@ -370,8 +378,8 @@ result = function_name(param1, param2)
 
 4. **Run tests:**
    ```bash
-   pytest
-   black --check medical_image/
+   pytest medical_image/tests/
+   black --check .
    ```
 
 5. **Commit changes:**
@@ -498,7 +506,7 @@ What actually happens
 ## Environment
 - OS: Linux (Ubuntu 22.04)
 - Python version: 3.11
-- Library version: 0.2.8.dev1
+- Library version: 0.2.0
 - CUDA version (if applicable): 12.8
 
 ## Error Messages
@@ -584,14 +592,16 @@ Any other relevant information
 1. **Create algorithm class:**
    ```python
    from medical_image.algorithms.algorithm import Algorithm
-   
+   from medical_image.utils.device import resolve_device
+
    class NewAlgorithm(Algorithm):
-       def __init__(self, param1, param2):
-           super().__init__()
+       def __init__(self, param1, param2, device=None):
+           super().__init__(device=device)
            self.param1 = param1
            self.param2 = param2
-       
+
        def apply(self, image: Image, output: Image):
+           target = resolve_device(image, explicit=self.device)
            # Implementation
            pass
    ```
@@ -607,7 +617,28 @@ Any other relevant information
 
 ### Adding New Filters
 
-1. **Add static method to `Filters` class**
+1. **Add static method to `Filters` class** following this template:
+   ```python
+   from medical_image.utils.device import resolve_device
+
+   @staticmethod
+   def new_filter(image: Image, output: Image, param: float = 1.0,
+                  device: Optional[str] = None) -> torch.Tensor:
+       """Apply new filter.
+
+       Args:
+           image: Input image
+           output: Output image object
+           param: Filter parameter
+           device: Target device (None to auto-resolve)
+
+       Returns:
+           Filtered image tensor
+       """
+       target = resolve_device(image, explicit=device)
+       # Implementation
+       pass
+   ```
 2. **Include docstring with mathematical definition**
 3. **Add tests**
 4. **Update documentation**

@@ -519,7 +519,7 @@ dataloader = DataLoader(
     batch_size=16,
     shuffle=True,
     num_workers=4,
-    pin_memory=True  # For GPU training
+    pin_memory=True  # Pin host memory for faster GPU transfers
 )
 
 # Training loop
@@ -527,12 +527,24 @@ for epoch in range(num_epochs):
     for batch_idx, (images, annotations) in enumerate(dataloader):
         # images: torch.Tensor of shape (batch_size, H, W)
         # annotations: list of Annotation objects
-        
+
         # Move to GPU
         images = images.to('cuda')
-        
+
         # Training step
         # ...
+```
+
+**Pin memory at the image level:** If you are working with `Image` objects before
+they enter the DataLoader, you can call `image.pin_memory()` to place the
+underlying `pixel_data` tensor in page-locked (pinned) memory. This is especially
+useful in custom `__getitem__` implementations where you return raw `Image` objects
+and want the subsequent host-to-device transfer to be asynchronous:
+
+```python
+image = DicomImage(path)
+image.load()
+image.pin_memory()  # pin pixel_data for faster .to('cuda') later
 ```
 
 ### Custom Collate Function
@@ -581,6 +593,28 @@ dataset = CbisDdsm(
 )
 ```
 
+### Batch Processing with Filters
+
+For dataset-level preprocessing, `Filters.gaussian_filter_batch()` applies a
+Gaussian filter to an entire batch of images in a single call. This is
+significantly faster than filtering images one at a time because it leverages
+batched convolution on the GPU.
+
+```python
+import torch
+from medical_image.process.filters import Filters
+
+# Assume images is a batched tensor of shape (B, 1, H, W)
+images = torch.stack([dataset[i][0].unsqueeze(0) for i in range(batch_size)])
+
+# Apply Gaussian filter to the full batch at once
+smoothed = Filters.gaussian_filter_batch(images, sigma=1.5, device="cuda")
+```
+
+The `device` parameter controls where the convolution runs. If omitted, it
+defaults to the device of the input tensor. The `truncate` parameter (default
+4.0) controls the kernel size relative to sigma.
+
 ---
 
 ## Best Practices
@@ -594,9 +628,27 @@ dataset.load_batch(batch_size=32)
 # Process batch
 # ...
 
-# Free memory
+# Free memory -- destroy_batch should call torch.cuda.empty_cache() internally
 dataset.destroy_batch()
-torch.cuda.empty_cache()
+```
+
+**Using DeviceContext for automatic GPU memory management:**
+
+`DeviceContext` is a context manager that clears the GPU cache on entry and exit,
+tracks memory usage, and falls back to CPU automatically when CUDA is unavailable.
+Wrap GPU-intensive sections with it instead of managing `torch.cuda.empty_cache()`
+calls manually:
+
+```python
+from medical_image.utils.device import DeviceContext
+
+with DeviceContext(device="cuda", fallback="cpu") as ctx:
+    dataset.load_batch(batch_size=32)
+    for image in batch:
+        image.to(ctx.active_device)
+        # ... process on GPU ...
+    dataset.destroy_batch()
+# GPU cache is cleared automatically on exit
 ```
 
 ### 2. Data Validation
