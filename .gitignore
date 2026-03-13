@@ -11,3 +11,4 @@ __pycache__
 /medical_image_std.egg-info/
 /dist/
 /dummy_data
+/.claude/

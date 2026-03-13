@@ -2,44 +2,265 @@
 
 ## Overview
 
-This guide covers working with medical image datasets in the Medical Image Standard Library, with a focus on the CBIS-DDSM mammography dataset.
+This guide covers working with medical image datasets in the Medical Image Standard Library, including the `MedicalDataset` base class, loading strategies, and the CBIS-DDSM mammography dataset.
 
 ---
 
 ## Table of Contents
 
-1. [Dataset Structure](#dataset-structure)
-2. [CBIS-DDSM Dataset](#cbis-ddsm-dataset)
-3. [Creating Custom Datasets](#creating-custom-datasets)
-4. [Annotations](#annotations)
-5. [Data Loading Strategies](#data-loading-strategies)
+1. [MedicalDataset Base Class](#medicaldataset-base-class)
+2. [Dataset Loading Strategies](#dataset-loading-strategies)
+3. [CBIS-DDSM Dataset](#cbis-ddsm-dataset)
+4. [Creating Custom Datasets](#creating-custom-datasets)
+5. [Annotations](#annotations)
 6. [PyTorch Integration](#pytorch-integration)
 
 ---
 
-## Dataset Structure
+## MedicalDataset Base Class
 
-### MedicalDataset Base Class
+`MedicalDataset` is an abstract class that extends PyTorch's `torch.utils.data.Dataset`. It provides a standardized interface for medical image datasets with support for different annotation types, batch loading, and memory management.
 
-The `MedicalDataset` class provides a standardized interface for medical image datasets.
+### Class Signature
 
-**Key Features:**
-- PyTorch Dataset compatibility
-- Flexible annotation support
-- Batch loading capabilities
-- Transform pipeline integration
-- Memory-efficient loading
-
-**Architecture:**
+```python
+class MedicalDataset(Dataset, ABC):
+    def __init__(
+        self,
+        base_path: str,          # Root directory containing images
+        file_format: str = ".dcm",  # File extension to scan for
+        transform: Optional[Callable] = None,  # Transform pipeline
+        train: bool = True,      # Training split flag
+        test: bool = False,      # Test split flag
+    ):
 ```
-MedicalDataset (Abstract)
-├── __init__()
-├── __len__()
-├── __getitem__()
-├── load_batch() (Abstract)
-├── destroy_batch() (Abstract)
-├── load_mask()
-└── apply_transform() (Abstract)
+
+### Key Attributes
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `base_path` | str | Root directory containing the dataset files |
+| `file_format` | str | File extension filter (`.dcm`, `.png`, etc.) |
+| `transform` | Callable or None | Optional transform applied to each sample |
+| `images_path` | List[str] | Populated by subclasses with paths to image files |
+| `image_labels` | Any | Label storage (format depends on subclass) |
+| `current_image` | Image or None | Reference to the most recently loaded image |
+| `train` / `test` | bool | Split flags for train/test partitioning |
+
+### Abstract Methods
+
+Subclasses **must** implement these methods:
+
+| Method | Signature | Purpose |
+|--------|-----------|---------|
+| `load_batch` | `(batch_size) -> Image` | Load a batch of images into memory |
+| `destroy_batch` | `() -> Image` | Free memory from the current batch |
+| `apply_transform` | `(transform, pixel_data, label)` | Apply transforms to a sample |
+
+### Built-in Methods
+
+| Method | Purpose |
+|--------|---------|
+| `__len__()` | Returns dataset size |
+| `__getitem__(idx)` | Returns `(pixel_data, label)` tuple, handles ROI extraction and annotation loading |
+| `load_mask(image_path)` | Loads a corresponding binary mask from the mask directory |
+
+### Architecture Diagram
+
+```mermaid
+classDiagram
+    class Dataset {
+        <<PyTorch>>
+        +__len__()
+        +__getitem__(idx)
+    }
+
+    class MedicalDataset {
+        <<abstract>>
+        +base_path: str
+        +file_format: str
+        +transform: Callable
+        +images_path: List~str~
+        +train: bool
+        +test: bool
+        +__len__()
+        +__getitem__(idx)
+        +load_batch(batch_size)* abstract
+        +destroy_batch()* abstract
+        +apply_transform(transform, data, label)* abstract
+        +load_mask(image_path)
+    }
+
+    class CbisDDsmDataset {
+        +task: str
+        +image_labels_path: str
+    }
+
+    class YourCustomDataset {
+        +load_batch()
+        +destroy_batch()
+        +apply_transform()
+    }
+
+    Dataset <|-- MedicalDataset
+    MedicalDataset <|-- CbisDDsmDataset
+    MedicalDataset <|-- YourCustomDataset
+```
+
+### Annotation Support
+
+`MedicalDataset.__getitem__()` supports three annotation geometry types:
+
+| Type | `GeometryType` | Description |
+|------|-----------------|-------------|
+| Bounding Box | `BOUNDING_BOX` | `[x_min, y_min, x_max, y_max]` — crops via `RegionOfInterest` |
+| Polygon | `POLYGON` | List of `(x, y)` points — crops via `RegionOfInterest` |
+| Mask | `MASK` | Binary mask loaded from a parallel directory via `load_mask()` |
+
+---
+
+## Dataset Loading Strategies
+
+Medical images are large (a single mammogram can be 50+ MB). The library supports multiple loading strategies to balance memory usage and speed.
+
+### Strategy 1: Loading from Local Paths
+
+The most common approach — point to a local directory of DICOM/PNG files:
+
+```python
+from medical_image.data.dicom_image import DicomImage
+import os
+
+# Scan a local directory for DICOM files
+base_dir = "/data/mammograms"
+paths = [os.path.join(base_dir, f) for f in os.listdir(base_dir) if f.endswith(".dcm")]
+
+# Lazy-load individual images
+image = DicomImage(paths[0])
+image.load()  # pixel_data is now available
+```
+
+With `MedicalDataset`, subclasses populate `self.images_path` with local file paths in `__init__`. The base class `__getitem__` then loads each file on demand.
+
+### Strategy 2: Lazy Loading (On-Demand)
+
+**Best for:** Large datasets that do not fit in memory.
+
+Images are loaded only when accessed. This is the library's default pattern — `Image.__init__()` stores the path, and `.load()` reads pixel data:
+
+```python
+class LazyDataset(MedicalDataset):
+    def __init__(self, base_path, **kwargs):
+        super().__init__(base_path, **kwargs)
+        self.images_path = self._scan_directory()
+
+    def __getitem__(self, idx):
+        img = DicomImage(self.images_path[idx])
+        img.load()  # I/O happens here, not at init time
+        pixel_data = img.pixel_data
+        if self.transform:
+            pixel_data, _ = self.apply_transform(self.transform, pixel_data, None)
+        return pixel_data
+
+    # ... implement abstract methods ...
+```
+
+| Pros | Cons |
+|------|------|
+| Low memory footprint | I/O overhead per access |
+| Scales to any dataset size | Slower iteration |
+
+### Strategy 3: Batch Loading and Destruction
+
+**Best for:** Medium-to-large datasets. Load a window of images, process them, then free memory.
+
+```python
+class BatchedDataset(MedicalDataset):
+    def load_batch(self, batch_size):
+        batch = []
+        for i in range(batch_size):
+            if self.current_index < len(self.images_path):
+                img = DicomImage(self.images_path[self.current_index])
+                img.load()
+                batch.append(img)
+                self.current_index += 1
+        return batch
+
+    def destroy_batch(self):
+        self.current_image = None
+        import torch
+        torch.cuda.empty_cache()
+```
+
+| Pros | Cons |
+|------|------|
+| Balanced memory usage | Cache misses on random access |
+| Reduced I/O overhead | More complex logic |
+
+### Strategy 4: Preloaded (All in Memory)
+
+**Best for:** Small datasets that fit in RAM/VRAM.
+
+```python
+class PreloadedDataset(MedicalDataset):
+    def __init__(self, base_path, **kwargs):
+        super().__init__(base_path, **kwargs)
+        self.images_path = self._scan_directory()
+        self.images = []
+        for path in self.images_path:
+            img = DicomImage(path)
+            img.load()
+            self.images.append(img)
+
+    def __getitem__(self, idx):
+        return self.images[idx].pixel_data
+```
+
+| Pros | Cons |
+|------|------|
+| Fastest access | High memory usage |
+| No I/O during training | Slow initialization |
+
+### Strategy 5: Automatic Caching
+
+Cache preprocessed tensors to disk to avoid repeated DICOM parsing:
+
+```python
+import torch, os
+
+CACHE_DIR = "/data/cache"
+
+def load_cached(path):
+    cache_path = os.path.join(CACHE_DIR, os.path.basename(path) + ".pt")
+    if os.path.exists(cache_path):
+        return torch.load(cache_path)
+    img = DicomImage(path)
+    img.load()
+    torch.save(img.pixel_data, cache_path)
+    return img.pixel_data
+```
+
+| Pros | Cons |
+|------|------|
+| Fast after first pass | Extra disk space |
+| Avoids repeated DICOM parsing | Cache invalidation needed if data changes |
+
+### Strategy Comparison
+
+```mermaid
+graph TD
+    Q1{"Dataset fits<br/>in memory?"}
+    Q1 -->|Yes| PRE["Preloaded<br/>(all in RAM)"]
+    Q1 -->|No| Q2{"Sequential<br/>access?"}
+    Q2 -->|Yes| BATCH["Batch Loading<br/>(load N, process, free)"]
+    Q2 -->|No| Q3{"Repeated<br/>epochs?"}
+    Q3 -->|Yes| CACHE["Cached to Disk<br/>(.pt files)"]
+    Q3 -->|No| LAZY["Lazy Loading<br/>(on-demand)"]
+
+    style PRE fill:#90EE90
+    style BATCH fill:#FFE4B5
+    style CACHE fill:#B0E0E6
+    style LAZY fill:#DDA0DD
 ```
 
 ---

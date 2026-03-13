@@ -54,12 +54,26 @@ medical_image/
 - Linux OS
 - CUDA GPU (optional, for GPU acceleration)
 
-### Install
+### Option A — Using `venv`
 
 ```bash
 git clone https://github.com/LATIS-DocumentAI-Group/medical-image-std.git
 cd medical-image-std
+
+python -m venv .venv
+source .venv/bin/activate
 pip install -e .
+```
+
+### Option B — Using `uv` (Astral)
+
+```bash
+git clone https://github.com/LATIS-DocumentAI-Group/medical-image-std.git
+cd medical-image-std
+
+uv venv
+source .venv/bin/activate
+uv pip install -e .
 ```
 
 ### Optional Dependencies
@@ -68,12 +82,21 @@ pip install -e .
 # Development tools (pytest, black, ruff, mypy)
 pip install -e ".[dev]"
 
-# GPU support
+# GPU support (requires CUDA-compatible GPU and drivers)
 pip install -e ".[gpu]"
 
 # Everything
 pip install -e ".[all]"
 ```
+
+### GPU Requirements
+
+GPU acceleration requires:
+- NVIDIA GPU with CUDA support
+- CUDA toolkit installed (12.x recommended)
+- PyTorch with CUDA backend (`torch.cuda.is_available()` should return `True`)
+
+Without a GPU, all operations run on CPU automatically.
 
 ---
 
@@ -113,7 +136,48 @@ output = image.clone()
 algo(image, output)  # __call__ returns output
 ```
 
-### 4. Patch-based Processing
+### 4. Visualize Results
+
+```python
+import matplotlib.pyplot as plt
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+
+axes[0].imshow(image.pixel_data.cpu().numpy(), cmap="gray")
+axes[0].set_title("Original")
+
+axes[1].imshow(output.pixel_data.cpu().numpy(), cmap="gray")
+axes[1].set_title("FEBDS Output")
+
+for ax in axes:
+    ax.axis("off")
+plt.tight_layout()
+plt.show()
+```
+
+### 5. Display Image Info
+
+`display_info()` logs metadata via Python's `logging` module. Enable logging to see the output:
+
+```python
+import logging
+logging.basicConfig(level=logging.INFO)
+
+image.display_info()
+# Output:
+# === Image Info ===
+# File Path: mammogram.dcm
+# Pixel Data: Loaded
+# Pixel Data Type: torch.float32
+# Shape (H x W): torch.Size([4096, 3328])
+# Device: cpu
+# Width: 3328
+# Height: 4096
+# Annotations: None
+# =================
+```
+
+### 6. Patch-based Processing
 
 ```python
 from medical_image import PatchGrid
@@ -212,17 +276,53 @@ algo(image, output)  # runs under torch.cuda.amp.autocast
 Process multiple images in a single GPU kernel launch:
 
 ```python
-from medical_image import Filters
+import torch
+from medical_image import Filters, TopHatAlgorithm, InMemoryImage
 
-# Batch of images as (B, C, H, W) tensor
+# --- Filter-level batching (single GPU kernel) ---
 batch = torch.randn(8, 1, 256, 256, device="cuda")
 filtered = Filters.gaussian_filter_batch(batch, sigma=2.0)
 
-# Algorithm-level batching
-from medical_image import TopHatAlgorithm
+# --- Algorithm-level batching ---
+# Build Image objects from tensors
+images = []
+outputs = []
+for i in range(4):
+    img = InMemoryImage.from_array(torch.randn(256, 256))
+    img.to("cuda")
+    images.append(img)
+    outputs.append(img.clone())
 
 algo = TopHatAlgorithm(radius=4, device="cuda")
-results = algo.apply_batch(images, outputs)  # default: loops; subclasses can override
+results = algo.apply_batch(images, outputs)  # loops over apply(); subclasses can override
+```
+
+### GPU Memory Clearing
+
+To free GPU memory when you are done processing:
+
+```python
+import torch
+
+# Option 1: Manual cache clearing
+del output  # remove references to GPU tensors
+torch.cuda.empty_cache()  # release cached memory back to CUDA
+
+# Option 2: DeviceContext (automatic)
+from medical_image import DeviceContext
+
+with DeviceContext("cuda") as ctx:
+    # ... all GPU work here ...
+    pass
+# GPU cache is automatically cleared when the context exits
+
+# Option 3: Full GPU memory reset (clears everything)
+torch.cuda.reset_peak_memory_stats()
+torch.cuda.empty_cache()
+
+# Check current GPU memory usage
+print(f"Allocated: {torch.cuda.memory_allocated() / 1e6:.1f} MB")
+print(f"Cached:    {torch.cuda.memory_reserved() / 1e6:.1f} MB")
 ```
 
 ### Pinned Memory

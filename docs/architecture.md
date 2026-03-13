@@ -402,19 +402,19 @@ graph TB
         gpu_safe["@gpu_safe decorator"]
     end
 
-    subgraph "Precision"
-        Precision["Precision enum: FULL / HALF / BFLOAT16"]
+    subgraph "Precision Control"
+        PrecisionEnum["Precision enum: FULL / HALF / BFLOAT16"]
     end
 
     resolve_device --> ProcessMethods[Processing Methods]
     DeviceContext --> UserCode[User Pipeline Code]
     gpu_safe --> ProcessMethods
-    Precision --> Algorithm[Algorithm.__call__]
+    PrecisionEnum --> Algorithm[Algorithm.__call__]
 
     style resolve_device fill:#90EE90
     style DeviceContext fill:#FFE4B5
     style gpu_safe fill:#DDA0DD
-    style Precision fill:#B0E0E6
+    style PrecisionEnum fill:#B0E0E6
 ```
 
 All processing methods (`Filters`, `Threshold`, `Morphology`, `Frequency`) accept `device=None` and call `resolve_device(image, explicit=device)` internally. This means the caller can either:

@@ -638,8 +638,8 @@ flowchart TD
     Median --> Gamma["Gamma Correction<br/>γ=1.25<br/>out = (in/4095)^γ × 4095"]
 
     Gamma --> ThreshCheck{Method?}
-    ThreshCheck -->|"dog" or "log"| Otsu["Otsu Threshold<br/>(automatic)"]
-    ThreshCheck -->|"fft"| Binarize["Variance Binarization<br/>α=1"]
+    ThreshCheck -->|dog / log| Otsu["Otsu Threshold<br/>(automatic)"]
+    ThreshCheck -->|fft| Binarize["Variance Binarization<br/>α=1"]
 
     Otsu --> Closing["Morphological Closing<br/>7×7 kernel"]
     Binarize --> Closing
