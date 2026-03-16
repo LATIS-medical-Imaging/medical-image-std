@@ -10,7 +10,7 @@ from typing import Optional, Callable, Dict, Any, Tuple, List
 
 import torch
 
-from log_manager import logger
+from medical_image.utils.logging import logger
 from medical_image.data.dicom_image import DicomImage
 from medical_image.datasets.base_dataset import BaseDataset
 from medical_image.datasets.inbreast import INbreastDataset

@@ -13,7 +13,7 @@ import urllib.request
 from pathlib import Path
 from typing import Literal, Optional, List
 
-from log_manager import logger
+from medical_image.utils.logging import logger
 
 
 def download(

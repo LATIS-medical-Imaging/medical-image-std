@@ -15,7 +15,7 @@ import torch
 from PIL import Image as PILImage
 from skimage.draw import polygon as draw_polygon, disk as draw_disk
 
-from log_manager import logger
+from medical_image.utils.logging import logger
 
 
 # ---------------------------------------------------------------------------

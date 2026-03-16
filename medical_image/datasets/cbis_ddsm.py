@@ -13,7 +13,7 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-from log_manager import logger
+from medical_image.utils.logging import logger
 from medical_image.data.dicom_image import DicomImage
 from medical_image.datasets.base_dataset import BaseDataset
 from medical_image.utils.mask_utils import stack_dicom_masks

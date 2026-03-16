@@ -12,7 +12,7 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 
-from log_manager import logger
+from medical_image.utils.logging import logger
 from medical_image.utils.downloader import download
 
 

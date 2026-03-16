@@ -10,8 +10,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
 
-from log_manager import logger
-
+from medical_image.utils.logging import logger
 
 # ---------------------------------------------------------------------------
 # Data classes for paired samples
