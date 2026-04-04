@@ -76,9 +76,7 @@ class CustomINbreastDataset(BaseDataset):
         inbreast_dir = root / "INbreast Release 1.0"
 
         if not inbreast_dir.exists():
-            raise FileNotFoundError(
-                f"'INbreast Release 1.0' not found in {root}"
-            )
+            raise FileNotFoundError(f"'INbreast Release 1.0' not found in {root}")
 
         dicoms_dir = inbreast_dir / "AllDICOMs"
         xml_dir = inbreast_dir / "AllXML"
@@ -128,7 +126,9 @@ class CustomINbreastDataset(BaseDataset):
                         f"Resizing mask {mask_np.shape} → ({h}, {w}) "
                         f"for case {sample.case_id}"
                     )
-                    mask_tensor = torch.from_numpy(mask_np).unsqueeze(0).unsqueeze(0).float()
+                    mask_tensor = (
+                        torch.from_numpy(mask_np).unsqueeze(0).unsqueeze(0).float()
+                    )
                     mask_tensor = torch.nn.functional.interpolate(
                         mask_tensor, size=(h, w), mode="nearest"
                     ).squeeze(0)

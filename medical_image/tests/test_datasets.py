@@ -83,9 +83,9 @@ class TestPairing:
         for s in samples:
             if s.mask_path is not None:
                 mask_name = os.path.basename(s.mask_path)
-                assert mask_name.startswith(s.case_id), (
-                    f"Mask {mask_name} should start with case_id {s.case_id}"
-                )
+                assert mask_name.startswith(
+                    s.case_id
+                ), f"Mask {mask_name} should start with case_id {s.case_id}"
 
 
 # =========================================================================

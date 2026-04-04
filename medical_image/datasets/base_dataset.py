@@ -174,7 +174,9 @@ class BaseDataset(Dataset, ABC):
             tensor = tensor.unsqueeze(0).unsqueeze(0)  # (1, 1, H, W)
             align = mode != "nearest"
             out = F.interpolate(
-                tensor.float(), size=size, mode=mode,
+                tensor.float(),
+                size=size,
+                mode=mode,
                 align_corners=align if align else None,
             )
             return out.squeeze(0).squeeze(0)
@@ -183,7 +185,9 @@ class BaseDataset(Dataset, ABC):
             tensor = tensor.unsqueeze(0)  # (1, C, H, W)
             align = mode != "nearest"
             out = F.interpolate(
-                tensor.float(), size=size, mode=mode,
+                tensor.float(),
+                size=size,
+                mode=mode,
                 align_corners=align if align else None,
             )
             return out.squeeze(0)

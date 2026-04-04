@@ -239,14 +239,26 @@ class MammographyPreprocessing:
         for k in range(k_max):
             # Optimise b with a fixed
             b = MammographyPreprocessing._optimise_bound(
-                img, orig_responses, gabor_kernels, a, b, delta,
-                optimise_upper=True, device=device,
+                img,
+                orig_responses,
+                gabor_kernels,
+                a,
+                b,
+                delta,
+                optimise_upper=True,
+                device=device,
             )
 
             # Optimise a with b fixed
             a = MammographyPreprocessing._optimise_bound(
-                img, orig_responses, gabor_kernels, a, b, delta,
-                optimise_upper=False, device=device,
+                img,
+                orig_responses,
+                gabor_kernels,
+                a,
+                b,
+                delta,
+                optimise_upper=False,
+                device=device,
             )
 
             delta = max(delta // 10, 1)
@@ -336,9 +348,7 @@ class MammographyPreprocessing:
         return (img > threshold_value).to(torch.uint8)
 
     @staticmethod
-    def _largest_connected_component(
-        mask: torch.Tensor, device
-    ) -> torch.Tensor:
+    def _largest_connected_component(mask: torch.Tensor, device) -> torch.Tensor:
         """
         Select the largest connected component from a binary mask.
 
@@ -441,9 +451,7 @@ class MammographyPreprocessing:
         return 16
 
     @staticmethod
-    def _intensity_window(
-        img: torch.Tensor, a: float, b: float
-    ) -> torch.Tensor:
+    def _intensity_window(img: torch.Tensor, a: float, b: float) -> torch.Tensor:
         """Linear mapping from [a, b] to [0, 255], clamped."""
         span = b - a
         if span <= 0:
@@ -453,9 +461,7 @@ class MammographyPreprocessing:
     # --- Gabor filter helpers for GRAIL ---
 
     @staticmethod
-    def _build_gabor_bank(
-        n_scales: int, n_orientations: int, device
-    ) -> list:
+    def _build_gabor_bank(n_scales: int, n_orientations: int, device) -> list:
         """
         Build a bank of 2-D Gabor kernels.
 
@@ -467,7 +473,7 @@ class MammographyPreprocessing:
 
         kernels = []
         for m in range(n_scales):
-            f_m = f_max / (gamma_val ** m)
+            f_m = f_max / (gamma_val**m)
             sigma = 1.0 / (2.0 * f_m)
             # kernel size: 6*sigma, rounded to nearest odd
             ksize = int(math.ceil(6 * sigma))
@@ -483,16 +489,14 @@ class MammographyPreprocessing:
                     indexing="ij",
                 )
                 x_prime = x_coords * math.sin(theta) + y_coords * math.cos(theta)
-                gauss = torch.exp(-(x_coords ** 2 + y_coords ** 2) / (2 * sigma ** 2))
+                gauss = torch.exp(-(x_coords**2 + y_coords**2) / (2 * sigma**2))
                 real = gauss * torch.cos(2 * math.pi * f_m * x_prime)
                 kernels.append(real)
 
         return kernels
 
     @staticmethod
-    def _gabor_responses(
-        img: torch.Tensor, kernels: list, device
-    ) -> list:
+    def _gabor_responses(img: torch.Tensor, kernels: list, device) -> list:
         """Apply each Gabor kernel to *img* and return magnitude responses."""
         img4d = img.unsqueeze(0).unsqueeze(0)
         responses = []
@@ -535,13 +539,24 @@ class MammographyPreprocessing:
             o = o.clamp(0, 255)
             w = w.clamp(0, 255)
             idx = o * 256 + w
-            joint.view(-1).scatter_add_(0, idx, torch.ones_like(idx, dtype=torch.float32))
+            joint.view(-1).scatter_add_(
+                0, idx, torch.ones_like(idx, dtype=torch.float32)
+            )
             joint = joint / joint.sum()
 
             p_o = joint.sum(dim=1)
             p_w = joint.sum(dim=0)
             nz = joint > 0
-            mi = (joint[nz] * torch.log2(joint[nz] / (p_o.unsqueeze(1).expand_as(joint)[nz] * p_w.unsqueeze(0).expand_as(joint)[nz]).clamp(min=1e-12))).sum()
+            mi = (
+                joint[nz]
+                * torch.log2(
+                    joint[nz]
+                    / (
+                        p_o.unsqueeze(1).expand_as(joint)[nz]
+                        * p_w.unsqueeze(0).expand_as(joint)[nz]
+                    ).clamp(min=1e-12)
+                )
+            ).sum()
             total_mi += mi.item()
         return total_mi
 

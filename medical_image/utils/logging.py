@@ -24,7 +24,9 @@ def configure_logging(level=logging.DEBUG, log_file=None):
         console.setFormatter(formatter)
         logger.addHandler(console)
 
-    if log_file and not any(isinstance(h, logging.FileHandler) for h in logger.handlers):
+    if log_file and not any(
+        isinstance(h, logging.FileHandler) for h in logger.handlers
+    ):
         fh = logging.FileHandler(log_file, mode="a")
         fh.setFormatter(formatter)
         logger.addHandler(fh)

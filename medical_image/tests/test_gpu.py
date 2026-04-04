@@ -63,6 +63,7 @@ def binary_image():
 # resolve_device tests
 # ---------------------------------------------------------------------------
 
+
 class TestResolveDevice:
     def test_explicit_overrides(self, sample_image):
         device = resolve_device(sample_image, explicit="cpu")
@@ -92,6 +93,7 @@ class TestResolveDevice:
 # DeviceContext tests
 # ---------------------------------------------------------------------------
 
+
 class TestDeviceContext:
     def test_cpu_context(self):
         with DeviceContext("cpu") as ctx:
@@ -117,6 +119,7 @@ class TestDeviceContext:
 # ---------------------------------------------------------------------------
 # Precision tests
 # ---------------------------------------------------------------------------
+
 
 class TestPrecision:
     def test_default_is_full(self):
@@ -144,6 +147,7 @@ class TestPrecision:
 # Image.pin_memory tests
 # ---------------------------------------------------------------------------
 
+
 class TestPinMemory:
     def test_pin_memory_cpu(self, sample_image):
         sample_image.pin_memory()
@@ -157,6 +161,7 @@ class TestPinMemory:
 # ---------------------------------------------------------------------------
 # Filters with device=None (auto-infer)
 # ---------------------------------------------------------------------------
+
 
 class TestFiltersDeviceInference:
     @pytest.mark.parametrize("device", DEVICES)
@@ -207,6 +212,7 @@ class TestFiltersDeviceInference:
 # Morphology with device=None
 # ---------------------------------------------------------------------------
 
+
 class TestMorphologyDeviceInference:
     @pytest.mark.parametrize("device", DEVICES)
     def test_erosion(self, sample_image, device):
@@ -234,6 +240,7 @@ class TestMorphologyDeviceInference:
 # Threshold with device=None
 # ---------------------------------------------------------------------------
 
+
 class TestThresholdDeviceInference:
     @pytest.mark.parametrize("device", DEVICES)
     def test_otsu(self, sample_16x16, device):
@@ -254,6 +261,7 @@ class TestThresholdDeviceInference:
 # Metrics with device=None
 # ---------------------------------------------------------------------------
 
+
 class TestMetricsDeviceInference:
     @pytest.mark.parametrize("device", DEVICES)
     def test_entropy(self, sample_image, device):
@@ -273,6 +281,7 @@ class TestMetricsDeviceInference:
 # Frequency with device=None
 # ---------------------------------------------------------------------------
 
+
 class TestFrequencyDeviceInference:
     @pytest.mark.parametrize("device", DEVICES)
     def test_fft(self, sample_image, device):
@@ -285,6 +294,7 @@ class TestFrequencyDeviceInference:
 # ---------------------------------------------------------------------------
 # Algorithm.apply_batch
 # ---------------------------------------------------------------------------
+
 
 class TestAlgorithmBatch:
     def test_apply_batch_tophat(self):
@@ -314,6 +324,7 @@ class TestAlgorithmBatch:
 # Batch filter
 # ---------------------------------------------------------------------------
 
+
 class TestBatchFilter:
     @pytest.mark.parametrize("device", DEVICES)
     def test_gaussian_filter_batch(self, device):
@@ -326,6 +337,7 @@ class TestBatchFilter:
 # ---------------------------------------------------------------------------
 # Algorithm repr with precision
 # ---------------------------------------------------------------------------
+
 
 class TestAlgorithmRepr:
     def test_repr_includes_precision(self):

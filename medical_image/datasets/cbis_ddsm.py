@@ -287,7 +287,9 @@ class CBISDDSMDataset(BaseDataset):
                 - ``"meta"``: dict with patient_id, view, side, task
         """
         if self.mode != "full_image":
-            raise ValueError("get_detailed_sample is only available in 'full_image' mode")
+            raise ValueError(
+                "get_detailed_sample is only available in 'full_image' mode"
+            )
 
         case = self._case_samples[idx]
 
@@ -313,9 +315,7 @@ class CBISDDSMDataset(BaseDataset):
                         torch.from_numpy(roi_array.astype(np.float32))
                     )
                 except Exception as e:
-                    logger.warning(
-                        f"Failed to load ROI crop {entry.roi_path}: {e}"
-                    )
+                    logger.warning(f"Failed to load ROI crop {entry.roi_path}: {e}")
 
             # Load mask
             mask_tensor: Optional[torch.Tensor] = None
@@ -325,9 +325,7 @@ class CBISDDSMDataset(BaseDataset):
                     mask_arr = (mask_ds.pixel_array > 0).astype(np.float32)
                     mask_tensor = self._to_chw(torch.from_numpy(mask_arr))
                 except Exception as e:
-                    logger.warning(
-                        f"Failed to load ROI mask {entry.mask_path}: {e}"
-                    )
+                    logger.warning(f"Failed to load ROI mask {entry.mask_path}: {e}")
 
             if roi_tensor is not None:
                 rois.append(roi_tensor)
@@ -340,9 +338,7 @@ class CBISDDSMDataset(BaseDataset):
                     bbox = self._locate_roi_in_mammogram(full_array, roi_array)
                     bboxes.append(bbox)
                 except Exception as e:
-                    logger.warning(
-                        f"Failed to compute bbox for {entry.roi_path}: {e}"
-                    )
+                    logger.warning(f"Failed to compute bbox for {entry.roi_path}: {e}")
 
         bbox_tensor = (
             torch.tensor(bboxes, dtype=torch.int64)
@@ -420,6 +416,7 @@ class CBISDDSMDataset(BaseDataset):
         y_off, x_off = np.unravel_index(np.argmax(result), result.shape)
 
         return [int(x_off), int(y_off), int(x_off + tw), int(y_off + th)]
+
     # ------------------------------------------------------------------
     # Custom collate_fn
     # ------------------------------------------------------------------
@@ -478,9 +475,7 @@ class CBISDDSMDataset(BaseDataset):
         ds = pydicom.dcmread(dcm_path, stop_before_pixels=True)
         return int(ds.Rows), int(ds.Columns)
 
-    def _compute_patch_positions(
-        self, h: int, w: int
-    ) -> List[Tuple[int, int]]:
+    def _compute_patch_positions(self, h: int, w: int) -> List[Tuple[int, int]]:
         """
         Compute top-left (y, x) positions for sliding-window patches.
         """

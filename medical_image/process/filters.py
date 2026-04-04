@@ -63,7 +63,13 @@ class Filters:
         )
         kernel = kernel.unsqueeze(0).unsqueeze(0)
 
-        img_t = img.detach().clone().to(dtype=dtype, device=device).unsqueeze(0).unsqueeze(0)
+        img_t = (
+            img.detach()
+            .clone()
+            .to(dtype=dtype, device=device)
+            .unsqueeze(0)
+            .unsqueeze(0)
+        )
 
         pad = kernel.shape[-1] // 2
         img_padded = F.pad(img_t, (pad, pad, pad, pad), mode="replicate")

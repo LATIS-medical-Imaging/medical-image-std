@@ -15,10 +15,12 @@ import torch
 
 from medical_image.data.in_memory_image import InMemoryImage
 from medical_image.algorithms.breast_mask import BreastMaskAlgorithm
-from medical_image.algorithms.dicom_window import DicomWindowAlgorithm, GrailWindowAlgorithm
+from medical_image.algorithms.dicom_window import (
+    DicomWindowAlgorithm,
+    GrailWindowAlgorithm,
+)
 from medical_image.algorithms.bit_depth_norm import BitDepthNormAlgorithm
 from medical_image.process.mammography import MammographyPreprocessing
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -53,6 +55,7 @@ def _make_simple_binary_scene(device="cpu"):
 # BreastMaskAlgorithm
 # ---------------------------------------------------------------------------
 
+
 class TestBreastMaskAlgorithm:
     """Tests for BreastMaskAlgorithm (Algorithm subclass)."""
 
@@ -79,8 +82,8 @@ class TestBreastMaskAlgorithm:
         algo = BreastMaskAlgorithm(mask_only=True, device=device)
         output = image.clone()
         algo(image, output)
-        assert output.pixel_data[30, 30] == 1   # centre of large blob
-        assert output.pixel_data[75, 75] == 0   # centre of small blob
+        assert output.pixel_data[30, 30] == 1  # centre of large blob
+        assert output.pixel_data[75, 75] == 0  # centre of small blob
 
     @pytest.mark.parametrize("device", DEVICES)
     def test_apply_mask_zeros_background(self, device):
@@ -142,13 +145,16 @@ class TestBreastMaskAlgorithm:
 # DicomWindowAlgorithm
 # ---------------------------------------------------------------------------
 
+
 class TestDicomWindowAlgorithm:
     """Tests for DicomWindowAlgorithm (Algorithm subclass)."""
 
     @pytest.mark.parametrize("device", DEVICES)
     def test_output_range_0_255(self, device):
         image = _make_mammogram(device)
-        algo = DicomWindowAlgorithm(window_center=2000, window_width=3000, device=device)
+        algo = DicomWindowAlgorithm(
+            window_center=2000, window_width=3000, device=device
+        )
         output = image.clone()
         algo(image, output)
         assert output.pixel_data.min() >= 0
@@ -160,7 +166,9 @@ class TestDicomWindowAlgorithm:
         algo = DicomWindowAlgorithm(window_center=1000, window_width=100, device=device)
         output = img.clone()
         algo(img, output)
-        assert torch.allclose(output.pixel_data, torch.full_like(output.pixel_data, 127.5))
+        assert torch.allclose(
+            output.pixel_data, torch.full_like(output.pixel_data, 127.5)
+        )
 
     def test_full_range_fallback(self):
         img = InMemoryImage(array=torch.linspace(0, 4095, 256 * 256).reshape(256, 256))
@@ -201,6 +209,7 @@ class TestDicomWindowAlgorithm:
 # ---------------------------------------------------------------------------
 # GrailWindowAlgorithm
 # ---------------------------------------------------------------------------
+
 
 class TestGrailWindowAlgorithm:
     """Tests for GrailWindowAlgorithm (Algorithm subclass)."""
@@ -254,6 +263,7 @@ class TestGrailWindowAlgorithm:
 # ---------------------------------------------------------------------------
 # BitDepthNormAlgorithm
 # ---------------------------------------------------------------------------
+
 
 class TestBitDepthNormAlgorithm:
     """Tests for BitDepthNormAlgorithm (Algorithm subclass)."""
@@ -323,7 +333,10 @@ class TestBitDepthNormAlgorithm:
         assert "BitDepthNormAlgorithm" in repr(algo)
 
     def test_apply_batch(self):
-        images = [InMemoryImage(array=torch.linspace(0, 4095, 100).reshape(10, 10)) for _ in range(3)]
+        images = [
+            InMemoryImage(array=torch.linspace(0, 4095, 100).reshape(10, 10))
+            for _ in range(3)
+        ]
         outputs = [img.clone() for img in images]
         algo = BitDepthNormAlgorithm(bits_stored=12, device="cpu")
         results = algo.apply_batch(images, outputs)
@@ -335,6 +348,7 @@ class TestBitDepthNormAlgorithm:
 # ---------------------------------------------------------------------------
 # MammographyPreprocessing static utilities (low-level)
 # ---------------------------------------------------------------------------
+
 
 class TestStaticUtilities:
     """Tests for MammographyPreprocessing static helper methods."""

@@ -57,7 +57,9 @@ class TestDicom:
         output = dicom_image.clone()
         Threshold.sauvola_threshold(dicom_image, output, window_size, k)
 
-        assert not torch.equal(dicom_image.pixel_data.float(), output.pixel_data.float())
+        assert not torch.equal(
+            dicom_image.pixel_data.float(), output.pixel_data.float()
+        )
 
         out = output.pixel_data
         assert torch.all((out == 0) | (out == 255))

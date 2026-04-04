@@ -42,8 +42,10 @@ class CustomINbreastSample:
 class CBISDDSMROIEntry:
     """A single ROI annotation for a CBIS-DDSM case."""
 
-    roi_path: Optional[str] = None   # ROI crop DICOM (from 1-1.dcm or cropped images)
-    mask_path: Optional[str] = None  # Binary mask DICOM (from 1-2.dcm or ROI mask images)
+    roi_path: Optional[str] = None  # ROI crop DICOM (from 1-1.dcm or cropped images)
+    mask_path: Optional[str] = (
+        None  # Binary mask DICOM (from 1-2.dcm or ROI mask images)
+    )
 
 
 @dataclass

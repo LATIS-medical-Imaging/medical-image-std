@@ -135,7 +135,9 @@ class Image(ABC):
         new._width = self._width
         new._height = self._height
         new._device = self._device
-        new.pixel_data = self.pixel_data.clone() if self.pixel_data is not None else None
+        new.pixel_data = (
+            self.pixel_data.clone() if self.pixel_data is not None else None
+        )
         if hasattr(self, "annotations"):
             new.annotations = self.annotations
         # Subclass-specific: don't copy heavy DICOM/PIL objects

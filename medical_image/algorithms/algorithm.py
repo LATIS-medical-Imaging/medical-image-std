@@ -11,7 +11,9 @@ class Algorithm(ABC):
     def __init__(self, device: str = None, precision: Precision = Precision.FULL):
         super().__init__()
         self.device = (
-            device if device is not None else "cuda" if torch.cuda.is_available() else "cpu"
+            device
+            if device is not None
+            else "cuda" if torch.cuda.is_available() else "cpu"
         )
         self.precision = precision
 

@@ -48,9 +48,9 @@ class TestCBISDDSMPairing:
 
         samples = pair_cbis_ddsm(CBIS_ROOT)
         for s in samples:
-            assert os.path.isfile(s.mammogram_path), (
-                f"Mammogram not found: {s.mammogram_path}"
-            )
+            assert os.path.isfile(
+                s.mammogram_path
+            ), f"Mammogram not found: {s.mammogram_path}"
 
     def test_sample_has_required_fields(self):
         from medical_image.utils.pairing import pair_cbis_ddsm
@@ -76,9 +76,9 @@ class TestCBISDDSMPairing:
         samples = pair_cbis_ddsm(CBIS_ROOT)
         for s in samples:
             for entry in s.roi_entries:
-                assert entry.roi_path or entry.mask_path, (
-                    f"ROI entry for {s.case_id} has neither roi_path nor mask_path"
-                )
+                assert (
+                    entry.roi_path or entry.mask_path
+                ), f"ROI entry for {s.case_id} has neither roi_path nor mask_path"
 
     def test_mask_paths_backward_compat(self):
         from medical_image.utils.pairing import pair_cbis_ddsm
@@ -94,9 +94,9 @@ class TestCBISDDSMPairing:
             if entry.endswith("_1"):
                 roi_folder = os.path.join(CBIS_DDSM_DIR, entry)
                 result = _parse_roi_folder(roi_folder)
-                assert result.roi_path or result.mask_path, (
-                    f"Failed to parse ROI folder: {entry}"
-                )
+                assert (
+                    result.roi_path or result.mask_path
+                ), f"Failed to parse ROI folder: {entry}"
                 break
 
 
@@ -387,8 +387,9 @@ class TestDetailedSample:
     def test_detailed_sample_rejects_patch_mode(self):
         from medical_image.datasets.cbis_ddsm import CBISDDSMDataset
 
-        ds = CBISDDSMDataset(CBIS_ROOT, mode="patch", patch_size=256, stride=256,
-                             percentage=_SUBSET_PCT)
+        ds = CBISDDSMDataset(
+            CBIS_ROOT, mode="patch", patch_size=256, stride=256, percentage=_SUBSET_PCT
+        )
         with pytest.raises(ValueError, match="full_image"):
             ds.get_detailed_sample(0)
 
@@ -399,5 +400,8 @@ class TestDetailedSample:
         sample = ds.get_detailed_sample(0)
 
         assert sample["label"] in (
-            "Calc-Test", "Calc-Training", "Mass-Test", "Mass-Training"
+            "Calc-Test",
+            "Calc-Training",
+            "Mass-Test",
+            "Mass-Training",
         )

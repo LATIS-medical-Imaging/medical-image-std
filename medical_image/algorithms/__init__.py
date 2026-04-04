@@ -5,7 +5,10 @@ from medical_image.algorithms.pfcm import PFCMAlgorithm
 from medical_image.algorithms.top_hat import TopHatAlgorithm
 from medical_image.algorithms.kmeans import KMeansAlgorithm
 from medical_image.algorithms.breast_mask import BreastMaskAlgorithm
-from medical_image.algorithms.dicom_window import DicomWindowAlgorithm, GrailWindowAlgorithm
+from medical_image.algorithms.dicom_window import (
+    DicomWindowAlgorithm,
+    GrailWindowAlgorithm,
+)
 from medical_image.algorithms.bit_depth_norm import BitDepthNormAlgorithm
 
 __all__ = [

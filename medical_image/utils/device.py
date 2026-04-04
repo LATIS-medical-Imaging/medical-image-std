@@ -10,10 +10,10 @@ import torch
 
 from medical_image.utils.logging import logger
 
-
 # ---------------------------------------------------------------------------
 # Device resolution
 # ---------------------------------------------------------------------------
+
 
 def resolve_device(
     *images, explicit: Union[str, torch.device, None] = None
@@ -37,6 +37,7 @@ def resolve_device(
 # ---------------------------------------------------------------------------
 # Mixed precision
 # ---------------------------------------------------------------------------
+
 
 class Precision(Enum):
     FULL = torch.float32
@@ -64,6 +65,7 @@ def get_dtype() -> torch.dtype:
 # DeviceContext — GPU-aware context manager
 # ---------------------------------------------------------------------------
 
+
 class DeviceContext:
     """
     Context manager for GPU-aware processing with automatic memory management.
@@ -90,9 +92,7 @@ class DeviceContext:
             torch.cuda.empty_cache()
             if self.verbose:
                 free, total = torch.cuda.mem_get_info(self.primary)
-                logger.info(
-                    f"GPU memory: {free / 1e9:.1f} / {total / 1e9:.1f} GB free"
-                )
+                logger.info(f"GPU memory: {free / 1e9:.1f} / {total / 1e9:.1f} GB free")
         elif self.primary.type == "cuda":
             logger.warning("CUDA requested but not available — falling back to CPU")
             self.active_device = self.fallback
@@ -128,6 +128,7 @@ class DeviceContext:
 # @gpu_safe — OOM fallback decorator
 # ---------------------------------------------------------------------------
 
+
 def gpu_safe(func):
     """Decorator: catches CUDA OOM and retries the operation on CPU."""
 
@@ -150,6 +151,7 @@ def gpu_safe(func):
 # AsyncGPUPipeline — overlapped I/O + compute with CUDA streams
 # ---------------------------------------------------------------------------
 
+
 class AsyncGPUPipeline:
     """
     Overlap disk I/O, CPU→GPU transfer, and GPU compute using CUDA streams.
@@ -164,9 +166,7 @@ class AsyncGPUPipeline:
         self.compute_stream = torch.cuda.Stream(self.device)
         self.transfer_stream = torch.cuda.Stream(self.device)
 
-    def process_images(
-        self, images: list, algorithm
-    ) -> list:
+    def process_images(self, images: list, algorithm) -> list:
         """
         Process pre-loaded Image objects with overlapped transfer and compute.
 
@@ -200,6 +200,7 @@ class AsyncGPUPipeline:
 # ---------------------------------------------------------------------------
 # MultiGPUAlgorithm — data-parallel across GPUs
 # ---------------------------------------------------------------------------
+
 
 class MultiGPUAlgorithm:
     """

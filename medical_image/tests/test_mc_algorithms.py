@@ -35,7 +35,6 @@ from medical_image.tests.mock_sample import (
 )
 from medical_image.utils.image_utils import MathematicalOperations
 
-
 # ===========================================================================
 # MathematicalOperations
 # ===========================================================================

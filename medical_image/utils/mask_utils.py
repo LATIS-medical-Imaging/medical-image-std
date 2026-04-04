@@ -17,7 +17,6 @@ from skimage.draw import polygon as draw_polygon, disk as draw_disk
 
 from medical_image.utils.logging import logger
 
-
 # ---------------------------------------------------------------------------
 # INbreast XML (Apple plist) parsing
 # ---------------------------------------------------------------------------
@@ -212,7 +211,5 @@ def stack_dicom_masks(dcm_paths: List[str]) -> torch.Tensor:
         combined[:h, :w] = np.maximum(combined[:h, :w], m)
 
     tensor = torch.from_numpy(combined).unsqueeze(0)  # (1, H, W)
-    logger.debug(
-        f"Stacked {len(dcm_paths)} DICOM masks → shape={tuple(tensor.shape)}"
-    )
+    logger.debug(f"Stacked {len(dcm_paths)} DICOM masks → shape={tuple(tensor.shape)}")
     return tensor

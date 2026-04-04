@@ -150,9 +150,7 @@ class MorphologyOperations:
 
     @staticmethod
     @requires_loaded
-    def dilation(
-        image: Image, output: Image, radius: int = 4, device=None
-    ) -> Image:
+    def dilation(image: Image, output: Image, radius: int = 4, device=None) -> Image:
         """
         Grayscale dilation using a flat disk SE.
 
