@@ -335,14 +335,10 @@ class CBISDDSMDataset(BaseDataset):
                 masks.append(mask_tensor)
 
             # Compute bounding box from ROI crop position in full mammogram
-            print("555555555555555555555555555555555555555555555555555555555555555")
             if roi_array is not None:
                 try:
                     bbox = self._locate_roi_in_mammogram(full_array, roi_array)
-                    # TODO: debig here
                     bboxes.append(bbox)
-                    print("bboxes################################################")
-                    print(bboxes)
                 except Exception as e:
                     logger.warning(
                         f"Failed to compute bbox for {entry.roi_path}: {e}"
