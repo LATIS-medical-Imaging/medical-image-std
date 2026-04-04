@@ -39,6 +39,14 @@ class CustomINbreastSample:
 
 
 @dataclass
+class CBISDDSMROIEntry:
+    """A single ROI annotation for a CBIS-DDSM case."""
+
+    roi_path: Optional[str] = None   # ROI crop DICOM (from 1-1.dcm or cropped images)
+    mask_path: Optional[str] = None  # Binary mask DICOM (from 1-2.dcm or ROI mask images)
+
+
+@dataclass
 class CBISDDSMSample:
     """A CBIS-DDSM case: full mammogram DICOM + all ROI mask DICOMs."""
 
@@ -46,7 +54,9 @@ class CBISDDSMSample:
     patient_id: str
     side: str  # LEFT or RIGHT
     view: str  # CC or MLO
+    task: str  # e.g. Calc-Test, Mass-Training
     mammogram_path: str
+    roi_entries: List[CBISDDSMROIEntry] = field(default_factory=list)
     mask_paths: List[str] = field(default_factory=list)
 
 
@@ -245,6 +255,39 @@ def _find_all_dcm_in_tree(root: str) -> List[str]:
     return dcms
 
 
+def _parse_roi_folder(roi_folder: str) -> CBISDDSMROIEntry:
+    """
+    Parse a single CBIS-DDSM ROI folder and identify the ROI crop and mask DICOMs.
+
+    Handles two layouts:
+
+    - **Standard**: ``ROI mask images/`` contains ``1-1.dcm`` (crop) and ``1-2.dcm`` (mask).
+    - **Split**: ``cropped images/`` has the crop, ``ROI mask images/`` has the mask.
+    """
+    cropped_dcm: Optional[str] = None
+    mask_dcm: Optional[str] = None
+
+    for dirpath, _, filenames in os.walk(roi_folder):
+        parent_name = os.path.basename(dirpath).lower()
+        dcms = sorted(f for f in filenames if f.lower().endswith(".dcm"))
+
+        if "cropped images" in parent_name:
+            # The cropped images folder contains the ROI crop
+            if dcms:
+                cropped_dcm = os.path.join(dirpath, dcms[0])
+
+        elif "roi mask images" in parent_name:
+            if cropped_dcm is not None or len(dcms) == 1:
+                # Cropped image found separately, or only one file → it's the mask
+                mask_dcm = os.path.join(dirpath, dcms[0]) if dcms else None
+            elif len(dcms) >= 2:
+                # 1-1.dcm = ROI crop, 1-2.dcm = binary mask
+                cropped_dcm = os.path.join(dirpath, dcms[0])
+                mask_dcm = os.path.join(dirpath, dcms[1])
+
+    return CBISDDSMROIEntry(roi_path=cropped_dcm, mask_path=mask_dcm)
+
+
 def pair_cbis_ddsm(root_dir: str) -> List[CBISDDSMSample]:
     """
     Pair CBIS-DDSM full mammogram images with their ROI mask images.
@@ -313,23 +356,30 @@ def pair_cbis_ddsm(root_dir: str) -> List[CBISDDSMSample]:
             logger.warning(f"No DICOM found for mammogram: {mammo_folder}")
             continue
 
-        # Collect all mask DICOMs
-        mask_dcms = []
-        for mask_folder in mask_folders.get(base_key, []):
-            mask_dcms.extend(_find_all_dcm_in_tree(mask_folder))
+        # Parse each ROI folder into structured entries
+        roi_entries: List[CBISDDSMROIEntry] = []
+        mask_dcms: List[str] = []
+        for roi_folder in sorted(mask_folders.get(base_key, [])):
+            entry = _parse_roi_folder(roi_folder)
+            roi_entries.append(entry)
+            # Backward-compatible flat mask list
+            if entry.mask_path:
+                mask_dcms.append(entry.mask_path)
 
         sample = CBISDDSMSample(
             case_id=base_key,
             patient_id=match.group(2),
             side=match.group(3),
             view=match.group(4),
+            task=match.group(1),
             mammogram_path=mammo_dcm,
+            roi_entries=roi_entries,
             mask_paths=mask_dcms,
         )
         samples.append(sample)
 
     logger.info(
         f"CBIS-DDSM pairing: {len(samples)} cases, "
-        f"{sum(len(s.mask_paths) for s in samples)} total mask DICOMs"
+        f"{len([e for s in samples for e in s.roi_entries])} ROI entries"
     )
     return samples
