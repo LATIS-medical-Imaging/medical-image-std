@@ -22,7 +22,7 @@ CBIS_DDSM_DIR = os.path.join(CBIS_ROOT, "CBIS-DDSM")
 # Skip all tests if data is not available
 pytestmark = pytest.mark.skipif(
     not os.path.exists(CBIS_DDSM_DIR),
-    reason="CBIS-DDSM test data not available",
+    reason=f"CBIS-DDSM test data not available: {CBIS_DDSM_DIR}",
 )
 
 # Use a tiny subset for integration tests to avoid OOM on large DICOMs

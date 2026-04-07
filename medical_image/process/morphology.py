@@ -3,6 +3,27 @@ import torch.nn.functional as F
 
 from medical_image.data.image import Image, requires_loaded
 from medical_image.utils.device import resolve_device
+from medical_image.utils.logging import logger
+
+
+def _safe_to_device(tensor: torch.Tensor, device: torch.device) -> tuple:
+    """Move tensor to device with CUDA error fallback to CPU.
+
+    Returns:
+        (tensor_on_device, actual_device)
+    """
+    try:
+        return tensor.to(device).float(), device
+    except (RuntimeError, torch.cuda.CudaError, torch.AcceleratorError) as e:
+        if device.type != "cpu":
+            logger.warning(
+                "CUDA error moving tensor to %s, falling back to CPU: %s",
+                device, e,
+            )
+            torch.cuda.empty_cache()
+            cpu = torch.device("cpu")
+            return tensor.to(cpu).float(), cpu
+        raise
 
 
 class MorphologyOperations:
@@ -26,7 +47,7 @@ class MorphologyOperations:
             The output Image.
         """
         device = resolve_device(image, explicit=device)
-        img = image.pixel_data.to(device).float()
+        img, device = _safe_to_device(image.pixel_data, device)
         while img.ndim > 2:
             img = img.squeeze(0)
 
@@ -72,7 +93,7 @@ class MorphologyOperations:
             The output Image.
         """
         device = resolve_device(image, explicit=device)
-        img = image.pixel_data.to(device).float()
+        img, device = _safe_to_device(image.pixel_data, device)
         h, w = img.shape
         mask = torch.zeros((h + 2, w + 2), device=device)
         mask[1:-1, 1:-1] = 1 - img
@@ -132,7 +153,7 @@ class MorphologyOperations:
             The output Image.
         """
         device = resolve_device(image, explicit=device)
-        img = image.pixel_data.to(device).float()
+        img, device = _safe_to_device(image.pixel_data, device)
         while img.ndim > 2:
             img = img.squeeze(0)
         H, W = img.shape
@@ -140,10 +161,22 @@ class MorphologyOperations:
         kernel_size = 2 * radius + 1
         pad = radius
 
-        neg_img = (-img).unsqueeze(0).unsqueeze(0)
-        neg_padded = F.pad(neg_img, (pad, pad, pad, pad), mode="constant", value=0)
-        neg_max = F.max_pool2d(neg_padded, kernel_size, stride=1)
-        eroded = (-neg_max).squeeze(0).squeeze(0)[:H, :W]
+        try:
+            neg_img = (-img).unsqueeze(0).unsqueeze(0)
+            neg_padded = F.pad(neg_img, (pad, pad, pad, pad), mode="constant", value=0)
+            neg_max = F.max_pool2d(neg_padded, kernel_size, stride=1)
+            eroded = (-neg_max).squeeze(0).squeeze(0)[:H, :W]
+        except (RuntimeError, torch.cuda.CudaError, torch.AcceleratorError):
+            if device.type != "cpu":
+                logger.warning("CUDA error in erosion, falling back to CPU")
+                torch.cuda.empty_cache()
+                img = img.cpu()
+                neg_img = (-img).unsqueeze(0).unsqueeze(0)
+                neg_padded = F.pad(neg_img, (pad, pad, pad, pad), mode="constant", value=0)
+                neg_max = F.max_pool2d(neg_padded, kernel_size, stride=1)
+                eroded = (-neg_max).squeeze(0).squeeze(0)[:H, :W]
+            else:
+                raise
 
         output.pixel_data = eroded
         return output
@@ -164,7 +197,7 @@ class MorphologyOperations:
             The output Image.
         """
         device = resolve_device(image, explicit=device)
-        img = image.pixel_data.to(device).float()
+        img, device = _safe_to_device(image.pixel_data, device)
         while img.ndim > 2:
             img = img.squeeze(0)
         H, W = img.shape
@@ -172,10 +205,22 @@ class MorphologyOperations:
         kernel_size = 2 * radius + 1
         pad = radius
 
-        img4d = img.unsqueeze(0).unsqueeze(0)
-        padded = F.pad(img4d, (pad, pad, pad, pad), mode="constant", value=0)
-        dilated = F.max_pool2d(padded, kernel_size, stride=1)
-        dilated = dilated.squeeze(0).squeeze(0)[:H, :W]
+        try:
+            img4d = img.unsqueeze(0).unsqueeze(0)
+            padded = F.pad(img4d, (pad, pad, pad, pad), mode="constant", value=0)
+            dilated = F.max_pool2d(padded, kernel_size, stride=1)
+            dilated = dilated.squeeze(0).squeeze(0)[:H, :W]
+        except (RuntimeError, torch.cuda.CudaError, torch.AcceleratorError):
+            if device.type != "cpu":
+                logger.warning("CUDA error in dilation, falling back to CPU")
+                torch.cuda.empty_cache()
+                img = img.cpu()
+                img4d = img.unsqueeze(0).unsqueeze(0)
+                padded = F.pad(img4d, (pad, pad, pad, pad), mode="constant", value=0)
+                dilated = F.max_pool2d(padded, kernel_size, stride=1)
+                dilated = dilated.squeeze(0).squeeze(0)[:H, :W]
+            else:
+                raise
 
         output.pixel_data = dilated
         return output
@@ -210,11 +255,12 @@ class MorphologyOperations:
         MorphologyOperations.dilation(eroded, opened, radius=radius, device=device)
 
         # Step 3: Top-Hat = I - opening
-        img = image.pixel_data.to(device).float()
+        img, device = _safe_to_device(image.pixel_data, device)
         while img.ndim > 2:
             img = img.squeeze(0)
 
-        th = torch.clamp(img - opened.pixel_data, min=0.0)
+        opened_data = opened.pixel_data.to(img.device)
+        th = torch.clamp(img - opened_data, min=0.0)
 
         output.pixel_data = th
         return output

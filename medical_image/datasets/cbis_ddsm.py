@@ -10,10 +10,8 @@ from pathlib import Path
 from typing import Optional, Callable, Dict, Any, Tuple, List, Literal
 
 import numpy as np
-import pydicom
 import torch
 import torch.nn.functional as F
-from scipy.signal import fftconvolve
 from skimage.feature import match_template
 from skimage.filters import sobel
 
@@ -304,26 +302,26 @@ class CBISDDSMDataset(BaseDataset):
         bboxes: List[List[int]] = []
 
         for entry in case.roi_entries:
-            # Load ROI crop
+            # Load ROI crop via DicomImage
             roi_tensor: Optional[torch.Tensor] = None
             roi_array: Optional[np.ndarray] = None
             if entry.roi_path:
                 try:
-                    roi_ds = pydicom.dcmread(entry.roi_path)
-                    roi_array = roi_ds.pixel_array.astype(np.float64)
-                    roi_tensor = self._to_chw(
-                        torch.from_numpy(roi_array.astype(np.float32))
-                    )
+                    roi_dcm = DicomImage(file_path=entry.roi_path)
+                    roi_dcm.load()
+                    roi_array = roi_dcm.pixel_data.numpy().astype(np.float64)
+                    roi_tensor = self._to_chw(roi_dcm.pixel_data.float())
                 except Exception as e:
                     logger.warning(f"Failed to load ROI crop {entry.roi_path}: {e}")
 
-            # Load mask
+            # Load mask via DicomImage
             mask_tensor: Optional[torch.Tensor] = None
             if entry.mask_path:
                 try:
-                    mask_ds = pydicom.dcmread(entry.mask_path)
-                    mask_arr = (mask_ds.pixel_array > 0).astype(np.float32)
-                    mask_tensor = self._to_chw(torch.from_numpy(mask_arr))
+                    mask_dcm = DicomImage(file_path=entry.mask_path)
+                    mask_dcm.load()
+                    mask_arr = (mask_dcm.pixel_data > 0).float()
+                    mask_tensor = self._to_chw(mask_arr)
                 except Exception as e:
                     logger.warning(f"Failed to load ROI mask {entry.mask_path}: {e}")
 
@@ -472,6 +470,7 @@ class CBISDDSMDataset(BaseDataset):
         """
         Read DICOM header to get image dimensions without loading pixel data.
         """
+        import pydicom
         ds = pydicom.dcmread(dcm_path, stop_before_pixels=True)
         return int(ds.Rows), int(ds.Columns)
 

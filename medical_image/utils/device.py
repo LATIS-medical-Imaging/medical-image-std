@@ -130,7 +130,7 @@ class DeviceContext:
 
 
 def gpu_safe(func):
-    """Decorator: catches CUDA OOM and retries the operation on CPU."""
+    """Decorator: catches CUDA errors (OOM, device-side asserts) and retries on CPU."""
 
     @functools.wraps(func)
     def wrapper(*args, device=None, **kwargs):
@@ -139,10 +139,15 @@ def gpu_safe(func):
         )
         try:
             return func(*args, device=device, **kwargs)
-        except torch.cuda.OutOfMemoryError:
-            logger.warning(f"{func.__name__}: GPU OOM — retrying on CPU")
-            torch.cuda.empty_cache()
-            return func(*args, device=torch.device("cpu"), **kwargs)
+        except (torch.cuda.OutOfMemoryError, RuntimeError, torch.AcceleratorError) as e:
+            if device.type != "cpu" and (
+                isinstance(e, (torch.cuda.OutOfMemoryError, torch.AcceleratorError))
+                or "CUDA" in str(e)
+            ):
+                logger.warning(f"{func.__name__}: CUDA error — retrying on CPU: {e}")
+                torch.cuda.empty_cache()
+                return func(*args, device=torch.device("cpu"), **kwargs)
+            raise
 
     return wrapper
 

@@ -187,15 +187,16 @@ def stack_dicom_masks(dcm_paths: List[str]) -> torch.Tensor:
     Returns:
         Tensor of shape (1, H, W) with dtype ``torch.float32``, values 0 or 1.
     """
-    import pydicom
+    from medical_image.data.dicom_image import DicomImage
 
     if not dcm_paths:
         raise ValueError("No DICOM mask paths provided")
 
     masks = []
     for p in dcm_paths:
-        ds = pydicom.dcmread(p)
-        arr = ds.pixel_array.astype(np.float32)
+        dcm = DicomImage(file_path=p)
+        dcm.load()
+        arr = dcm.pixel_data.numpy().astype(np.float32)
         # Binarize
         arr = (arr > 0).astype(np.float32)
         masks.append(arr)
