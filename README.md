@@ -35,9 +35,10 @@ Provide **standardized abstractions** for medical image processing workflows:
 ```
 medical_image/
 ├── data/                # Image ABC, DicomImage, PNGImage, InMemoryImage, Patch, ROI
+├── datasets/            # BaseDataset ABC, INbreastDataset, CustomINbreastDataset, CBISDDSMDataset
 ├── process/             # Filters, Threshold, Morphology, Metrics, Frequency
-├── algorithms/          # Algorithm ABC, FEBDS, FCM, PFCM, KMeans, TopHat
-└── utils/               # device (GPU), logging, annotations, image_utils
+├── algorithms/          # Algorithm ABC, FEBDS, FCM, PFCM, KMeans, TopHat, BreastMask, DicomWindow
+└── utils/               # device (GPU), logging, annotations, pairing, mask_utils, downloader
 ```
 
 ### Design Patterns
@@ -360,6 +361,49 @@ outputs = multi.apply_batch(images, [img.clone() for img in images])
 
 ---
 
+## Datasets
+
+Production-grade PyTorch `Dataset` classes with lazy loading, automatic file pairing, and standardized outputs.
+
+### Available Datasets
+
+| Dataset | Class | Description |
+|---------|-------|-------------|
+| **INbreast** | `INbreastDataset` | Mammography with DICOM + XML annotations, generates binary masks |
+| **Custom INbreast** | `CustomINbreastDataset` | INbreast with TIF mask support (TIF > XML > empty priority) |
+| **CBIS-DDSM** | `CBISDDSMDataset` | Large-scale mammography with full-image and patch-based modes |
+
+### Quick Example
+
+```python
+from medical_image.datasets import CBISDDSMDataset
+from torch.utils.data import DataLoader
+
+dataset = CBISDDSMDataset(
+    root_dir="/data/ddsm",
+    mode="full_image",
+    target_size=(1024, 1024),
+    percentage=0.1,        # 10% subset for prototyping
+)
+
+loader = DataLoader(
+    dataset,
+    batch_size=4,
+    collate_fn=CBISDDSMDataset.collate_fn,
+    num_workers=4,
+    pin_memory=True,
+)
+
+for batch in loader:
+    images = batch["image"]       # [B, 1, 1024, 1024]
+    masks = batch["mask"]         # [B, 1, 1024, 1024]
+    metadata = batch["metadata"]
+```
+
+All datasets return dictionaries with `"image"` (Tensor), `"mask"` (Tensor), and `"metadata"` (dict). See the [Dataset Guide](docs/datasets.md) for full documentation.
+
+---
+
 ## Algorithms
 
 ### Available Algorithms
@@ -371,6 +415,10 @@ outputs = multi.apply_batch(images, [img.clone() for img in images])
 | **FCM** | `FCMAlgorithm` | Fuzzy C-Means with soft membership, isolates brightest cluster |
 | **PFCM** | `PFCMAlgorithm` | Possibilistic FCM detecting microcalcifications via atypicality |
 | **FEBDS** | `FebdsAlgorithm` | Fourier Enhancement + Band-pass filtering with DoG/LoG/FFT modes |
+| **Breast Mask** | `BreastMaskAlgorithm` | Automatic breast region segmentation |
+| **DICOM Window** | `DicomWindowAlgorithm` | DICOM windowing (window center/width) |
+| **Grail Window** | `GrailWindowAlgorithm` | Grail-style DICOM windowing |
+| **Bit Depth Norm** | `BitDepthNormAlgorithm` | Bit-depth normalization |
 
 ### Custom Algorithm
 
@@ -587,4 +635,4 @@ MIT License - See [LICENSE](LICENSE) file
 
 ## Version
 
-**Current**: 0.2.0
+**Current**: 0.4.1

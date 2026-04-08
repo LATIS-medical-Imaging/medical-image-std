@@ -49,14 +49,12 @@ This document provides detailed architectural information about the Medical Imag
 graph TB
     subgraph "Abstract Layer"
         Image[Image ABC]
-        MedicalDataset[MedicalDataset ABC]
     end
 
     subgraph "Concrete Implementations"
         DicomImage[DicomImage]
         PNGImage[PNGImage]
         InMemoryImage[InMemoryImage]
-        CbisDdsm[CbisDdsm Dataset]
     end
 
     subgraph "Supporting Classes"
@@ -69,7 +67,6 @@ graph TB
     Image --> DicomImage
     Image --> PNGImage
     Image --> InMemoryImage
-    MedicalDataset --> CbisDdsm
 
     PatchGrid --> Patch
     Image -.references.- Patch
@@ -77,9 +74,60 @@ graph TB
     Image -.labeled by.- Annotation
 
     style Image fill:#FFE4B5
-    style MedicalDataset fill:#FFE4B5
     style InMemoryImage fill:#B0E0E6
 ```
+
+### Datasets Package (`medical_image.datasets`)
+
+**Purpose**: Production-grade PyTorch Dataset classes with lazy loading, automatic file pairing, and standardized output dictionaries.
+
+```mermaid
+graph TB
+    subgraph "Abstract Layer"
+        BaseDataset[BaseDataset ABC]
+    end
+
+    subgraph "Concrete Datasets"
+        INbreast[INbreastDataset]
+        CustomINbreast[CustomINbreastDataset]
+        CBISDDSM[CBISDDSMDataset]
+    end
+
+    subgraph "Supporting Modules"
+        Pairing[pairing.py<br/>File matching]
+        MaskUtils[mask_utils.py<br/>Mask generation]
+        Downloader[downloader.py<br/>Dataset download]
+    end
+
+    subgraph "Data Layer"
+        DicomImage2[DicomImage]
+    end
+
+    BaseDataset --> INbreast
+    BaseDataset --> CustomINbreast
+    BaseDataset --> CBISDDSM
+
+    INbreast --> Pairing
+    INbreast --> MaskUtils
+    INbreast --> DicomImage2
+    CustomINbreast --> Pairing
+    CustomINbreast --> MaskUtils
+    CBISDDSM --> Pairing
+    CBISDDSM --> MaskUtils
+    CBISDDSM --> DicomImage2
+    BaseDataset --> Downloader
+
+    style BaseDataset fill:#FFE4B5
+    style INbreast fill:#B0E0E6
+    style CustomINbreast fill:#B0E0E6
+    style CBISDDSM fill:#B0E0E6
+```
+
+**Key patterns:**
+- **Template Method**: `BaseDataset.__getitem__` calls abstract `_load_sample`, then applies transforms and resizing
+- **Lazy Loading**: Images loaded from disk on each access, never pre-loaded
+- **Data Classes**: `INbreastSample`, `CBISDDSMSample`, etc. as typed sample containers
+- **Strategy**: `CBISDDSMDataset` dispatches between `_load_full_image` and `_load_patch` based on mode
 
 #### Image Class Hierarchy
 
