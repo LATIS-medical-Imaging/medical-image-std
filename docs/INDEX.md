@@ -42,7 +42,14 @@ Welcome to the Medical Image Standard Library documentation!
 
 ### Specialized Topics
 
-5. **[Algorithm Reference](algorithms.md)** - Algorithm details
+5. **[Annotation & COCO Export API](annotation_api.md)** - Swagger-style API reference
+   - Annotation class (center, bounding box, ROI)
+   - Image-annotation integration (to_json / from_json)
+   - COCO JSON export / import
+   - JSON schemas and visualization examples
+   - Installation and usage guide
+
+6. **[Algorithm Reference](algorithms.md)** - Algorithm details
    - FEBDS algorithm (with paper reference)
    - Segmentation algorithms (K-Means, FCM, PFCM, Top-Hat)
    - Filtering algorithms
@@ -51,7 +58,7 @@ Welcome to the Medical Image Standard Library documentation!
    - Frequency domain algorithms
    - Algorithm selection guide
 
-6. **[Dataset Guide](datasets.md)** - Working with medical datasets
+7. **[Dataset Guide](datasets.md)** - Working with medical datasets
    - CBIS-DDSM dataset
    - Creating custom datasets
    - Annotation types and formats
@@ -60,7 +67,7 @@ Welcome to the Medical Image Standard Library documentation!
 
 ### Development
 
-7. **[Contributing Guide](contributing.md)** - For contributors
+8. **[Contributing Guide](contributing.md)** - For contributors
    - Development setup
    - Code standards (Black formatting)
    - Testing requirements
@@ -68,7 +75,7 @@ Welcome to the Medical Image Standard Library documentation!
    - Pull request process
    - Issue reporting
 
-8. **[Quick Reference](quick_reference.md)** - Code snippets
+9. **[Quick Reference](quick_reference.md)** - Code snippets
    - Common operations cheat sheet
    - Quick code examples
    - Useful constants
@@ -94,6 +101,9 @@ Welcome to the Medical Image Standard Library documentation!
 
 **Understand algorithms**
 -> [Algorithm Reference](algorithms.md)
+
+**Work with annotations & COCO export**
+-> [Annotation & COCO Export API](annotation_api.md)
 
 **Work with datasets**
 -> [Dataset Guide](datasets.md)
@@ -213,6 +223,7 @@ medical-image-std/
 │   ├── INDEX.md                 # This file
 │   ├── architecture.md          # Architecture details
 │   ├── api_reference.md         # API documentation
+│   ├── annotation_api.md        # Annotation & COCO API (Swagger-style)
 │   ├── user_guide.md            # User tutorials
 │   ├── algorithms.md            # Algorithm reference
 │   ├── datasets.md              # Dataset guide
@@ -277,5 +288,5 @@ MIT License - See LICENSE file for details
 
 ---
 
-**Last Updated**: 2026-03-12
-**Version**: 0.2.0
+**Last Updated**: 2026-04-15
+**Version**: 0.5.0

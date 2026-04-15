@@ -47,6 +47,43 @@ ImageExporter.save_as(image, format="PNG")
 
 ---
 
+## Annotations & COCO Export
+
+```python
+from medical_image.utils.annotation import Annotation, GeometryType
+from medical_image.data.in_memory_image import InMemoryImage
+from medical_image.data.image import image_from_json
+
+# Create annotations
+ann = Annotation(GeometryType.RECTANGLE, [100, 150, 200, 250], "mass")
+ann = Annotation(GeometryType.ELLIPSE, [256.0, 256.0, 50.0, 30.0], "lesion")
+ann = Annotation(GeometryType.POLYGON, [(10,10), (50,10), (50,50), (10,50)], "calc")
+
+# Inspect
+print(ann.center)             # Computed centroid
+print(ann.get_bounding_box()) # [x_min, y_min, x_max, y_max]
+
+# ROI with padding
+roi = ann.get_roi(padding=20, roi_type="bbox")
+roi = ann.get_roi(padding=10, roi_type="ellipse", image_shape=(512, 512))
+
+# Attach to image
+image = InMemoryImage(width=512, height=512)
+image.add_annotation(ann)
+removed = image.remove_annotation(0)
+
+# Serialize / deserialize
+json_str = image.to_json(file_path="output.json")
+restored = InMemoryImage.from_json("output.json")
+restored = image_from_json("output.json")  # auto-detects subclass
+
+# COCO export (on any BaseDataset subclass)
+coco = dataset.to_coco_json(output_path="coco.json")
+result = BaseDataset.from_coco_json("coco.json")
+```
+
+---
+
 ## Common Filters
 
 All filter functions accept an optional `device=None` parameter. When `None`,

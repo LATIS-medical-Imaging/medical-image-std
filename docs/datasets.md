@@ -76,6 +76,28 @@ Subclasses **must** implement:
 | `_to_chw` | `(tensor) -> Tensor` | `Tensor` | Ensure tensor is in `(C, H, W)` format |
 | `download` | `(source, destination, method, percentage) -> str` | `str` | Class method to download datasets |
 
+### Annotation & COCO Methods
+
+| Method | Signature | Returns | Description |
+|--------|-----------|---------|-------------|
+| `_get_annotations` | `(idx: int) -> List[Annotation]` | `List[Annotation]` | Override point for subclasses; returns annotations for sample at index. Default: `[]` |
+| `_annotation_to_coco_segmentation` | `(ann: Annotation) -> list` | `list` | Static. Converts any Annotation to COCO segmentation `[[x1,y1,...]]` |
+| `to_coco_json` | `(output_path=None, description="...") -> dict` | `dict` | Export entire dataset as COCO JSON. Optionally writes to file. |
+| `from_coco_json` | `(json_path: str) -> dict` | `dict` | Class method. Load COCO JSON into `{"images", "annotations", "categories"}` |
+
+**COCO export usage:**
+
+```python
+dataset = CBISDDSMDataset(root_dir="/data/cbis-ddsm")
+coco = dataset.to_coco_json(output_path="cbis_coco.json")
+print(f"Exported {len(coco['annotations'])} annotations")
+
+# Load back
+result = BaseDataset.from_coco_json("cbis_coco.json")
+```
+
+> **See also:** [Annotation & COCO Export API Reference](annotation_api.md) for the full Swagger-style documentation with JSON schemas and visualization examples.
+
 ### Output Contract
 
 Every `__getitem__` call returns a dictionary with at minimum:
@@ -110,8 +132,12 @@ classDiagram
         +__len__() int
         +__getitem__(idx) Dict
         +download(source, dest, method, pct)$ str
+        +to_coco_json(output_path, description) dict
+        +from_coco_json(json_path)$ dict
         -_build_sample_list()* abstract
         -_load_sample(idx)* abstract
+        -_get_annotations(idx) List~Annotation~
+        -_annotation_to_coco_segmentation(ann)$ list
         -_resize(tensor, size, mode) Tensor
         -_to_chw(tensor) Tensor
     }

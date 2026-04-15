@@ -92,6 +92,51 @@ Construct an Image by copying another Image.
 ##### `empty(width=None, height=None) -> Image` (classmethod)
 Construct an empty Image with optional width/height hints.
 
+##### `add_annotation(annotation: Annotation) -> None`
+Append an annotation to this image. Initializes `self.annotations` to `[]` if it is `None`.
+
+**Parameters:**
+- `annotation` (Annotation): The annotation to attach.
+
+##### `remove_annotation(index: int) -> Annotation`
+Remove and return the annotation at the given index.
+
+**Parameters:**
+- `index` (int): Zero-based index.
+
+**Returns:**
+- `Annotation`: The removed annotation.
+
+**Raises:**
+- `IndexError`: If `annotations` is `None` or index is out of range.
+
+##### `to_json(file_path: Optional[str] = None) -> str`
+Serialize this image's metadata and annotations to JSON.
+
+**Parameters:**
+- `file_path` (Optional[str]): If provided, also writes JSON to this file.
+
+**Returns:**
+- `str`: JSON string representation.
+
+##### `from_json(json_input: str) -> Image` (classmethod)
+Deserialize an Image from a JSON string or file path. Call on a concrete subclass.
+
+**Parameters:**
+- `json_input` (str): JSON string or path to a `.json` file.
+
+**Returns:**
+- `Image`: A new image instance with annotations loaded (pixel data is not loaded).
+
+#### `image_from_json(json_input: str) -> Image` (module-level function)
+Factory function that reads `image_type` from the JSON and dispatches to the correct subclass's `from_json`.
+
+**Parameters:**
+- `json_input` (str): JSON string or path to a `.json` file.
+
+**Returns:**
+- `Image`: Instance of the correct concrete subclass.
+
 ---
 
 ### `medical_image.data.in_memory_image`
@@ -304,40 +349,84 @@ Dataset loader for CBIS-DDSM mammography dataset.
 
 ### `medical_image.utils.annotation`
 
-#### `AnnotationType` (Enum)
+#### `GeometryType` (Enum)
 
-Enumeration of annotation types.
+Enumeration of supported geometric shapes for annotations.
 
 **Values:**
-- `BOUNDING_BOX`: Rectangular bounding box
-- `POLYGON`: Polygon region
-- `MASK`: Binary mask
+- `RECTANGLE`: Axis-aligned bounding box `[x_min, y_min, x_max, y_max]`
+- `ELLIPSE`: Center + radii `[cx, cy, rx, ry]`
+- `POLYGON`: Ordered vertex list `[(x1,y1), (x2,y2), ...]` (>= 3 points)
+- `MASK`: Binary NumPy 2D array
+- `POINT`: Single point `[x, y]`
+- `BOUNDING_BOX`: Backward-compatible alias for `RECTANGLE`
 
 ---
 
 #### `Annotation`
 
-Stores annotation information for medical images.
+Represents a single annotation (lesion, region, landmark) on a medical image.
 
 **Attributes:**
-- `annotation_type` (str): Type of annotation
-- `coordinates` (List): List of coordinate sets
-- `classes` (List[str]): Class labels
-- `image_view` (str): Image view/perspective
-- `abnormality_type` (str): Type of abnormality ('calcification' or 'mass')
-- `pathology` (str): Pathology classification
-- `calcification_type` (str, optional): Calcification type
-- `calcification_distribution` (str, optional): Calcification distribution
-- `mass_shape` (str, optional): Mass shape
-- `mass_margin` (str, optional): Mass margin
+- `shape` (GeometryType): Geometry type of the annotation
+- `coordinates` (Union[List[int], List[Tuple[int,int]], np.ndarray]): Shape-specific coordinate data
+- `label` (str): Annotation label (e.g. `"mass"`, `"calcification"`)
+- `metadata` (dict): Extra info (BI-RADS, margins, pathology, etc.)
+- `center` (Tuple[float, float]): Computed centroid of the geometry (set automatically in constructor)
 
 **Methods:**
 
-##### `__init__(...)`
-Initialize annotation with all metadata.
+##### `__init__(shape: GeometryType, coordinates, label: str, metadata: Optional[dict] = None)`
+Initialize annotation. Validates coordinates and computes center automatically.
+
+**Parameters:**
+- `shape` (GeometryType): Geometry type
+- `coordinates`: Shape-specific coordinates
+- `label` (str): Annotation label
+- `metadata` (Optional[dict]): Extra metadata. Defaults to `{}`
 
 **Raises:**
-- `ValueError`: If required fields for abnormality type are missing
+- `ValueError`: If coordinates don't match the shape contract
+
+##### `get_bounding_box() -> List[int]`
+Return the axis-aligned bounding box `[x_min, y_min, x_max, y_max]` for any geometry type.
+
+**Returns:**
+- `List[int]`: Bounding box coordinates
+
+**Raises:**
+- `ValueError`: For unsupported shapes
+
+##### `get_roi(padding: int = 0, roi_type: str = "bbox", image_shape: Optional[Tuple[int, int]] = None) -> dict`
+Get a region of interest around the annotation with configurable padding and shape.
+
+**Parameters:**
+- `padding` (int): Extra pixels on each side. Default: 0
+- `roi_type` (str): `"bbox"`, `"rectangle"`, or `"ellipse"`. Default: `"bbox"`
+- `image_shape` (Optional[Tuple[int, int]]): `(height, width)` to clamp within bounds
+
+**Returns:**
+- `dict`: `{"type": str, "coordinates": ...}` (format depends on `roi_type`)
+
+**Raises:**
+- `ValueError`: If `roi_type` is not recognized
+
+##### `to_dict() -> dict`
+Serialize annotation to a JSON-compatible dictionary. Includes computed `center` and `bounding_box` fields.
+
+**Returns:**
+- `dict`: Serialized annotation
+
+##### `from_dict(data: dict) -> Annotation` (classmethod)
+Deserialize an annotation from a dictionary (inverse of `to_dict`).
+
+**Parameters:**
+- `data` (dict): Dictionary with keys `shape`, `coordinates`, `label`, and optionally `metadata`
+
+**Returns:**
+- `Annotation`: Reconstructed annotation
+
+> **See also:** [Annotation & COCO Export API Reference](annotation_api.md) for the full Swagger-style documentation with schemas and examples.
 
 ---
 
