@@ -103,7 +103,7 @@ The framework is organized into four layers. Everything revolves around the **Im
 
 ```mermaid
 flowchart TB
-    subgraph Data Layer
+    subgraph Data_Layer
         IMG[Image]
         DICOM[DicomImage]
         PNG[PNGImage]
@@ -113,7 +113,7 @@ flowchart TB
         ANN[Annotation]
     end
 
-    subgraph Processing Layer
+    subgraph Processing_Layer
         FIL[Filters]
         THR[Threshold]
         MOR[MorphologyOperations]
@@ -122,7 +122,7 @@ flowchart TB
         MAM[MammographyPreprocessing]
     end
 
-    subgraph Algorithm Layer
+    subgraph Algorithm_Layer
         ALG[Algorithm]
         TH[TopHat]
         KM[KMeans]
@@ -135,7 +135,7 @@ flowchart TB
         BDN[BitDepthNorm]
     end
 
-    subgraph Dataset Layer
+    subgraph Dataset_Layer
         BD[BaseDataset]
         INB[INbreastDataset]
         CBIS[CBISDDSMDataset]
@@ -156,20 +156,20 @@ flowchart TB
     MAM --> IMG
 
     ALG --> TH
-   ALG --> KM
-   ALG --> FCM
-   ALG --> PFCM
-   ALG --> FEBDS
-   ALG --> BM
-   ALG --> DW
-   ALG --> GW
-   ALG --> BDN
+    ALG --> KM
+    ALG --> FCM
+    ALG --> PFCM
+    ALG --> FEBDS
+    ALG --> BM
+    ALG --> DW
+    ALG --> GW
+    ALG --> BDN
     ALG --> IMG
 
-    BD --> INB & CBIS
+    BD --> INB
+    BD --> CBIS
     BD --> IMG
 ```
-
 ### Design Principles
 
 | Principle | Description |
