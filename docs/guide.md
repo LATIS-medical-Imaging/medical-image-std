@@ -155,7 +155,15 @@ flowchart TB
     MET --> IMG
     MAM --> IMG
 
-    ALG --> TH & KM & FCM & PFCM & FEBDS & BM & DW & GW & BDN
+    ALG --> TH
+   ALG --> KM
+   ALG --> FCM
+   ALG --> PFCM
+   ALG --> FEBDS
+   ALG --> BM
+   ALG --> DW
+   ALG --> GW
+   ALG --> BDN
     ALG --> IMG
 
     BD --> INB & CBIS
