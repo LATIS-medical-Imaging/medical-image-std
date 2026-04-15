@@ -1,4 +1,5 @@
 import functools
+import json
 import os
 from abc import ABC, abstractmethod
 from typing import Optional, Union, List, TypeVar
@@ -6,6 +7,7 @@ from typing import Optional, Union, List, TypeVar
 import torch
 from medical_image.utils.logging import logger
 from medical_image.utils.ErrorHandler import ErrorMessages, DicomDataNotLoadedError
+from medical_image.utils.annotation import Annotation
 import numpy as np
 
 T = TypeVar("T")
@@ -48,6 +50,7 @@ class Image(ABC):
         self._height: Optional[int] = height
         self.pixel_data: Optional[torch.Tensor] = None
         self._device: torch.device = torch.device("cpu")
+        self.annotations: Optional[List[Annotation]] = None
 
         if file_path is not None:
             if not os.path.exists(file_path):
@@ -66,8 +69,7 @@ class Image(ABC):
             self._height = source_image._height
             if source_image.pixel_data is not None:
                 self.pixel_data = source_image.pixel_data.clone()
-            if hasattr(source_image, "annotations"):
-                self.annotations = source_image.annotations
+            self.annotations = source_image.annotations
         else:
             self.pixel_data = None
 
@@ -138,8 +140,7 @@ class Image(ABC):
         new.pixel_data = (
             self.pixel_data.clone() if self.pixel_data is not None else None
         )
-        if hasattr(self, "annotations"):
-            new.annotations = self.annotations
+        new.annotations = list(self.annotations) if self.annotations else None
         # Subclass-specific: don't copy heavy DICOM/PIL objects
         if hasattr(self, "dicom_data"):
             new.dicom_data = None
@@ -184,6 +185,83 @@ class Image(ABC):
         pass
 
     # ------------------------------------------------------------------
+    # Annotation helpers
+    # ------------------------------------------------------------------
+
+    def add_annotation(self, annotation: Annotation) -> None:
+        """Add an annotation to this image."""
+        if self.annotations is None:
+            self.annotations = []
+        self.annotations.append(annotation)
+
+    def remove_annotation(self, index: int) -> Annotation:
+        """Remove and return annotation at index."""
+        if self.annotations is None or index >= len(self.annotations):
+            raise IndexError(f"Annotation index {index} out of range")
+        return self.annotations.pop(index)
+
+    # ------------------------------------------------------------------
+    # JSON serialization
+    # ------------------------------------------------------------------
+
+    def to_json(self, file_path: Optional[str] = None) -> str:
+        """
+        Serialize this Image's metadata and annotations to JSON.
+
+        Args:
+            file_path: If provided, write JSON to this file path.
+
+        Returns:
+            JSON string representation.
+        """
+        data = {
+            "file_path": self.file_path,
+            "width": self.width,
+            "height": self.height,
+            "image_type": self.__class__.__name__,
+            "annotations": [
+                ann.to_dict() for ann in (self.annotations or [])
+            ],
+        }
+
+        json_str = json.dumps(data, indent=2)
+        if file_path:
+            with open(file_path, "w") as f:
+                f.write(json_str)
+        return json_str
+
+    @classmethod
+    def from_json(cls, json_input: str) -> "Image":
+        """
+        Deserialize an Image from a JSON string or file path.
+
+        Args:
+            json_input: JSON string or path to a JSON file.
+
+        Returns:
+            Image instance with annotations loaded.
+        """
+        if os.path.isfile(json_input):
+            with open(json_input, "r") as f:
+                data = json.load(f)
+        else:
+            data = json.loads(json_input)
+
+        image = cls(
+            file_path=data.get("file_path") if data.get("file_path") and os.path.exists(data["file_path"]) else None,
+            width=data.get("width"),
+            height=data.get("height"),
+        )
+
+        annotations = data.get("annotations", [])
+        if annotations:
+            image.annotations = [
+                Annotation.from_dict(ann) for ann in annotations
+            ]
+
+        return image
+
+    # ------------------------------------------------------------------
     # Display / repr
     # ------------------------------------------------------------------
 
@@ -212,7 +290,7 @@ class Image(ABC):
         else:
             logger.info("Width/Height: Not set")
 
-        if hasattr(self, "annotations") and self.annotations:
+        if self.annotations:
             if isinstance(self.annotations, list):
                 logger.info(f"Annotations: {len(self.annotations)} items")
             else:
@@ -231,3 +309,30 @@ class Image(ABC):
             f"{self.width}x{self.height}, "
             f"{status}, device={dev})"
         )
+
+
+def image_from_json(json_input: str) -> Image:
+    """
+    Factory: load any Image subclass from JSON.
+
+    Reads the ``image_type`` field and dispatches to the correct subclass.
+    """
+    if os.path.isfile(json_input):
+        with open(json_input, "r") as f:
+            data = json.load(f)
+    else:
+        data = json.loads(json_input)
+
+    from medical_image.data.dicom_image import DicomImage
+    from medical_image.data.png_image import PNGImage
+    from medical_image.data.in_memory_image import InMemoryImage
+
+    _registry = {
+        "DicomImage": DicomImage,
+        "PNGImage": PNGImage,
+        "InMemoryImage": InMemoryImage,
+    }
+
+    image_type = data.get("image_type", "InMemoryImage")
+    cls = _registry.get(image_type, InMemoryImage)
+    return cls.from_json(json_input)

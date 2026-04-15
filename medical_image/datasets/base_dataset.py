@@ -14,6 +14,7 @@ from torch.utils.data import Dataset
 
 from medical_image.utils.logging import logger
 from medical_image.utils.downloader import download
+from medical_image.utils.annotation import Annotation, GeometryType
 
 
 class BaseDataset(Dataset, ABC):
@@ -193,6 +194,191 @@ class BaseDataset(Dataset, ABC):
             return out.squeeze(0)
 
         return tensor
+
+    # ------------------------------------------------------------------
+    # Annotation support
+    # ------------------------------------------------------------------
+
+    def _get_annotations(self, idx: int) -> List[Annotation]:
+        """
+        Return annotations for sample at index.
+
+        Default implementation returns an empty list.
+        Subclasses should override this to provide actual Annotation objects.
+        """
+        return []
+
+    @staticmethod
+    def _annotation_to_coco_segmentation(ann: Annotation) -> list:
+        """Convert an Annotation to COCO segmentation format."""
+        if ann.shape == GeometryType.POLYGON:
+            flat = []
+            for x, y in ann.coordinates:
+                flat.extend([x, y])
+            return [flat]
+
+        elif ann.shape in (GeometryType.RECTANGLE,):
+            x_min, y_min, x_max, y_max = ann.coordinates
+            return [[x_min, y_min, x_max, y_min, x_max, y_max, x_min, y_max]]
+
+        elif ann.shape == GeometryType.ELLIPSE:
+            import math
+            cx, cy, rx, ry = ann.coordinates
+            n_points = 36
+            poly = []
+            for i in range(n_points):
+                theta = 2 * math.pi * i / n_points
+                px = cx + rx * math.cos(theta)
+                py = cy + ry * math.sin(theta)
+                poly.extend([px, py])
+            return [poly]
+
+        return []
+
+    # ------------------------------------------------------------------
+    # COCO JSON export / import
+    # ------------------------------------------------------------------
+
+    def to_coco_json(
+        self,
+        output_path: Optional[str] = None,
+        description: str = "Medical Image Dataset",
+    ) -> dict:
+        """
+        Export the entire dataset as a COCO-format JSON.
+
+        Args:
+            output_path: If provided, write JSON to this file.
+            description: Dataset description for the COCO info block.
+
+        Returns:
+            dict: The full COCO JSON structure.
+        """
+        import json
+        from datetime import datetime
+
+        coco: Dict[str, Any] = {
+            "info": {
+                "description": description,
+                "version": "1.0",
+                "date_created": datetime.now().isoformat(),
+            },
+            "licenses": [],
+            "categories": [],
+            "images": [],
+            "annotations": [],
+        }
+
+        category_map: Dict[str, int] = {}
+        ann_id = 1
+
+        for img_id, idx in enumerate(range(len(self)), start=1):
+            sample = self._load_sample(idx)
+            metadata = sample.get("metadata", {})
+            image_tensor = sample["image"]
+
+            if image_tensor.ndim == 3:
+                _, h, w = image_tensor.shape
+            else:
+                h, w = image_tensor.shape
+
+            coco["images"].append({
+                "id": img_id,
+                "file_name": metadata.get("file_name", metadata.get("case_id", f"image_{idx}")),
+                "width": int(w),
+                "height": int(h),
+            })
+
+            annotations = self._get_annotations(idx)
+
+            for ann in annotations:
+                if ann.label not in category_map:
+                    cat_id = len(category_map) + 1
+                    category_map[ann.label] = cat_id
+                    coco["categories"].append({
+                        "id": cat_id,
+                        "name": ann.label,
+                        "supercategory": "lesion",
+                    })
+
+                segmentation = self._annotation_to_coco_segmentation(ann)
+
+                bbox = ann.get_bounding_box()
+                coco_bbox = [
+                    bbox[0],
+                    bbox[1],
+                    bbox[2] - bbox[0],
+                    bbox[3] - bbox[1],
+                ]
+
+                area = coco_bbox[2] * coco_bbox[3]
+
+                coco["annotations"].append({
+                    "id": ann_id,
+                    "image_id": img_id,
+                    "category_id": category_map[ann.label],
+                    "segmentation": segmentation,
+                    "bbox": coco_bbox,
+                    "area": float(area),
+                    "iscrowd": 0,
+                    "center": list(ann.center),
+                })
+                ann_id += 1
+
+        if output_path:
+            with open(output_path, "w") as f:
+                json.dump(coco, f, indent=2)
+
+        return coco
+
+    @classmethod
+    def from_coco_json(cls, json_path: str) -> dict:
+        """
+        Load dataset metadata and annotations from a COCO JSON file.
+
+        Returns:
+            dict with:
+                - "images": list of image metadata dicts
+                - "annotations": dict mapping image_id -> List[Annotation]
+                - "categories": dict mapping category_id -> name
+        """
+        import json
+
+        with open(json_path, "r") as f:
+            coco = json.load(f)
+
+        categories = {cat["id"]: cat["name"] for cat in coco.get("categories", [])}
+
+        annotations_by_image: Dict[int, List[Annotation]] = {}
+        for ann_data in coco.get("annotations", []):
+            img_id = ann_data["image_id"]
+
+            seg = ann_data.get("segmentation", [[]])
+            if seg and seg[0]:
+                flat = seg[0]
+                coords = [(flat[i], flat[i + 1]) for i in range(0, len(flat), 2)]
+                shape = GeometryType.POLYGON
+            else:
+                bbox = ann_data.get("bbox", [0, 0, 0, 0])
+                coords = [bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3]]
+                shape = GeometryType.RECTANGLE
+
+            label = categories.get(ann_data.get("category_id", -1), "unknown")
+
+            annotation = Annotation(
+                shape=shape,
+                coordinates=coords,
+                label=label,
+                metadata={"coco_id": ann_data.get("id")},
+            )
+
+            annotations_by_image.setdefault(img_id, []).append(annotation)
+
+        return {
+            "images": coco.get("images", []),
+            "annotations": annotations_by_image,
+            "categories": categories,
+        }
 
     @staticmethod
     def _to_chw(tensor: torch.Tensor) -> torch.Tensor:
