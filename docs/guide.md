@@ -80,7 +80,7 @@ pip install -e ".[dev]"
 
 ```python
 import medical_image
-print(medical_image.__version__)  # 0.5.0
+print(medical_image.__version__) 
 ```
 
 ### Dependencies
@@ -423,8 +423,6 @@ RegionOfInterest(
 | `RECTANGLE` | `[x_min, y_min, x_max, y_max]` | Axis-aligned bounding box |
 | `ELLIPSE` | `[cx, cy, rx, ry]` | Center + radii |
 | `POLYGON` | `[(x1,y1), (x2,y2), ...]` | Ordered vertices (>= 3) |
-| `MASK` | `np.ndarray` (2D) | Binary mask |
-| `POINT` | `[x, y]` | Single point |
 | `BOUNDING_BOX` | alias for `RECTANGLE` | Backward compatibility |
 
 ### 6.2 Annotation
@@ -432,7 +430,7 @@ RegionOfInterest(
 ```python
 Annotation(
     shape: GeometryType,
-    coordinates: Union[List[int], List[Tuple[int, int]], np.ndarray],
+    coordinates: Union[List[int], List[Tuple[int, int]]],
     label: str,
     metadata: Optional[dict] = None,
 )

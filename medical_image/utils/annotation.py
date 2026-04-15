@@ -8,11 +8,9 @@ from medical_image.utils.ErrorHandler import ErrorMessages
 
 
 class GeometryType(Enum):
-    RECTANGLE = auto()    # [x_min, y_min, x_max, y_max]
-    ELLIPSE = auto()      # [cx, cy, rx, ry]
-    POLYGON = auto()      # [(x1, y1), (x2, y2), ...]
-    MASK = auto()
-    POINT = auto()
+    RECTANGLE = auto()  # [x_min, y_min, x_max, y_max]
+    ELLIPSE = auto()  # [cx, cy, rx, ry]
+    POLYGON = auto()  # [(x1, y1), (x2, y2), ...]
 
     # Backward-compatible alias
     BOUNDING_BOX = RECTANGLE
@@ -29,7 +27,6 @@ class Annotation:
         coordinates: Union[
             List[int],
             List[Tuple[int, int]],
-            np.ndarray,
         ],
         label: str,
         metadata: Optional[dict] = None,
@@ -37,7 +34,6 @@ class Annotation:
         """
         Args:
             shape (GeometryType): Type of geometric shape.
-            coordinates: The geometric data (bbox, polygon, mask, point)
             label (str): Annotation label (e.g., mass, calcification, nodule)
             metadata (dict, optional): Extra info (shape, margins, BI-RADS...)
         """
@@ -63,10 +59,6 @@ class Annotation:
         elif self.shape == GeometryType.POLYGON:
             if not (isinstance(self.coordinates, list) and len(self.coordinates) >= 3):
                 raise ValueError("Polygon must be a list of >= 3 (x, y) points")
-
-        elif self.shape == GeometryType.MASK:
-            if not isinstance(self.coordinates, np.ndarray):
-                raise ValueError("Mask must be a NumPy 2D array")
 
     def _compute_center(self) -> Tuple[float, float]:
         """Compute the centroid of the annotation geometry."""
