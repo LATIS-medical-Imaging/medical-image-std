@@ -6,7 +6,13 @@ Welcome to the Medical Image Standard Library documentation!
 
 ### Getting Started
 
-1. **[README.md](../README.md)** - Start here!
+1. **[Complete API Guide](guide.md)** - Full framework reference (Swagger-style)
+   - Installation from PyPI (`pip install medical-image-std`)
+   - Every class, method signature, parameter, and return type
+   - 10 runnable examples with visualization code
+   - GPU acceleration, datasets, COCO export
+
+2. **[README.md](../README.md)** - Project overview
    - Project overview and architecture
    - Installation instructions
    - Quick start guide
@@ -15,7 +21,7 @@ Welcome to the Medical Image Standard Library documentation!
 
 ### Core Documentation
 
-2. **[Architecture](architecture.md)** - Deep dive into design
+3. **[Architecture](architecture.md)** - Deep dive into design
    - Design philosophy and principles
    - Package architecture details
    - Design patterns used
@@ -23,14 +29,14 @@ Welcome to the Medical Image Standard Library documentation!
    - Extension points
    - Performance considerations
 
-3. **[API Reference](api_reference.md)** - Complete API documentation
+4. **[API Reference](api_reference.md)** - Complete API documentation
    - Data module (Image, Patch, ROI, InMemoryImage, etc.)
    - Process module (Filters, Threshold, Metrics, etc.)
    - Algorithms module
    - Utils module (including device and logging)
    - Type hints and error handling
 
-4. **[User Guide](user_guide.md)** - Practical tutorials
+5. **[User Guide](user_guide.md)** - Practical tutorials
    - Working with images (lazy loading)
    - Image processing operations
    - Patch-based processing
@@ -42,14 +48,14 @@ Welcome to the Medical Image Standard Library documentation!
 
 ### Specialized Topics
 
-5. **[Annotation & COCO Export API](annotation_api.md)** - Swagger-style API reference
+6. **[Annotation & COCO Export API](annotation_api.md)** - Swagger-style API reference
    - Annotation class (center, bounding box, ROI)
    - Image-annotation integration (to_json / from_json)
    - COCO JSON export / import
    - JSON schemas and visualization examples
    - Installation and usage guide
 
-6. **[Algorithm Reference](algorithms.md)** - Algorithm details
+7. **[Algorithm Reference](algorithms.md)** - Algorithm details
    - FEBDS algorithm (with paper reference)
    - Segmentation algorithms (K-Means, FCM, PFCM, Top-Hat)
    - Filtering algorithms
@@ -58,7 +64,7 @@ Welcome to the Medical Image Standard Library documentation!
    - Frequency domain algorithms
    - Algorithm selection guide
 
-7. **[Dataset Guide](datasets.md)** - Working with medical datasets
+8. **[Dataset Guide](datasets.md)** - Working with medical datasets
    - CBIS-DDSM dataset
    - Creating custom datasets
    - Annotation types and formats
@@ -67,7 +73,7 @@ Welcome to the Medical Image Standard Library documentation!
 
 ### Development
 
-8. **[Contributing Guide](contributing.md)** - For contributors
+9. **[Contributing Guide](contributing.md)** - For contributors
    - Development setup
    - Code standards (Black formatting)
    - Testing requirements
@@ -75,7 +81,7 @@ Welcome to the Medical Image Standard Library documentation!
    - Pull request process
    - Issue reporting
 
-9. **[Quick Reference](quick_reference.md)** - Code snippets
+10. **[Quick Reference](quick_reference.md)** - Code snippets
    - Common operations cheat sheet
    - Quick code examples
    - Useful constants
@@ -88,7 +94,7 @@ Welcome to the Medical Image Standard Library documentation!
 ### I want to...
 
 **Get started quickly**
--> [README.md](../README.md) -> [Quick Reference](quick_reference.md)
+-> [Complete API Guide](guide.md) -> [Quick Reference](quick_reference.md)
 
 **Understand the architecture**
 -> [Architecture](architecture.md)
@@ -221,9 +227,10 @@ medical-image-std/
 ├── README.md                    # Main documentation
 ├── docs/                        # Documentation folder
 │   ├── INDEX.md                 # This file
+│   ├── guide.md                 # Complete API guide (supervisor doc)
 │   ├── architecture.md          # Architecture details
 │   ├── api_reference.md         # API documentation
-│   ├── annotation_api.md        # Annotation & COCO API (Swagger-style)
+│   ├── annotation_api.md        # Annotation & COCO API details
 │   ├── user_guide.md            # User tutorials
 │   ├── algorithms.md            # Algorithm reference
 │   ├── datasets.md              # Dataset guide
