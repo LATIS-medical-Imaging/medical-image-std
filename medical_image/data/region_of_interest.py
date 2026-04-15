@@ -9,13 +9,19 @@ from medical_image.utils.annotation import GeometryType
 
 
 class RegionOfInterest:
-    """
-    PyTorch-compatible Region of Interest (ROI) extractor.
+    """PyTorch-compatible Region of Interest (ROI) extractor.
 
-    Supports:
-        - Bounding Box: [x_min, y_min, x_max, y_max]
-        - Polygon: [(x1, y1), ..., (xn, yn)]
-        - Mask: 2D NumPy array
+    Crops a sub-region from an :class:`~medical_image.data.image.Image`
+    using one of three coordinate formats:
+
+    * **Bounding Box:** ``[x_min, y_min, x_max, y_max]``
+    * **Polygon:** ``[(x1, y1), ..., (xn, yn)]``
+    * **Mask:** 2D boolean NumPy array
+
+    Attributes:
+        image (Image): The source image.
+        coordinates: ROI definition (format depends on annotation type).
+        annotation_type (GeometryType): Detected ROI type.
     """
 
     def __init__(
@@ -23,6 +29,12 @@ class RegionOfInterest:
         image: Image,
         coordinates: Union[List[int], List[Tuple[int, int]], np.ndarray],
     ):
+        """Initialise an ROI.
+
+        Args:
+            image: Source image (will be loaded lazily if needed).
+            coordinates: ROI definition -- bounding box, polygon, or mask.
+        """
         self.image = image
         self.coordinates = coordinates
         self.annotation_type = self._determine_annotation_type()
@@ -60,6 +72,14 @@ class RegionOfInterest:
         return cls(image=image, coordinates=[x_min, y_min, x_max, y_max])
 
     def _determine_annotation_type(self) -> GeometryType:
+        """Detect the ROI type from the shape and dtype of *coordinates*.
+
+        Returns:
+            ``BOUNDING_BOX``, ``POLYGON``, or ``MASK``.
+
+        Raises:
+            ValueError: If the format cannot be determined.
+        """
         if isinstance(self.coordinates, list):
             if len(self.coordinates) == 4 and all(
                 isinstance(c, int) for c in self.coordinates
@@ -75,8 +95,13 @@ class RegionOfInterest:
         raise ValueError("Unsupported ROI coordinates format.")
 
     def load(self) -> Image:
-        """
-        Crop the image using the ROI definition and return a new Image object.
+        """Crop the image using the ROI definition and return a new Image.
+
+        Loads the source image lazily if it has not been loaded yet.
+
+        Returns:
+            A cloned Image whose ``pixel_data`` contains only the
+            cropped region.
         """
         if self.image.pixel_data is None:
             self.image.load()

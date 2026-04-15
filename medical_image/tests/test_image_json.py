@@ -81,9 +81,7 @@ class TestImageJsonSerialization:
 
     def test_to_json_with_annotations(self):
         img = InMemoryImage(width=200, height=300)
-        img.add_annotation(
-            Annotation(GeometryType.RECTANGLE, [10, 20, 30, 40], "mass")
-        )
+        img.add_annotation(Annotation(GeometryType.RECTANGLE, [10, 20, 30, 40], "mass"))
         img.add_annotation(
             Annotation(GeometryType.POLYGON, [(0, 0), (5, 0), (5, 5)], "calc")
         )
@@ -95,9 +93,7 @@ class TestImageJsonSerialization:
 
     def test_to_json_writes_file(self):
         img = InMemoryImage(width=100, height=100)
-        img.add_annotation(
-            Annotation(GeometryType.RECTANGLE, [1, 2, 3, 4], "test")
-        )
+        img.add_annotation(Annotation(GeometryType.RECTANGLE, [1, 2, 3, 4], "test"))
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
@@ -111,9 +107,7 @@ class TestImageJsonSerialization:
 
     def test_from_json_string(self):
         img = InMemoryImage(width=200, height=300)
-        img.add_annotation(
-            Annotation(GeometryType.RECTANGLE, [10, 20, 30, 40], "mass")
-        )
+        img.add_annotation(Annotation(GeometryType.RECTANGLE, [10, 20, 30, 40], "mass"))
         json_str = img.to_json()
 
         restored = InMemoryImage.from_json(json_str)
@@ -142,9 +136,7 @@ class TestImageJsonSerialization:
 
     def test_round_trip_all_geometry_types(self):
         img = InMemoryImage(width=500, height=500)
-        img.add_annotation(
-            Annotation(GeometryType.RECTANGLE, [10, 20, 30, 40], "rect")
-        )
+        img.add_annotation(Annotation(GeometryType.RECTANGLE, [10, 20, 30, 40], "rect"))
         img.add_annotation(
             Annotation(GeometryType.ELLIPSE, [50.0, 50.0, 10.0, 20.0], "ell")
         )
@@ -166,9 +158,7 @@ class TestImageJsonSerialization:
 class TestImageFromJsonFactory:
     def test_factory_dispatches_to_correct_class(self):
         img = InMemoryImage(width=100, height=100)
-        img.add_annotation(
-            Annotation(GeometryType.RECTANGLE, [1, 2, 3, 4], "test")
-        )
+        img.add_annotation(Annotation(GeometryType.RECTANGLE, [1, 2, 3, 4], "test"))
         json_str = img.to_json()
         restored = image_from_json(json_str)
         assert type(restored).__name__ == "InMemoryImage"

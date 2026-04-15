@@ -95,7 +95,9 @@ class TestAnnotationROI:
 
 class TestAnnotationSerialization:
     def test_rectangle_round_trip(self):
-        ann = Annotation(GeometryType.RECTANGLE, [10, 20, 30, 40], "mass", {"key": "val"})
+        ann = Annotation(
+            GeometryType.RECTANGLE, [10, 20, 30, 40], "mass", {"key": "val"}
+        )
         d = ann.to_dict()
         restored = Annotation.from_dict(d)
         assert restored.shape == GeometryType.RECTANGLE

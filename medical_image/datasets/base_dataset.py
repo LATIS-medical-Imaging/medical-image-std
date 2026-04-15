@@ -200,17 +200,34 @@ class BaseDataset(Dataset, ABC):
     # ------------------------------------------------------------------
 
     def _get_annotations(self, idx: int) -> List[Annotation]:
-        """
-        Return annotations for sample at index.
+        """Return annotations for the sample at *idx*.
 
-        Default implementation returns an empty list.
-        Subclasses should override this to provide actual Annotation objects.
+        Override this in subclasses to provide actual
+        :class:`~medical_image.utils.annotation.Annotation` objects
+        used by :meth:`to_coco_json`.
+
+        Args:
+            idx: Sample index (same as for ``_load_sample``).
+
+        Returns:
+            List of annotations.  The default implementation returns ``[]``.
         """
         return []
 
     @staticmethod
     def _annotation_to_coco_segmentation(ann: Annotation) -> list:
-        """Convert an Annotation to COCO segmentation format."""
+        """Convert an Annotation to COCO segmentation format.
+
+        Args:
+            ann: The annotation to convert.
+
+        Returns:
+            A nested list ``[[x1, y1, x2, y2, ...]]`` suitable for the
+            COCO ``segmentation`` field.  ``POLYGON`` coordinates are
+            flattened; ``RECTANGLE`` is expanded to four corners;
+            ``ELLIPSE`` is approximated as a 36-point polygon.
+            Returns ``[]`` for unsupported shapes.
+        """
         if ann.shape == GeometryType.POLYGON:
             flat = []
             for x, y in ann.coordinates:
@@ -223,6 +240,7 @@ class BaseDataset(Dataset, ABC):
 
         elif ann.shape == GeometryType.ELLIPSE:
             import math
+
             cx, cy, rx, ry = ann.coordinates
             n_points = 36
             poly = []
@@ -244,15 +262,27 @@ class BaseDataset(Dataset, ABC):
         output_path: Optional[str] = None,
         description: str = "Medical Image Dataset",
     ) -> dict:
-        """
-        Export the entire dataset as a COCO-format JSON.
+        """Export the entire dataset as a COCO-format JSON.
+
+        Iterates over every sample, calls :meth:`_get_annotations` for each,
+        and builds the standard COCO structure (``info``, ``images``,
+        ``annotations``, ``categories``).
+
+        Each annotation entry includes a custom ``"center"`` field with the
+        annotation centroid -- this is an extension to the official COCO spec.
+
+        Note:
+            COCO ``bbox`` format is ``[x, y, width, height]``, **not**
+            ``[x_min, y_min, x_max, y_max]``.  The conversion is handled
+            automatically.
 
         Args:
-            output_path: If provided, write JSON to this file.
-            description: Dataset description for the COCO info block.
+            output_path: If provided, the JSON dict is also written to this
+                file path.
+            description: Free-text description for the COCO ``info`` block.
 
         Returns:
-            dict: The full COCO JSON structure.
+            The full COCO JSON structure as a ``dict``.
         """
         import json
         from datetime import datetime
@@ -282,12 +312,16 @@ class BaseDataset(Dataset, ABC):
             else:
                 h, w = image_tensor.shape
 
-            coco["images"].append({
-                "id": img_id,
-                "file_name": metadata.get("file_name", metadata.get("case_id", f"image_{idx}")),
-                "width": int(w),
-                "height": int(h),
-            })
+            coco["images"].append(
+                {
+                    "id": img_id,
+                    "file_name": metadata.get(
+                        "file_name", metadata.get("case_id", f"image_{idx}")
+                    ),
+                    "width": int(w),
+                    "height": int(h),
+                }
+            )
 
             annotations = self._get_annotations(idx)
 
@@ -295,11 +329,13 @@ class BaseDataset(Dataset, ABC):
                 if ann.label not in category_map:
                     cat_id = len(category_map) + 1
                     category_map[ann.label] = cat_id
-                    coco["categories"].append({
-                        "id": cat_id,
-                        "name": ann.label,
-                        "supercategory": "lesion",
-                    })
+                    coco["categories"].append(
+                        {
+                            "id": cat_id,
+                            "name": ann.label,
+                            "supercategory": "lesion",
+                        }
+                    )
 
                 segmentation = self._annotation_to_coco_segmentation(ann)
 
@@ -313,16 +349,18 @@ class BaseDataset(Dataset, ABC):
 
                 area = coco_bbox[2] * coco_bbox[3]
 
-                coco["annotations"].append({
-                    "id": ann_id,
-                    "image_id": img_id,
-                    "category_id": category_map[ann.label],
-                    "segmentation": segmentation,
-                    "bbox": coco_bbox,
-                    "area": float(area),
-                    "iscrowd": 0,
-                    "center": list(ann.center),
-                })
+                coco["annotations"].append(
+                    {
+                        "id": ann_id,
+                        "image_id": img_id,
+                        "category_id": category_map[ann.label],
+                        "segmentation": segmentation,
+                        "bbox": coco_bbox,
+                        "area": float(area),
+                        "iscrowd": 0,
+                        "center": list(ann.center),
+                    }
+                )
                 ann_id += 1
 
         if output_path:
@@ -333,14 +371,23 @@ class BaseDataset(Dataset, ABC):
 
     @classmethod
     def from_coco_json(cls, json_path: str) -> dict:
-        """
-        Load dataset metadata and annotations from a COCO JSON file.
+        """Load dataset metadata and annotations from a COCO JSON file.
+
+        Reconstructs :class:`~medical_image.utils.annotation.Annotation`
+        objects from COCO segmentation polygons (preferred) or bounding boxes
+        (fallback when segmentation is empty).
+
+        Args:
+            json_path: Path to a COCO-format ``.json`` file.
 
         Returns:
-            dict with:
-                - "images": list of image metadata dicts
-                - "annotations": dict mapping image_id -> List[Annotation]
-                - "categories": dict mapping category_id -> name
+            A dict with three keys:
+
+            * ``"images"``      -- list of COCO image-entry dicts.
+            * ``"annotations"`` -- ``Dict[int, List[Annotation]]`` mapping
+              each COCO image ID to its reconstructed annotations.
+            * ``"categories"``  -- ``Dict[int, str]`` mapping each COCO
+              category ID to its label name.
         """
         import json
 

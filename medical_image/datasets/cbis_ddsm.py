@@ -471,6 +471,7 @@ class CBISDDSMDataset(BaseDataset):
         Read DICOM header to get image dimensions without loading pixel data.
         """
         import pydicom
+
         ds = pydicom.dcmread(dcm_path, stop_before_pixels=True)
         return int(ds.Rows), int(ds.Columns)
 

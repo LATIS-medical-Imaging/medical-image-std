@@ -18,7 +18,8 @@ def _safe_to_device(tensor: torch.Tensor, device: torch.device) -> tuple:
         if device.type != "cpu":
             logger.warning(
                 "CUDA error moving tensor to %s, falling back to CPU: %s",
-                device, e,
+                device,
+                e,
             )
             torch.cuda.empty_cache()
             cpu = torch.device("cpu")
@@ -172,7 +173,9 @@ class MorphologyOperations:
                 torch.cuda.empty_cache()
                 img = img.cpu()
                 neg_img = (-img).unsqueeze(0).unsqueeze(0)
-                neg_padded = F.pad(neg_img, (pad, pad, pad, pad), mode="constant", value=0)
+                neg_padded = F.pad(
+                    neg_img, (pad, pad, pad, pad), mode="constant", value=0
+                )
                 neg_max = F.max_pool2d(neg_padded, kernel_size, stride=1)
                 eroded = (-neg_max).squeeze(0).squeeze(0)[:H, :W]
             else:

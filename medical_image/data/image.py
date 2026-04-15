@@ -14,7 +14,12 @@ T = TypeVar("T")
 
 
 def requires_loaded(func):
-    """Decorator that checks pixel_data is not None before processing."""
+    """Decorator that verifies ``pixel_data`` is loaded on every Image argument.
+
+    Inspects all positional and keyword arguments; raises
+    ``DicomDataNotLoadedError`` if any :class:`Image` has
+    ``pixel_data is None``.
+    """
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
@@ -29,12 +34,20 @@ def requires_loaded(func):
 
 
 class Image(ABC):
-    """
-    Abstract base class for medical images supporting lazy loading and multiple constructors.
+    """Abstract base class for medical images.
 
-    Width and height are computed properties derived from pixel_data.shape when
-    pixel_data is loaded. Before loading, they fall back to cached values set
-    during construction or by subclass .load() methods.
+    Supports lazy loading and four mutually-exclusive construction paths
+    (file, array, source image, or empty shell).  Width and height are
+    computed properties derived from ``pixel_data.shape`` when loaded,
+    falling back to cached values before loading.
+
+    The Image optionally holds a list of :class:`~medical_image.utils.annotation.Annotation`
+    objects via aggregation -- an image can exist without annotations.
+
+    Attributes:
+        file_path (Optional[str]): Path to the image file on disk.
+        pixel_data (Optional[torch.Tensor]): Pixel values (``None`` until loaded).
+        annotations (Optional[List[Annotation]]): Attached annotations (``None`` by default).
     """
 
     def __init__(
@@ -45,6 +58,16 @@ class Image(ABC):
         height: Optional[int] = None,
         source_image: Optional["Image"] = None,
     ):
+        """Initialise an Image via one of four construction paths.
+
+        Args:
+            file_path: Path to an image file.  Raises ``FileNotFoundError``
+                if it does not exist.
+            array: Pre-existing numpy array or torch tensor to wrap as pixel data.
+            width: Explicit width hint (used before pixel data is loaded).
+            height: Explicit height hint (used before pixel data is loaded).
+            source_image: Another Image to clone metadata and pixel data from.
+        """
         self.file_path: Optional[str] = None
         self._width: Optional[int] = width
         self._height: Optional[int] = height
@@ -108,20 +131,37 @@ class Image(ABC):
         return self._device
 
     def to(self, device: Union[str, torch.device]) -> "Image":
-        """Move pixel_data to target device (in-place). Returns self for chaining."""
+        """Move pixel data to *device* (in-place).
+
+        Args:
+            device: Target device (e.g. ``"cuda"``, ``"cpu"``).
+
+        Returns:
+            ``self``, for method chaining.
+        """
         self._device = torch.device(device)
         if self.pixel_data is not None:
             self.pixel_data = self.pixel_data.to(self._device)
         return self
 
     def ensure_loaded(self) -> "Image":
-        """Guard method: raise if pixel_data is None."""
+        """Raise ``DicomDataNotLoadedError`` if pixel data has not been loaded.
+
+        Returns:
+            ``self``, for method chaining.
+        """
         if self.pixel_data is None:
             raise DicomDataNotLoadedError("Call .load() first")
         return self
 
     def pin_memory(self) -> "Image":
-        """Pin pixel_data to page-locked memory for faster GPU transfers."""
+        """Pin pixel data to page-locked memory for faster GPU transfers.
+
+        No-op if pixel data is ``None`` or already pinned.
+
+        Returns:
+            ``self``, for method chaining.
+        """
         if self.pixel_data is not None and not self.pixel_data.is_pinned():
             self.pixel_data = self.pixel_data.pin_memory()
         return self
@@ -131,7 +171,14 @@ class Image(ABC):
     # ------------------------------------------------------------------
 
     def clone(self) -> "Image":
-        """Lightweight clone: copies pixel_data tensor and metadata, not heavy objects."""
+        """Create a lightweight copy of this image.
+
+        Clones the pixel data tensor and shallow-copies the annotation list,
+        but does **not** copy heavy objects (DICOM dataset, PIL image).
+
+        Returns:
+            A new Image of the same concrete type.
+        """
         new = self.__class__.__new__(self.__class__)
         new.file_path = self.file_path
         new._width = self._width
@@ -154,20 +201,24 @@ class Image(ABC):
 
     @classmethod
     def from_file(cls, file_path: str) -> "Image":
+        """Construct an Image from a file path (lazy -- does not load pixels)."""
         return cls(file_path=file_path)
 
     @classmethod
     def from_image(cls, other_image: "Image") -> "Image":
+        """Construct an Image by copying metadata and pixel data from *other_image*."""
         return cls(source_image=other_image)
 
     @classmethod
     def from_array(cls, array: Union[np.ndarray, torch.Tensor]) -> "Image":
+        """Construct an Image from a NumPy array or PyTorch tensor."""
         return cls(array=array)
 
     @classmethod
     def empty(
         cls, width: Optional[int] = None, height: Optional[int] = None
     ) -> "Image":
+        """Construct an empty Image shell with optional width/height hints."""
         return cls(width=width, height=height)
 
     # ------------------------------------------------------------------
@@ -189,13 +240,31 @@ class Image(ABC):
     # ------------------------------------------------------------------
 
     def add_annotation(self, annotation: Annotation) -> None:
-        """Add an annotation to this image."""
+        """Append an annotation to this image.
+
+        Initialises the annotation list to ``[]`` on first call if it is
+        currently ``None``.
+
+        Args:
+            annotation: The :class:`Annotation` to attach.
+        """
         if self.annotations is None:
             self.annotations = []
         self.annotations.append(annotation)
 
     def remove_annotation(self, index: int) -> Annotation:
-        """Remove and return annotation at index."""
+        """Remove and return the annotation at *index*.
+
+        Args:
+            index: Zero-based position in the annotation list.
+
+        Returns:
+            The removed :class:`Annotation`.
+
+        Raises:
+            IndexError: If the annotation list is ``None`` or *index* is
+                out of range.
+        """
         if self.annotations is None or index >= len(self.annotations):
             raise IndexError(f"Annotation index {index} out of range")
         return self.annotations.pop(index)
@@ -205,23 +274,25 @@ class Image(ABC):
     # ------------------------------------------------------------------
 
     def to_json(self, file_path: Optional[str] = None) -> str:
-        """
-        Serialize this Image's metadata and annotations to JSON.
+        """Serialize this image's metadata and annotations to JSON.
+
+        Pixel data is **not** included -- only file path, dimensions,
+        image type, and the full annotation list.
 
         Args:
-            file_path: If provided, write JSON to this file path.
+            file_path: If provided, the JSON string is also written to
+                this file path.
 
         Returns:
-            JSON string representation.
+            A JSON string with keys ``file_path``, ``width``, ``height``,
+            ``image_type``, and ``annotations``.
         """
         data = {
             "file_path": self.file_path,
             "width": self.width,
             "height": self.height,
             "image_type": self.__class__.__name__,
-            "annotations": [
-                ann.to_dict() for ann in (self.annotations or [])
-            ],
+            "annotations": [ann.to_dict() for ann in (self.annotations or [])],
         }
 
         json_str = json.dumps(data, indent=2)
@@ -232,14 +303,18 @@ class Image(ABC):
 
     @classmethod
     def from_json(cls, json_input: str) -> "Image":
-        """
-        Deserialize an Image from a JSON string or file path.
+        """Deserialize an Image from a JSON string or file path.
+
+        Pixel data is **not** loaded -- only metadata and annotations are
+        restored.  Call on a concrete subclass (``InMemoryImage``,
+        ``DicomImage``, ``PNGImage``).  For automatic subclass dispatch see
+        :func:`image_from_json`.
 
         Args:
-            json_input: JSON string or path to a JSON file.
+            json_input: A JSON string **or** a path to a ``.json`` file.
 
         Returns:
-            Image instance with annotations loaded.
+            A new Image instance with annotations attached.
         """
         if os.path.isfile(json_input):
             with open(json_input, "r") as f:
@@ -248,16 +323,18 @@ class Image(ABC):
             data = json.loads(json_input)
 
         image = cls(
-            file_path=data.get("file_path") if data.get("file_path") and os.path.exists(data["file_path"]) else None,
+            file_path=(
+                data.get("file_path")
+                if data.get("file_path") and os.path.exists(data["file_path"])
+                else None
+            ),
             width=data.get("width"),
             height=data.get("height"),
         )
 
         annotations = data.get("annotations", [])
         if annotations:
-            image.annotations = [
-                Annotation.from_dict(ann) for ann in annotations
-            ]
+            image.annotations = [Annotation.from_dict(ann) for ann in annotations]
 
         return image
 
@@ -265,7 +342,8 @@ class Image(ABC):
     # Display / repr
     # ------------------------------------------------------------------
 
-    def display_info(self):
+    def display_info(self) -> None:
+        """Log summary information about this image (path, dimensions, device, annotations)."""
         logger.info("=== Image Info ===")
 
         if self.file_path:
@@ -300,7 +378,8 @@ class Image(ABC):
 
         logger.info("=================")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Return a one-line summary of the image (class, path, size, status)."""
         status = "loaded" if self.pixel_data is not None else "unloaded"
         dev = str(self.device) if self.pixel_data is not None else "n/a"
         return (
@@ -312,10 +391,22 @@ class Image(ABC):
 
 
 def image_from_json(json_input: str) -> Image:
-    """
-    Factory: load any Image subclass from JSON.
+    """Factory function: load any Image subclass from JSON.
 
-    Reads the ``image_type`` field and dispatches to the correct subclass.
+    Reads the ``image_type`` field from the JSON payload and dispatches
+    to the matching concrete subclass's :meth:`Image.from_json`.
+
+    Dispatch table:
+        * ``"DicomImage"``    -> :class:`DicomImage`
+        * ``"PNGImage"``      -> :class:`PNGImage`
+        * ``"InMemoryImage"`` -> :class:`InMemoryImage` (also the fallback)
+
+    Args:
+        json_input: A JSON string **or** a path to a ``.json`` file.
+
+    Returns:
+        An instance of the correct concrete Image subclass with annotations
+        attached.
     """
     if os.path.isfile(json_input):
         with open(json_input, "r") as f:
