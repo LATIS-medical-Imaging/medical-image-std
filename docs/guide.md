@@ -103,12 +103,13 @@ The framework is organized into four layers. Everything revolves around the **Im
 
 ```mermaid
 flowchart TB
+
     subgraph Data_Layer
         IMG[Image]
         DICOM[DicomImage]
         PNG[PNGImage]
         MEM[InMemoryImage]
-        PATCH[PatchGrid / Patch]
+        PATCH[PatchGrid - Patch]
         ROI[RegionOfInterest]
         ANN[Annotation]
     end
@@ -146,7 +147,7 @@ flowchart TB
     IMG --> MEM
     IMG --> PATCH
     IMG --> ROI
-    IMG o-- ANN
+    IMG --> ANN
 
     FIL --> IMG
     THR --> IMG
