@@ -355,6 +355,7 @@ class CBISDDSMDataset(BaseDataset):
                 "view": case.view,
                 "side": case.side,
                 "task": case.task,
+                "mammogram_path": case.mammogram_path,
             },
         }
 
