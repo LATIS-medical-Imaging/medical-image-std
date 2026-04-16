@@ -108,7 +108,12 @@ class TestDicom:
         algorithm = FebdsAlgorithm("dog")
         algorithm(image=dicom_image, output=output)
 
-        image_output = output.pixel_data.detach().cpu().numpy().reshape((dicom_image.height, dicom_image.width))
+        image_output = (
+            output.pixel_data.detach()
+            .cpu()
+            .numpy()
+            .reshape((dicom_image.height, dicom_image.width))
+        )
         assert not torch.allclose(
             torch.tensor(I).float(), output.pixel_data.detach().cpu()
         )
