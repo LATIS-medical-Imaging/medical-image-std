@@ -22,13 +22,13 @@ dependencies = [
     "torchvision",
     "transformers",
     "pandas",
-    "pyqt5>=5.15.11",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "black>=23.0", "ruff", "mypy"]
 gpu = ["torch", "torchvision"]
-all = ["medical-image-std[dev,gpu]"]
+qt = ["pyqt5>=5.15.11; python_version < '3.13'", "pyqt6>=6.5.0; python_version >= '3.13'"]
+all = ["medical-image-std[dev,gpu,qt]"]
 
 [build-system]
 requires = ["setuptools"]
