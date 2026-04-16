@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import requests
@@ -74,12 +73,11 @@ def mock_dicom():
 
 
 def download_png():
-    img_dir = os.path.join("dummy_data")
-    os.makedirs(img_dir, exist_ok=True)
+    DUMMY_DIR.mkdir(exist_ok=True)
 
-    png_path = os.path.join(img_dir, "sample.png")
+    png_path = DUMMY_DIR / "sample.png"
 
-    if os.path.exists(png_path):
+    if png_path.exists():
         print("PNG file already exists at:", png_path)
         return
 
@@ -95,7 +93,7 @@ def download_png():
         response = requests.get(png_url, headers=headers)
         response.raise_for_status()  # Raise an error for bad response status codes
 
-        with open(png_path, "wb") as f:
+        with open(str(png_path), "wb") as f:
             f.write(response.content)
 
         print("PNG file downloaded successfully.")
