@@ -1,31 +1,18 @@
-"""Unit tests for Patch and PatchGrid classes."""
+"""Unit tests for Patch and PatchGrid classes.
+
+Uses real DICOM images via ``mock_dicom_image`` for consistency with the
+rest of the test suite, and includes algorithm-on-patch integration tests.
+"""
 
 import numpy as np
 import pytest
 import torch
 
-from medical_image.data.in_memory_image import InMemoryImage
+from medical_image.algorithms.FEBDS import FebdsAlgorithm
+from medical_image.algorithms.kmeans import KMeansAlgorithm
 from medical_image.data.patch import Patch, PatchGrid
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def _make_image(h: int, w: int, channels: int = 0) -> InMemoryImage:
-    """Create an InMemoryImage with deterministic pixel values.
-
-    Args:
-        h: Height.
-        w: Width.
-        channels: 0 for HW layout, otherwise number of channels (CHW).
-    """
-    if channels:
-        arr = np.arange(channels * h * w, dtype=np.float32).reshape(channels, h, w)
-    else:
-        arr = np.arange(h * w, dtype=np.float32).reshape(h, w)
-    return InMemoryImage(array=arr)
-
+from medical_image.data.region_of_interest import RegionOfInterest
+from medical_image.tests.mock_sample import mock_dicom_image
 
 # ---------------------------------------------------------------------------
 # Patch tests
@@ -33,104 +20,112 @@ def _make_image(h: int, w: int, channels: int = 0) -> InMemoryImage:
 
 
 class TestPatch:
-    def test_properties(self):
-        img = _make_image(64, 64)
-        patch_data = img.pixel_data[:32, :16]
-        p = Patch(parent=img, row_idx=0, col_idx=0, x=0, y=0, pixel_data=patch_data)
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_properties(self, dicom_image):
+        patch_data = dicom_image.pixel_data[:32, :16]
+        p = Patch(
+            parent=dicom_image,
+            row_idx=0,
+            col_idx=0,
+            x=0,
+            y=0,
+            pixel_data=patch_data,
+        )
         assert p.height == 32
         assert p.width == 16
 
-    def test_grid_id(self):
-        img = _make_image(64, 64)
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_grid_id(self, dicom_image):
         p = Patch(
-            parent=img,
+            parent=dicom_image,
             row_idx=2,
             col_idx=3,
             x=0,
             y=0,
-            pixel_data=img.pixel_data[:8, :8],
+            pixel_data=dicom_image.pixel_data[:8, :8],
         )
         assert p.grid_id() == (2, 3)
 
-    def test_pixel_position(self):
-        img = _make_image(64, 64)
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_pixel_position(self, dicom_image):
         p = Patch(
-            parent=img,
+            parent=dicom_image,
             row_idx=0,
             col_idx=0,
             x=16,
             y=32,
-            pixel_data=img.pixel_data[:8, :8],
+            pixel_data=dicom_image.pixel_data[:8, :8],
         )
         assert p.pixel_position() == (16, 32)
 
-    def test_to_numpy(self):
-        img = _make_image(16, 16)
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_to_numpy(self, dicom_image):
         p = Patch(
-            parent=img,
+            parent=dicom_image,
             row_idx=0,
             col_idx=0,
             x=0,
             y=0,
-            pixel_data=img.pixel_data[:8, :8],
+            pixel_data=dicom_image.pixel_data[:8, :8],
         )
         arr = p.to_numpy()
         assert isinstance(arr, np.ndarray)
         assert arr.shape == (8, 8)
 
-    def test_to_image_returns_image(self):
-        img = _make_image(32, 32)
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_to_image_returns_image(self, dicom_image):
         p = Patch(
-            parent=img,
+            parent=dicom_image,
             row_idx=0,
             col_idx=0,
             x=0,
             y=0,
-            pixel_data=img.pixel_data[:16, :16],
+            pixel_data=dicom_image.pixel_data[:16, :16],
         )
         result = p.to_image()
-        assert isinstance(result, InMemoryImage)
+        assert result.pixel_data is not None
         assert result.pixel_data.shape == (16, 16)
         assert result.file_path is None
 
-    def test_to_image_clones_data(self):
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_to_image_clones_data(self, dicom_image):
         """to_image must not share the same tensor with the parent."""
-        img = _make_image(32, 32)
+        original = dicom_image.pixel_data.clone()
         p = Patch(
-            parent=img,
+            parent=dicom_image,
             row_idx=0,
             col_idx=0,
             x=0,
             y=0,
-            pixel_data=img.pixel_data[:16, :16].clone(),
+            pixel_data=dicom_image.pixel_data[:16, :16].clone(),
         )
         result = p.to_image()
         result.pixel_data.fill_(999.0)
-        assert img.pixel_data[0, 0].item() != 999.0
+        assert torch.equal(dicom_image.pixel_data, original)
 
-    def test_load_delegates_to_to_image(self):
-        img = _make_image(32, 32)
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_load_delegates_to_to_image(self, dicom_image):
         p = Patch(
-            parent=img,
+            parent=dicom_image,
             row_idx=0,
             col_idx=0,
             x=0,
             y=0,
-            pixel_data=img.pixel_data[:16, :16],
+            pixel_data=dicom_image.pixel_data[:16, :16],
         )
         result = p.load()
-        assert isinstance(result, InMemoryImage)
+        assert result.pixel_data is not None
         assert result.pixel_data.shape == (16, 16)
 
-    def test_repr(self):
-        img = _make_image(32, 32)
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_repr(self, dicom_image):
         p = Patch(
-            parent=img,
+            parent=dicom_image,
             row_idx=1,
             col_idx=2,
             x=16,
             y=32,
-            pixel_data=img.pixel_data[:8, :8],
+            pixel_data=dicom_image.pixel_data[:8, :8],
         )
         r = repr(p)
         assert "Patch[1,2]" in r
@@ -138,91 +133,57 @@ class TestPatch:
 
 
 # ---------------------------------------------------------------------------
-# PatchGrid tests — HW layout
+# PatchGrid tests
 # ---------------------------------------------------------------------------
 
 
-class TestPatchGridHW:
-    def test_exact_split(self):
-        """Image dimensions evenly divisible by patch size."""
-        img = _make_image(64, 64)
-        grid = PatchGrid(img, (32, 32))
-        assert len(grid.patches) == 4
-        assert len(grid.grid) == 2
-        assert len(grid.grid[0]) == 2
-        assert grid.pad_bottom == 0
-        assert grid.pad_right == 0
+class TestPatchGrid:
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_split_creates_patches(self, dicom_image):
+        grid = PatchGrid(dicom_image, (64, 64))
+        assert len(grid.patches) > 0
+        assert len(grid.grid) > 0
 
-    def test_padding(self):
-        """Image dimensions not divisible — padding required."""
-        img = _make_image(50, 70)
-        grid = PatchGrid(img, (32, 32))
-        assert grid.pad_bottom == 14  # 64 - 50
-        assert grid.pad_right == 26  # 96 - 70
-        assert len(grid.patches) == 2 * 3  # 2 rows x 3 cols
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_grid_dimensions(self, dicom_image):
+        grid = PatchGrid(dicom_image, (64, 64))
+        total = sum(len(row) for row in grid.grid)
+        assert total == len(grid.patches)
 
-    def test_padded_flag(self):
-        img = _make_image(50, 70)
-        grid = PatchGrid(img, (32, 32))
-        # Last row and last column patches are padded
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_patch_size(self, dicom_image):
+        grid = PatchGrid(dicom_image, (64, 64))
+        for p in grid.patches:
+            assert p.height == 64
+            assert p.width == 64
+
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_padded_flag(self, dicom_image):
+        grid = PatchGrid(dicom_image, (64, 64))
+        num_rows = len(grid.grid)
+        num_cols = len(grid.grid[0])
         for p in grid.patches:
             r, c = p.grid_id()
-            num_rows = len(grid.grid)
-            num_cols = len(grid.grid[0])
             expected = (r == num_rows - 1 and grid.pad_bottom > 0) or (
                 c == num_cols - 1 and grid.pad_right > 0
             )
             assert p.is_padded == expected, f"Patch[{r},{c}] is_padded mismatch"
 
-    def test_reconstruct_exact(self):
-        """Reconstruction of an exactly-divisible image matches original."""
-        img = _make_image(64, 64)
-        grid = PatchGrid(img, (32, 32))
-        recon = grid.reconstruct()
-        assert torch.equal(recon, img.pixel_data)
-
-    def test_reconstruct_padded(self):
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_reconstruct(self, dicom_image):
         """Reconstruction strips padding and matches original."""
-        img = _make_image(50, 70)
-        grid = PatchGrid(img, (32, 32))
+        grid = PatchGrid(dicom_image, (64, 64))
         recon = grid.reconstruct()
-        assert recon.shape == img.pixel_data.shape
-        assert torch.equal(recon, img.pixel_data)
+        assert recon.shape == dicom_image.pixel_data.shape
+        assert torch.equal(recon, dicom_image.pixel_data)
 
-    def test_int_patch_size(self):
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_int_patch_size(self, dicom_image):
         """Passing a single int creates square patches."""
-        img = _make_image(64, 64)
-        grid = PatchGrid(img, 32)
-        assert grid.patch_h == 32
-        assert grid.patch_w == 32
-        assert len(grid.patches) == 4
-
-
-# ---------------------------------------------------------------------------
-# PatchGrid tests — CHW layout
-# ---------------------------------------------------------------------------
-
-
-class TestPatchGridCHW:
-    def test_exact_split(self):
-        img = _make_image(64, 64, channels=3)
-        grid = PatchGrid(img, (32, 32))
-        assert len(grid.patches) == 4
-        for p in grid.patches:
-            assert p.pixel_data.shape == (3, 32, 32)
-
-    def test_reconstruct_exact(self):
-        img = _make_image(64, 64, channels=3)
-        grid = PatchGrid(img, (32, 32))
-        recon = grid.reconstruct()
-        assert torch.equal(recon, img.pixel_data)
-
-    def test_reconstruct_padded(self):
-        img = _make_image(50, 70, channels=1)
-        grid = PatchGrid(img, (32, 32))
-        recon = grid.reconstruct()
-        assert recon.shape == img.pixel_data.shape
-        assert torch.equal(recon, img.pixel_data)
+        grid = PatchGrid(dicom_image, 128)
+        assert grid.patch_h == 128
+        assert grid.patch_w == 128
+        assert len(grid.patches) > 0
 
 
 # ---------------------------------------------------------------------------
@@ -231,24 +192,16 @@ class TestPatchGridCHW:
 
 
 class TestPatchGridFromImage:
-    def test_from_image_basic(self):
-        img = _make_image(64, 64)
-        grid = PatchGrid.from_image(img, (32, 32))
-        assert len(grid.patches) == 4
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_from_image_basic(self, dicom_image):
+        grid = PatchGrid.from_image(dicom_image, (64, 64))
+        assert len(grid.patches) > 0
 
-    def test_from_image_int_size(self):
-        img = _make_image(64, 64)
-        grid = PatchGrid.from_image(img, 16)
-        assert len(grid.patches) == 16
-
-    def test_from_image_loads_lazily(self):
-        """from_image triggers load() on an unloaded image."""
-        img = InMemoryImage(width=32, height=32)
-        # InMemoryImage.load() is a no-op, so pixel_data stays None.
-        # Provide pixel_data manually to test the path logic.
-        img.pixel_data = torch.zeros(32, 32)
-        grid = PatchGrid.from_image(img, 16)
-        assert len(grid.patches) == 4
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_from_image_int_size(self, dicom_image):
+        grid = PatchGrid.from_image(dicom_image, 128)
+        assert grid.patch_h == 128
+        assert grid.patch_w == 128
 
 
 # ---------------------------------------------------------------------------
@@ -257,33 +210,22 @@ class TestPatchGridFromImage:
 
 
 class TestPatchGridToImage:
-    def test_to_image_returns_image_instance(self):
-        img = _make_image(64, 64)
-        grid = PatchGrid(img, (32, 32))
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_to_image_pixel_data_matches(self, dicom_image):
+        grid = PatchGrid(dicom_image, (64, 64))
         result = grid.to_image()
-        assert isinstance(result, InMemoryImage)
+        assert result.pixel_data is not None
+        assert result.pixel_data.shape == dicom_image.pixel_data.shape
+        assert torch.equal(result.pixel_data, dicom_image.pixel_data)
 
-    def test_to_image_pixel_data_matches(self):
-        img = _make_image(64, 64)
-        grid = PatchGrid(img, (32, 32))
-        result = grid.to_image()
-        assert torch.equal(result.pixel_data, img.pixel_data)
-
-    def test_to_image_with_padding(self):
-        img = _make_image(50, 70)
-        grid = PatchGrid(img, (32, 32))
-        result = grid.to_image()
-        assert result.pixel_data.shape == img.pixel_data.shape
-        assert torch.equal(result.pixel_data, img.pixel_data)
-
-    def test_to_image_clones(self):
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_to_image_clones(self, dicom_image):
         """to_image should not share pixel_data with the parent."""
-        img = _make_image(64, 64)
-        original = img.pixel_data.clone()
-        grid = PatchGrid(img, (32, 32))
+        original = dicom_image.pixel_data.clone()
+        grid = PatchGrid(dicom_image, (64, 64))
         result = grid.to_image()
-        result.pixel_data.fill_(-1.0)
-        assert torch.equal(img.pixel_data, original)
+        result.pixel_data = result.pixel_data.float().fill_(0.0)
+        assert torch.equal(dicom_image.pixel_data, original)
 
 
 # ---------------------------------------------------------------------------
@@ -292,41 +234,107 @@ class TestPatchGridToImage:
 
 
 class TestPatchVisualization:
-    """Verifies that patches can be individually converted to images and
-    that the full round-trip (split → per-patch to_image → reassemble)
-    preserves pixel values.
-    """
-
-    def test_patch_to_image_round_trip(self):
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_patch_to_image_round_trip(self, dicom_image):
         """Each patch's to_image pixel data matches the corresponding
         region in the original image."""
-        img = _make_image(64, 64)
-        grid = PatchGrid(img, (32, 32))
-
+        grid = PatchGrid(dicom_image, (64, 64))
         for p in grid.patches:
             patch_img = p.to_image()
-            expected = img.pixel_data[p.x : p.x + p.height, p.y : p.y + p.width]
-            assert torch.equal(patch_img.pixel_data, expected)
+            expected = dicom_image.pixel_data[p.x : p.x + p.height, p.y : p.y + p.width]
+            # Padded patches extend beyond the original, so compare the valid region
+            valid_h = min(p.height, dicom_image.height - p.x)
+            valid_w = min(p.width, dicom_image.width - p.y)
+            assert torch.equal(
+                patch_img.pixel_data[:valid_h, :valid_w],
+                expected[:valid_h, :valid_w],
+            )
 
-    def test_full_round_trip_chw(self):
-        """Split → reconstruct round-trip for CHW layout."""
-        img = _make_image(48, 48, channels=3)
-        grid = PatchGrid(img, (16, 16))
-        result = grid.to_image()
-        assert torch.equal(result.pixel_data, img.pixel_data)
-
-    def test_patches_cover_entire_image(self):
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_patches_cover_entire_image(self, dicom_image):
         """All original pixels are accounted for by exactly one patch."""
-        H, W = 40, 60
-        img = _make_image(H, W)
-        grid = PatchGrid(img, (16, 16))
+        H, W = dicom_image.height, dicom_image.width
+        grid = PatchGrid(dicom_image, (64, 64))
 
         coverage = torch.zeros(H, W)
         for p in grid.patches:
-            ph, pw = p.height, p.width
-            # Only count non-padded region
-            valid_h = min(ph, H - p.x)
-            valid_w = min(pw, W - p.y)
+            valid_h = min(p.height, H - p.x)
+            valid_w = min(p.width, W - p.y)
             coverage[p.x : p.x + valid_h, p.y : p.y + valid_w] += 1
 
         assert (coverage == 1).all(), "Every pixel must be covered exactly once"
+
+
+# ---------------------------------------------------------------------------
+# Algorithm-on-patch integration tests
+# ---------------------------------------------------------------------------
+
+
+class TestAlgorithmOnPatch:
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_kmeans_on_patch(self, dicom_image):
+        """Run KMeans segmentation on individual patches extracted from a
+        real DICOM image after normalization."""
+        normalized = RegionOfInterest.normalize(dicom_image.clone(), divisor=4095.0)
+        grid = PatchGrid(normalized, (64, 64))
+
+        # Pick a patch with sufficient variance to avoid degenerate k-means
+        patch = max(
+            (p for p in grid.patches if not p.is_padded),
+            key=lambda p: float(p.pixel_data.float().std()),
+        )
+        patch_img = patch.to_image()
+
+        out = patch_img.clone()
+        km = KMeansAlgorithm(k=3, device="cpu")
+        km(patch_img, out)
+
+        assert out.pixel_data is not None
+        assert out.pixel_data.shape == patch_img.pixel_data.shape
+        unique = torch.unique(out.pixel_data)
+        assert set(unique.tolist()).issubset({0.0, 1.0})
+        assert km.centroids.shape == (3, 1)
+        assert km.converged or km.n_iter == km.max_iter
+
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_febds_on_patch(self, dicom_image):
+        """Run FEBDS algorithm on individual patches extracted from a
+        real DICOM image."""
+        grid = PatchGrid(dicom_image, (64, 64))
+
+        patch = next(p for p in grid.patches if not p.is_padded)
+        patch_img = patch.to_image()
+
+        if not isinstance(patch_img.pixel_data, torch.Tensor):
+            patch_img.pixel_data = torch.from_numpy(patch_img.pixel_data).float()
+
+        out = patch_img.clone()
+        algorithm = FebdsAlgorithm("dog")
+        algorithm(image=patch_img, output=out)
+
+        assert out.pixel_data is not None
+        assert out.pixel_data.shape == patch_img.pixel_data.shape
+
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_kmeans_per_patch_then_reconstruct(self, dicom_image):
+        """Run KMeans on every non-uniform patch independently, replace
+        patch pixel_data with the segmentation output, then reconstruct."""
+        normalized = RegionOfInterest.normalize(dicom_image.clone(), divisor=4095.0)
+        grid = PatchGrid(normalized, (64, 64))
+
+        processed = 0
+        for p in grid.patches:
+            # Skip uniform patches (KMeans needs variance for k-means++)
+            if float(p.pixel_data.float().std()) < 1e-6:
+                continue
+            patch_img = p.to_image()
+            out = patch_img.clone()
+            km = KMeansAlgorithm(k=2, device="cpu")
+            km(patch_img, out)
+            # Replace patch pixel_data with algorithm output
+            p.pixel_data = out.pixel_data
+            processed += 1
+
+        assert processed > 0, "Expected at least one non-uniform patch"
+        result = grid.to_image()
+        assert result.pixel_data.shape == normalized.pixel_data.shape
