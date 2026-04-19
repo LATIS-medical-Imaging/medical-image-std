@@ -33,7 +33,7 @@ jobs:
 
     # Run tests inside uv virtual environment
     - name: Run tests
-      run: uv run pytest medical_image/tests/test_dicom.py
+      run: uv run pytest medical_image/tests/test_dicom.py medical_image/tests/test_patch.py
 
     # Black formatting check
     - name: Run Black

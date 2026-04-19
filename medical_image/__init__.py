@@ -46,7 +46,7 @@ from medical_image.utils.image_utils import (
     ImageVisualizer,
     MathematicalOperations,
 )
-from medical_image.utils.annotation import Annotation, GeometryType
+from medical_image.data.annotation import Annotation, GeometryType
 from medical_image.utils.device import (
     resolve_device,
     Precision,

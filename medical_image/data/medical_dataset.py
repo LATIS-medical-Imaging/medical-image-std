@@ -8,7 +8,7 @@ from medical_image.data.dicom_image import DicomImage
 from medical_image.data.image import Image
 from medical_image.data.region_of_interest import RegionOfInterest
 from medical_image.utils.ErrorHandler import ErrorMessages
-from medical_image.utils.annotation import GeometryType
+from medical_image.data.annotation import GeometryType
 
 
 class MedicalDataset(Dataset, ABC):

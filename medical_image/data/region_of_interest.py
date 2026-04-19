@@ -5,7 +5,7 @@ import torch
 from skimage.draw import polygon
 
 from medical_image.data.image import Image
-from medical_image.utils.annotation import GeometryType
+from medical_image.data.annotation import GeometryType
 
 
 class RegionOfInterest:

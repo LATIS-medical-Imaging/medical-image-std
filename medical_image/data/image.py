@@ -7,7 +7,7 @@ from typing import Optional, Union, List, TypeVar
 import torch
 from medical_image.utils.logging import logger
 from medical_image.utils.ErrorHandler import ErrorMessages, DicomDataNotLoadedError
-from medical_image.utils.annotation import Annotation
+from medical_image.data.annotation import Annotation
 import numpy as np
 
 T = TypeVar("T")

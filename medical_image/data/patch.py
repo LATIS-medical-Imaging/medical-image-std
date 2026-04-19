@@ -1,13 +1,15 @@
-from typing import Tuple
+from __future__ import annotations
 
+from typing import Tuple, Union
+
+import numpy as np
 import torch
 
 from medical_image.data.image import Image
 
 
 class Patch:
-    """
-    Represents a patch extracted from an image.
+    """Represents a patch extracted from an image.
 
     Attributes:
         parent (Image): The parent image from which this patch is extracted.
@@ -53,21 +55,35 @@ class Patch:
         """Return top-left (x, y) pixel coordinates in the original image."""
         return self.x, self.y
 
-    def to_numpy(self) -> "np.ndarray":
+    def to_numpy(self) -> np.ndarray:
         """Convert patch pixel data to a NumPy array."""
         return self.pixel_data.detach().cpu().numpy()
 
-    def load(self) -> Image:
-        """
-        Convert this patch into a new Image instance.
+    def to_image(self) -> Image:
+        """Convert this patch into a new Image instance.
+
+        Clones the parent image and replaces its pixel data with the patch
+        tensor.  Follows the same pattern as
+        :meth:`~medical_image.data.region_of_interest.RegionOfInterest.load`.
 
         Returns:
             Image: A new Image object containing only the patch pixels.
         """
         patch_image = self.parent.clone()
-        patch_image.pixel_data = self.pixel_data
+        patch_image.pixel_data = self.pixel_data.clone()
         patch_image.file_path = None
         return patch_image
+
+    def load(self) -> Image:
+        """Convert this patch into a new Image instance.
+
+        .. deprecated::
+            Use :meth:`to_image` instead for consistency with the ROI API.
+
+        Returns:
+            Image: A new Image object containing only the patch pixels.
+        """
+        return self.to_image()
 
     def __repr__(self):
         return (
@@ -77,22 +93,66 @@ class Patch:
 
 
 class PatchGrid:
-    def __init__(self, parent_image: Image, patch_size):
-        """
-        Manages a full grid of patches.
+    """Divides an :class:`Image` into a regular grid of rectangular patches.
+
+    Automatically pads the image with zeros when its dimensions are not
+    evenly divisible by the requested patch size.
+
+    Attributes:
+        parent (Image): The source image.
+        patch_h (int): Height of each patch in pixels.
+        patch_w (int): Width of each patch in pixels.
+        patches (list[Patch]): Flat list of all patches (row-major order).
+        grid (list[list[Patch]]): 2-D grid indexed as ``grid[row][col]``.
+        pad_bottom (int): Number of rows of zero-padding added at the bottom.
+        pad_right (int): Number of columns of zero-padding added on the right.
+    """
+
+    def __init__(self, parent_image: Image, patch_size: Union[Tuple[int, int], int]):
+        """Create a PatchGrid by splitting *parent_image*.
 
         Args:
-            parent_image (Image): The image to divide
-            patch_size (tuple): (patch_height, patch_width)
+            parent_image: The image to divide.  Must have ``pixel_data``
+                loaded (i.e. not ``None``).
+            patch_size: ``(patch_height, patch_width)`` or a single int for
+                square patches.
         """
         self.parent = parent_image
+        if isinstance(patch_size, int):
+            patch_size = (patch_size, patch_size)
         self.patch_h, self.patch_w = patch_size
-        self.patches = []
-        self.grid = []
+        self.patches: list[Patch] = []
+        self.grid: list[list[Patch]] = []
         self.pad_bottom = 0
         self.pad_right = 0
 
         self._split()
+
+    @classmethod
+    def from_image(
+        cls,
+        image: Image,
+        patch_size: Union[Tuple[int, int], int],
+    ) -> PatchGrid:
+        """Create a PatchGrid from an :class:`Image`.
+
+        Loads the image lazily if its ``pixel_data`` is ``None``.
+
+        Args:
+            image: Source image.
+            patch_size: ``(patch_height, patch_width)`` or a single int for
+                square patches.
+
+        Returns:
+            A new :class:`PatchGrid` covering the entire image.
+        """
+        if image.pixel_data is None:
+            image.load()
+        return cls(parent_image=image, patch_size=patch_size)
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
 
     def _infer_layout(self, img):
         if img.ndim == 2:
@@ -183,16 +243,54 @@ class PatchGrid:
 
             self.grid.append(row_list)
 
+    # ------------------------------------------------------------------
+    # Reconstruction
+    # ------------------------------------------------------------------
+
     def reconstruct(self) -> torch.Tensor:
-        """Reassemble the full image from patches (removing padding)."""
+        """Reassemble the full image tensor from patches (removing padding).
+
+        Returns:
+            The reconstructed ``torch.Tensor`` with the same layout as the
+            original image.
+        """
+        layout = self._infer_layout(self.patches[0].pixel_data)
+
         rows = []
         for row in self.grid:
             rows.append(torch.cat([p.pixel_data for p in row], dim=-1))
         reconstructed = torch.cat(rows, dim=-2)
 
-        if self.pad_bottom:
-            reconstructed = reconstructed[:, : -self.pad_bottom, :]
-        if self.pad_right:
-            reconstructed = reconstructed[:, :, : -self.pad_right]
+        if layout == "HW":
+            if self.pad_bottom:
+                reconstructed = reconstructed[: -self.pad_bottom, :]
+            if self.pad_right:
+                reconstructed = reconstructed[:, : -self.pad_right]
+        elif layout == "CHW":
+            if self.pad_bottom:
+                reconstructed = reconstructed[:, : -self.pad_bottom, :]
+            if self.pad_right:
+                reconstructed = reconstructed[:, :, : -self.pad_right]
+        elif layout == "HWC":
+            if self.pad_bottom:
+                reconstructed = reconstructed[: -self.pad_bottom, :, :]
+            if self.pad_right:
+                reconstructed = reconstructed[:, : -self.pad_right, :]
 
         return reconstructed
+
+    def to_image(self) -> Image:
+        """Reconstruct the full image from patches and return a new Image.
+
+        Removes any padding that was added during splitting, clones the
+        parent image, and replaces its pixel data with the reconstructed
+        tensor.  Follows the same pattern as
+        :meth:`~medical_image.data.region_of_interest.RegionOfInterest.load`.
+
+        Returns:
+            A new :class:`Image` containing the reassembled pixel data.
+        """
+        reconstructed = self.reconstruct()
+        result = self.parent.clone()
+        result.pixel_data = reconstructed
+        return result

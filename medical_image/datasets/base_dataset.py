@@ -14,7 +14,7 @@ from torch.utils.data import Dataset
 
 from medical_image.utils.logging import logger
 from medical_image.utils.downloader import download
-from medical_image.utils.annotation import Annotation, GeometryType
+from medical_image.data.annotation import Annotation, GeometryType
 
 
 class BaseDataset(Dataset, ABC):
