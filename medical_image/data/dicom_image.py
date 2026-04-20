@@ -62,6 +62,7 @@ class DicomImage(Image):
         self.pixel_data = torch.tensor(self.dicom_data.pixel_array)
         self._width = self.dicom_data.Columns
         self._height = self.dicom_data.Rows
+        self._post_load()
 
     def save(self) -> None:
         """Write modified pixel data back to ``{name}_modified.dcm``.

@@ -338,3 +338,73 @@ class TestAlgorithmOnPatch:
         assert processed > 0, "Expected at least one non-uniform patch"
         result = grid.to_image()
         assert result.pixel_data.shape == normalized.pixel_data.shape
+
+
+# ---------------------------------------------------------------------------
+# Data integrity tests (S1.1)
+# ---------------------------------------------------------------------------
+
+
+class TestPatchDataIntegrity:
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_patch_modification_does_not_corrupt_parent(self, dicom_image):
+        """S1.1: Modifying patch pixel_data must NOT change the parent image."""
+        original_val = dicom_image.pixel_data[0, 0].item()
+        grid = PatchGrid(dicom_image, 64)
+        grid.patches[0].pixel_data[0, 0] = 999.0
+        assert dicom_image.pixel_data[0, 0].item() == original_val
+
+    def test_patch_clone_independence_synthetic(self):
+        """Patches are independent copies even on synthetic images."""
+        from medical_image.data.dicom_image import DicomImage
+
+        arr = np.random.rand(128, 128).astype(np.float32)
+        img = DicomImage.from_array(arr)
+        grid = PatchGrid(img, 32)
+        # Modify every patch
+        for p in grid.patches:
+            p.pixel_data.fill_(0.0)
+        # Original must be unchanged
+        assert torch.allclose(img.pixel_data, torch.from_numpy(arr))
+
+
+# ---------------------------------------------------------------------------
+# Determinism tests (S1.3)
+# ---------------------------------------------------------------------------
+
+
+class TestAlgorithmDeterminism:
+    def test_fcm_determinism(self):
+        """Same random_state produces identical results across runs."""
+        from medical_image.algorithms.fcm import FCMAlgorithm
+        from medical_image.data.dicom_image import DicomImage
+
+        arr = np.random.RandomState(0).rand(64, 64).astype(np.float32)
+        img = DicomImage.from_array(arr)
+
+        results = []
+        for _ in range(3):
+            output = img.clone()
+            algo = FCMAlgorithm(c=3, random_state=42, device="cpu")
+            algo(img, output)
+            results.append(output.pixel_data.clone())
+
+        for r in results[1:]:
+            assert torch.equal(results[0], r), "FCM results differ across runs"
+
+    def test_kmeans_determinism(self):
+        """Same random_state produces identical results across runs."""
+        from medical_image.data.dicom_image import DicomImage
+
+        arr = np.random.RandomState(0).rand(64, 64).astype(np.float32)
+        img = DicomImage.from_array(arr)
+
+        results = []
+        for _ in range(3):
+            output = img.clone()
+            algo = KMeansAlgorithm(k=3, random_state=42, device="cpu")
+            algo(img, output)
+            results.append(output.pixel_data.clone())
+
+        for r in results[1:]:
+            assert torch.equal(results[0], r), "KMeans results differ across runs"

@@ -57,6 +57,8 @@ from medical_image.utils.device import (
     gpu_safe,
     AsyncGPUPipeline,
     MultiGPUAlgorithm,
+    check_gpu_budget,
+    estimate_image_bytes,
 )
 
 __all__ = [
@@ -104,4 +106,6 @@ __all__ = [
     "gpu_safe",
     "AsyncGPUPipeline",
     "MultiGPUAlgorithm",
+    "check_gpu_budget",
+    "estimate_image_bytes",
 ]

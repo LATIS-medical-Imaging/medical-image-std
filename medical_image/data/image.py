@@ -92,7 +92,10 @@ class Image(ABC):
             self._height = source_image._height
             if source_image.pixel_data is not None:
                 self.pixel_data = source_image.pixel_data.clone()
-            self.annotations = source_image.annotations
+            if source_image.annotations is not None:
+                self.annotations = [ann.copy() for ann in source_image.annotations]
+            else:
+                self.annotations = None
         else:
             self.pixel_data = None
 
@@ -144,6 +147,15 @@ class Image(ABC):
             self.pixel_data = self.pixel_data.to(self._device)
         return self
 
+    def _post_load(self) -> None:
+        """Migrate pixel_data to cached device after loading.
+
+        Called by subclass ``load()`` implementations to honour a prior
+        ``.to(device)`` call made before the image was loaded.
+        """
+        if self.pixel_data is not None and self._device.type != "cpu":
+            self.pixel_data = self.pixel_data.to(self._device)
+
     def ensure_loaded(self) -> "Image":
         """Raise ``DicomDataNotLoadedError`` if pixel data has not been loaded.
 
@@ -187,7 +199,9 @@ class Image(ABC):
         new.pixel_data = (
             self.pixel_data.clone() if self.pixel_data is not None else None
         )
-        new.annotations = list(self.annotations) if self.annotations else None
+        new.annotations = (
+            [ann.copy() for ann in self.annotations] if self.annotations else None
+        )
         # Subclass-specific: don't copy heavy DICOM/PIL objects
         if hasattr(self, "dicom_data"):
             new.dicom_data = None
@@ -347,9 +361,11 @@ class Image(ABC):
         logger.info("=== Image Info ===")
 
         if self.file_path:
-            logger.info(f"File Path: {self.file_path}")
+            basename = os.path.basename(self.file_path)
+            logger.info(f"File: {basename}")
+            logger.debug(f"Full path: {self.file_path}")
         else:
-            logger.info("File Path: <None>")
+            logger.info("File: <None>")
 
         if self.pixel_data is not None:
             logger.info("Pixel Data: Loaded")

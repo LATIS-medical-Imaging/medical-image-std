@@ -51,10 +51,15 @@ class TestImageAnnotations:
         cloned = img.clone()
         assert cloned.annotations is not None
         assert len(cloned.annotations) == 1
-        # Shallow copy of list, same annotation object
-        assert cloned.annotations[0] is ann
-        # But different list
+        # Deep copy: annotations are independent objects
+        assert cloned.annotations[0] is not ann
+        assert cloned.annotations[0].label == ann.label
+        assert cloned.annotations[0].coordinates == ann.coordinates
+        # Different list
         assert cloned.annotations is not img.annotations
+        # Mutating clone's annotation does NOT affect original
+        cloned.annotations[0].metadata["test"] = True
+        assert "test" not in ann.metadata
 
     def test_clone_none_annotations(self):
         img = InMemoryImage(array=np.zeros((100, 100)))
@@ -66,7 +71,13 @@ class TestImageAnnotations:
         ann = Annotation(GeometryType.RECTANGLE, [10, 20, 30, 40], "mass")
         img.add_annotation(ann)
         img2 = InMemoryImage(source_image=img)
-        assert img2.annotations is img.annotations
+        # Annotations are deep-copied (independent from source)
+        assert img2.annotations is not img.annotations
+        assert len(img2.annotations) == 1
+        assert img2.annotations[0].label == ann.label
+        # Adding to copy does not affect original
+        img2.add_annotation(Annotation(GeometryType.RECTANGLE, [0, 0, 5, 5], "test"))
+        assert len(img.annotations) == 1
 
 
 class TestImageJsonSerialization:

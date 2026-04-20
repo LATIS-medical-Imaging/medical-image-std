@@ -57,6 +57,8 @@ class FCMAlgorithm(Algorithm):
         self.max_iter = max_iter
         self.tol = tol
         self.random_state = random_state
+        self._rng = torch.Generator(device="cpu")
+        self._rng.manual_seed(self.random_state)
 
         self.compute_distances = (
             lambda Z, V: MathematicalOperations.euclidean_distance_sq(Z=Z, V=V)
@@ -126,8 +128,8 @@ class FCMAlgorithm(Algorithm):
 
         Z = img.reshape(N, 1)
 
-        torch.manual_seed(self.random_state)
-        U = torch.rand(self.c, N, device=device)
+        U = torch.rand(self.c, N, generator=self._rng)
+        U = U.to(device)
         U = U / (U.sum(dim=0, keepdim=True) + 1e-10)
 
         V = self.update_centroids(Z, U)

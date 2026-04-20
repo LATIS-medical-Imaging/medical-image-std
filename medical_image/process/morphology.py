@@ -1,9 +1,21 @@
+import numpy as np
 import torch
 import torch.nn.functional as F
+from scipy.ndimage import binary_fill_holes
 
 from medical_image.data.image import Image, requires_loaded
 from medical_image.utils.device import resolve_device
 from medical_image.utils.logging import logger
+
+
+def _is_cuda_error(exc: BaseException) -> bool:
+    """Check if an exception is actually CUDA-related (not a logic bug)."""
+    if isinstance(exc, (torch.cuda.OutOfMemoryError,)):
+        return True
+    if hasattr(torch.cuda, "CudaError") and isinstance(exc, torch.cuda.CudaError):
+        return True
+    msg = str(exc).lower()
+    return "cuda" in msg or "out of memory" in msg
 
 
 def _safe_to_device(tensor: torch.Tensor, device: torch.device) -> tuple:
@@ -83,7 +95,9 @@ class MorphologyOperations:
     @requires_loaded
     def region_fill(image: Image, output: Image, device=None) -> Image:
         """
-        Fills holes in a binary image using PyTorch.
+        Fills holes in a binary image using scipy's binary_fill_holes.
+
+        Runs in O(H*W) instead of the previous unbounded iterative approach.
 
         Args:
             image: Input binary image (0/1).
@@ -93,28 +107,10 @@ class MorphologyOperations:
         Returns:
             The output Image.
         """
-        device = resolve_device(image, explicit=device)
-        img, device = _safe_to_device(image.pixel_data, device)
-        h, w = img.shape
-        mask = torch.zeros((h + 2, w + 2), device=device)
-        mask[1:-1, 1:-1] = 1 - img
-
-        prev_mask = torch.zeros_like(mask)
-        struct_elem = torch.ones((3, 3), device=device)
-
-        while not torch.equal(mask, prev_mask):
-            prev_mask = mask.clone()
-            dilated = F.conv2d(
-                mask.unsqueeze(0).unsqueeze(0),
-                struct_elem.unsqueeze(0).unsqueeze(0),
-                padding=1,
-            )
-            mask = (dilated > 0).float().squeeze(0).squeeze(0)
-
-        filled = img + (1 - mask[1:-1, 1:-1])
-        filled = (filled > 0).float()
-
-        output.pixel_data = filled
+        target_device = image.pixel_data.device
+        img_np = image.pixel_data.cpu().numpy().astype(bool)
+        filled = binary_fill_holes(img_np).astype(np.float32)
+        output.pixel_data = torch.from_numpy(filled).to(target_device)
         return output
 
     @staticmethod
@@ -167,9 +163,9 @@ class MorphologyOperations:
             neg_padded = F.pad(neg_img, (pad, pad, pad, pad), mode="constant", value=0)
             neg_max = F.max_pool2d(neg_padded, kernel_size, stride=1)
             eroded = (-neg_max).squeeze(0).squeeze(0)[:H, :W]
-        except (RuntimeError, torch.cuda.CudaError, torch.AcceleratorError):
-            if device.type != "cpu":
-                logger.warning("CUDA error in erosion, falling back to CPU")
+        except (RuntimeError, torch.cuda.CudaError, torch.AcceleratorError) as exc:
+            if device.type != "cpu" and _is_cuda_error(exc):
+                logger.warning(f"CUDA error in erosion, falling back to CPU: {exc}")
                 torch.cuda.empty_cache()
                 img = img.cpu()
                 neg_img = (-img).unsqueeze(0).unsqueeze(0)

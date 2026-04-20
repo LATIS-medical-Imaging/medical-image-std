@@ -55,21 +55,14 @@ class Filters:
         """Applies Gaussian filter."""
         device = resolve_device(image, explicit=device)
         dtype = torch.float32
-        output.pixel_data = image.pixel_data.clone()
 
-        img = image.pixel_data.to(device).float()
+        img = image.pixel_data.to(device).to(dtype)
         kernel = Filters._generate_gaussian_kernel(
             sigma, truncate=truncate, dtype=dtype, device=device
         )
         kernel = kernel.unsqueeze(0).unsqueeze(0)
 
-        img_t = (
-            img.detach()
-            .clone()
-            .to(dtype=dtype, device=device)
-            .unsqueeze(0)
-            .unsqueeze(0)
-        )
+        img_t = img.unsqueeze(0).unsqueeze(0)
 
         pad = kernel.shape[-1] // 2
         img_padded = F.pad(img_t, (pad, pad, pad, pad), mode="replicate")
@@ -200,8 +193,8 @@ class Filters:
         if high_sigma < low_sigma:
             raise ValueError("high_sigma must be >= low_sigma")
 
-        img1 = InMemoryImage(array=image.pixel_data.clone())
-        img2 = InMemoryImage(array=image.pixel_data.clone())
+        img1 = InMemoryImage(array=image.pixel_data)
+        img2 = InMemoryImage(array=image.pixel_data)
 
         Filters.gaussian_filter(
             image, img1, low_sigma, truncate=truncate, device=device
@@ -210,6 +203,8 @@ class Filters:
             image, img2, high_sigma, truncate=truncate, device=device
         )
         output.pixel_data = img1.pixel_data - img2.pixel_data
+
+        del img1, img2
         return output
 
     @staticmethod

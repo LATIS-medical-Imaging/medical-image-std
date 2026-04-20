@@ -43,6 +43,8 @@ class KMeansAlgorithm(Algorithm):
         self.max_iter = max_iter
         self.tol = tol
         self.random_state = random_state
+        self._rng = torch.Generator(device="cpu")
+        self._rng.manual_seed(self.random_state)
 
         self.compute_distances = (
             lambda Z, V: MathematicalOperations.euclidean_distance_sq(Z=Z, V=V)
@@ -90,13 +92,14 @@ class KMeansAlgorithm(Algorithm):
 
         Z = img.reshape(N, 1)
 
-        torch.manual_seed(self.random_state)
-        indices = [torch.randint(0, N, (1,)).item()]
+        indices = [torch.randint(0, N, (1,), generator=self._rng).item()]
         for _ in range(1, self.k):
             D2 = self.compute_distances(Z, Z[indices])
             min_D2 = D2.min(dim=0).values
             probs = min_D2 / (min_D2.sum() + 1e-10)
-            indices.append(torch.multinomial(probs, 1).item())
+            indices.append(
+                torch.multinomial(probs.cpu(), 1, generator=self._rng).item()
+            )
 
         V = Z[indices].clone()
 

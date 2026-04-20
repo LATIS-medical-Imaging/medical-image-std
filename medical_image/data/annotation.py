@@ -1,3 +1,4 @@
+import copy
 from enum import Enum, auto
 from typing import List, Tuple, Union, Optional
 
@@ -194,6 +195,15 @@ class Annotation:
             raise ValueError(
                 f"Unknown roi_type: {roi_type}. Use 'bbox', 'rectangle', or 'ellipse'"
             )
+
+    def copy(self) -> "Annotation":
+        """Return an independent deep copy of this annotation."""
+        return Annotation(
+            shape=self.shape,
+            coordinates=copy.deepcopy(self.coordinates),
+            label=self.label,
+            metadata=copy.deepcopy(self.metadata),
+        )
 
     def to_dict(self) -> dict:
         """Serialize the annotation to a JSON-compatible dictionary.

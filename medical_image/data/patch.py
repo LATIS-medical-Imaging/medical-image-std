@@ -15,8 +15,8 @@ class Patch:
         parent (Image): The parent image from which this patch is extracted.
         row_idx (int): Vertical index in the patch grid.
         col_idx (int): Horizontal index in the patch grid.
-        x (int): Top-left pixel x-coordinate in the original image.
-        y (int): Top-left pixel y-coordinate in the original image.
+        row_offset (int): Top-left row (height) pixel coordinate.
+        col_offset (int): Top-left column (width) pixel coordinate.
         pixel_data (torch.Tensor): Tensor representing patch pixels.
         is_padded (bool): Whether the patch contains padding.
     """
@@ -34,10 +34,20 @@ class Patch:
         self.parent = parent
         self.row_idx = row_idx
         self.col_idx = col_idx
-        self.x = x
-        self.y = y
+        self.row_offset = x
+        self.col_offset = y
         self.pixel_data = pixel_data
         self.is_padded = is_padded
+
+    @property
+    def x(self) -> int:
+        """Row offset (kept for backward compatibility)."""
+        return self.row_offset
+
+    @property
+    def y(self) -> int:
+        """Column offset (kept for backward compatibility)."""
+        return self.col_offset
 
     @property
     def height(self) -> int:
@@ -234,7 +244,7 @@ class PatchGrid:
                     col_idx=c,
                     x=x,
                     y=y,
-                    pixel_data=patch_tensor,
+                    pixel_data=patch_tensor.clone(),
                     is_padded=is_padded,
                 )
 
@@ -250,34 +260,48 @@ class PatchGrid:
     def reconstruct(self) -> torch.Tensor:
         """Reassemble the full image tensor from patches (removing padding).
 
+        Uses pre-allocated output tensor for O(1) allocations instead of
+        O(rows * cols) concatenations.
+
         Returns:
             The reconstructed ``torch.Tensor`` with the same layout as the
             original image.
         """
-        layout = self._infer_layout(self.patches[0].pixel_data)
-
-        rows = []
-        for row in self.grid:
-            rows.append(torch.cat([p.pixel_data for p in row], dim=-1))
-        reconstructed = torch.cat(rows, dim=-2)
+        first = self.patches[0].pixel_data
+        layout = self._infer_layout(first)
+        num_rows = len(self.grid)
+        num_cols = len(self.grid[0])
+        H = num_rows * self.patch_h
+        W = num_cols * self.patch_w
 
         if layout == "HW":
-            if self.pad_bottom:
-                reconstructed = reconstructed[: -self.pad_bottom, :]
-            if self.pad_right:
-                reconstructed = reconstructed[:, : -self.pad_right]
+            out = torch.empty(H, W, dtype=first.dtype, device=first.device)
         elif layout == "CHW":
-            if self.pad_bottom:
-                reconstructed = reconstructed[:, : -self.pad_bottom, :]
-            if self.pad_right:
-                reconstructed = reconstructed[:, :, : -self.pad_right]
+            C = first.shape[0]
+            out = torch.empty(C, H, W, dtype=first.dtype, device=first.device)
         elif layout == "HWC":
-            if self.pad_bottom:
-                reconstructed = reconstructed[: -self.pad_bottom, :, :]
-            if self.pad_right:
-                reconstructed = reconstructed[:, : -self.pad_right, :]
+            C = first.shape[-1]
+            out = torch.empty(H, W, C, dtype=first.dtype, device=first.device)
 
-        return reconstructed
+        for patch in self.patches:
+            r, c = patch.x, patch.y
+            ph, pw = patch.height, patch.width
+            if layout == "HW":
+                out[r : r + ph, c : c + pw] = patch.pixel_data
+            elif layout == "CHW":
+                out[:, r : r + ph, c : c + pw] = patch.pixel_data
+            elif layout == "HWC":
+                out[r : r + ph, c : c + pw, :] = patch.pixel_data
+
+        # Remove padding
+        orig_H = H - self.pad_bottom
+        orig_W = W - self.pad_right
+        if layout == "HW":
+            return out[:orig_H, :orig_W]
+        elif layout == "CHW":
+            return out[:, :orig_H, :orig_W]
+        else:
+            return out[:orig_H, :orig_W, :]
 
     def to_image(self) -> Image:
         """Reconstruct the full image from patches and return a new Image.

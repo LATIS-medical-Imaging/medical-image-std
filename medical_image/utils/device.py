@@ -3,6 +3,7 @@ GPU device management, memory handling, mixed precision, and multi-GPU utilities
 """
 
 import functools
+import threading
 from enum import Enum
 from typing import List, Optional, Union
 
@@ -46,19 +47,23 @@ class Precision(Enum):
 
 
 _default_precision: Precision = Precision.FULL
+_precision_lock = threading.Lock()
 
 
 def set_default_precision(precision: Precision) -> None:
     global _default_precision
-    _default_precision = precision
+    with _precision_lock:
+        _default_precision = precision
 
 
 def get_default_precision() -> Precision:
-    return _default_precision
+    with _precision_lock:
+        return _default_precision
 
 
 def get_dtype() -> torch.dtype:
-    return _default_precision.value
+    with _precision_lock:
+        return _default_precision.value
 
 
 # ---------------------------------------------------------------------------
@@ -102,9 +107,10 @@ class DeviceContext:
         if self.active_device.type == "cuda":
             torch.cuda.empty_cache()
         if exc_type is torch.cuda.OutOfMemoryError:
-            logger.warning("GPU OOM — retrying on CPU")
+            logger.error(f"GPU OOM in DeviceContext: {exc_val}")
             self.active_device = self.fallback
-            return True  # suppress exception
+            # Don't suppress — caller must handle retry explicitly
+            return False
         return False
 
     @property
@@ -190,16 +196,54 @@ class AsyncGPUPipeline:
                     self.device, non_blocking=True
                 )
 
-            # Compute on compute stream
+            # Compute on compute stream — don't mutate original image
             with torch.cuda.stream(self.compute_stream):
                 self.compute_stream.wait_stream(self.transfer_stream)
-                img.pixel_data = gpu_data
-                output = img.clone()
-                algorithm(img, output)
+                gpu_img = img.clone()
+                gpu_img.pixel_data = gpu_data
+                output = gpu_img.clone()
+                algorithm(gpu_img, output)
                 results.append(output)
 
         torch.cuda.synchronize()
         return results
+
+
+# ---------------------------------------------------------------------------
+# MultiGPUAlgorithm — data-parallel across GPUs
+# ---------------------------------------------------------------------------
+
+
+def check_gpu_budget(required_bytes: int, device: torch.device = None) -> bool:
+    """Return True if enough GPU memory is available for the operation.
+
+    Args:
+        required_bytes: Estimated memory needed in bytes.
+        device: Target CUDA device. Returns True for non-CUDA devices.
+    """
+    if device is None or device.type != "cuda":
+        return True
+    free, _ = torch.cuda.mem_get_info(device)
+    return free >= required_bytes
+
+
+def estimate_image_bytes(image, dtype: torch.dtype = torch.float32) -> int:
+    """Estimate GPU memory needed for an image tensor.
+
+    Args:
+        image: An Image object or any object with pixel_data/width/height.
+        dtype: Assumed dtype if pixel_data is not loaded.
+
+    Returns:
+        Estimated bytes required.
+    """
+    if hasattr(image, "pixel_data") and image.pixel_data is not None:
+        return image.pixel_data.nelement() * image.pixel_data.element_size()
+    if hasattr(image, "width") and hasattr(image, "height"):
+        w, h = image.width, image.height
+        if w and h:
+            return w * h * torch.tensor([], dtype=dtype).element_size()
+    return 0
 
 
 # ---------------------------------------------------------------------------

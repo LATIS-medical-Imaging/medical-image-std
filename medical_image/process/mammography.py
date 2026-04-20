@@ -23,8 +23,10 @@ All methods follow the library's standard patterns:
 import math
 from typing import Optional, Tuple
 
+import numpy as np
 import torch
 import torch.nn.functional as F
+from scipy.ndimage import label as scipy_label
 
 from medical_image.data.image import Image, requires_loaded
 from medical_image.data.in_memory_image import InMemoryImage
@@ -352,52 +354,16 @@ class MammographyPreprocessing:
         """
         Select the largest connected component from a binary mask.
 
-        Uses iterative flood-fill labelling implemented in pure PyTorch.
-        For each unlabelled foreground pixel, a dilation-based flood fill
-        expands the region, and the largest region by pixel count is kept.
+        Uses scipy's union-find based labeling for O(H*W) performance.
         """
-        mask_bool = mask.bool()
-        labelled = torch.zeros_like(mask, dtype=torch.int32, device=device)
-        current_label = 0
-        remaining = mask_bool.clone()
-
-        while remaining.any():
-            # Pick the first unlabelled foreground pixel
-            ys, xs = torch.where(remaining)
-            seed = torch.zeros_like(mask_bool)
-            seed[ys[0], xs[0]] = True
-
-            # Flood-fill via iterative dilation within the mask
-            kernel = torch.ones(1, 1, 3, 3, device=device)
-            prev = seed
-            while True:
-                dilated = (
-                    F.conv2d(
-                        prev.float().unsqueeze(0).unsqueeze(0),
-                        kernel,
-                        padding=1,
-                    ).squeeze()
-                    > 0
-                )
-                dilated = dilated & mask_bool
-                if torch.equal(dilated, prev):
-                    break
-                prev = dilated
-
-            current_label += 1
-            labelled[prev] = current_label
-            remaining = remaining & ~prev
-
-        if current_label == 0:
+        mask_np = mask.cpu().numpy().astype(bool)
+        labeled, n = scipy_label(mask_np)
+        if n == 0:
             return mask
-
-        # Find the label with the most pixels
-        counts = torch.bincount(labelled.flatten())
-        # Ignore label 0 (background)
-        counts[0] = 0
-        best_label = counts.argmax().item()
-
-        return (labelled == best_label).to(torch.uint8)
+        sizes = np.bincount(labeled.ravel())[1:]  # skip background (label 0)
+        largest_id = int(np.argmax(sizes)) + 1
+        result = (labeled == largest_id).astype(np.uint8)
+        return torch.from_numpy(result).to(device)
 
     @staticmethod
     def _resolve_wc_ww(

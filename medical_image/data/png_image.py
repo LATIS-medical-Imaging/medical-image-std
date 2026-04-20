@@ -40,6 +40,7 @@ class PNGImage(Image):
         self._pil_image = PILImage.open(self.file_path)
         img = np.array(self._pil_image)
         self.pixel_data = torch.from_numpy(img).float()
+        self._post_load()
 
     def save(self) -> None:
         """Write pixel data to ``{name}_modified.png`` as uint8.
