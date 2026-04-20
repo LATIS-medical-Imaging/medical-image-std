@@ -1,6 +1,6 @@
 [project]
 name = "medical-image-std"
-version = "0.5.0"
+version = "0.6.0"
 description = "A standardized Python framework for medical image processing."
 readme = "README.md"
 requires-python = ">=3.11"
