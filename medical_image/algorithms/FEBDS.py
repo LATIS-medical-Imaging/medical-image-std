@@ -120,7 +120,7 @@ class FebdsAlgorithm(Algorithm):
             self.butter_kernel(output, kernel_img)
             output.pixel_data *= kernel_img.pixel_data
 
-            self.inverse_fft(image, output)
+            self.inverse_fft(output, output)
 
         # Step 2: Denoise and smoothing
         self.abs(output, output)

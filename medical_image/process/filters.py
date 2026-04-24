@@ -119,7 +119,10 @@ class Filters:
         )
         filtered = patches.median(dim=-1).values
 
-        output.pixel_data = filtered.squeeze(0)
+        if image.pixel_data.ndim == 2:
+            output.pixel_data = filtered.squeeze(0).squeeze(0)
+        else:
+            output.pixel_data = filtered.squeeze(0)
         return output
 
     @staticmethod

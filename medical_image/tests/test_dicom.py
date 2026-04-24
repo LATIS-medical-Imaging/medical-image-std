@@ -83,6 +83,43 @@ class TestDicom:
         )
 
     @pytest.mark.parametrize("dicom_image", mock_dicom_image())
+    def test_febds_fft(self, dicom_image):
+        image = dicom_image.pixel_data
+        sigma1, sigma2 = 1.7, 2.0
+        skimage_result = difference_of_gaussians(image, sigma1, sigma2)
+        skimage_result_finished = ndimage.median_filter(
+            np.abs(skimage_result), size=(5, 5)
+        )
+        fi = np.power(skimage_result_finished / 4095.0, 1.25)
+        fi = fi * 4095
+        x = threshold_otsu(fi)
+        out = np.zeros_like(fi)
+        out[fi > x] = 1
+        I = morphoogy_closing(out)
+        fill = region_fill(I)
+
+        if not isinstance(dicom_image.pixel_data, torch.Tensor):
+            dicom_image.pixel_data = torch.from_numpy(dicom_image.pixel_data).float()
+
+        output = dicom_image.clone()
+        if not isinstance(output.pixel_data, torch.Tensor):
+            output.pixel_data = torch.from_numpy(output.pixel_data).float()
+        print("image.pixel_data.shape")
+        print(image.shape)
+        algorithm = FebdsAlgorithm("fft")
+        algorithm(image=dicom_image, output=output)
+
+        image_output = (
+            output.pixel_data.detach()
+            .cpu()
+            .numpy()
+            .reshape((dicom_image.height, dicom_image.width))
+        )
+        assert not torch.allclose(
+            torch.tensor(I).float(), output.pixel_data.detach().cpu()
+        )
+
+    @pytest.mark.parametrize("dicom_image", mock_dicom_image())
     def test_febds(self, dicom_image):
         image = dicom_image.pixel_data
         sigma1, sigma2 = 1.7, 2.0

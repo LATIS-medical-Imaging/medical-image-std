@@ -1,6 +1,7 @@
 from typing import Union
 
 import torch
+import torch.nn.functional as F
 
 from medical_image.data.image import Image, requires_loaded
 from medical_image.utils.device import resolve_device
@@ -112,8 +113,12 @@ class Metrics:
             kh, kw = kernel, kernel
         else:
             kh, kw = kernel
+        pad_h, pad_w = kh // 2, kw // 2
+        img_unfold = F.pad(img_unfold, (pad_w, pad_w, pad_h, pad_h), mode="reflect")
         patches = img_unfold.unfold(2, kh, 1).unfold(3, kw, 1)
-        patches = patches.contiguous().view(1, 1, img.shape[0], img.shape[1], -1)
+        patches = patches.contiguous().view(
+            1, 1, patches.shape[2], patches.shape[3], -1
+        )
         local_var = patches.var(dim=-1)
         output.pixel_data = local_var.squeeze(0).squeeze(0)
         return output
