@@ -10,6 +10,7 @@ from medical_image.algorithms.dicom_window import (
     GrailWindowAlgorithm,
 )
 from medical_image.algorithms.bit_depth_norm import BitDepthNormAlgorithm
+from medical_image.algorithms.sbrg import SbrgAlgorithm
 
 __all__ = [
     "Algorithm",
@@ -22,4 +23,5 @@ __all__ = [
     "DicomWindowAlgorithm",
     "GrailWindowAlgorithm",
     "BitDepthNormAlgorithm",
+    "SbrgAlgorithm",
 ]
