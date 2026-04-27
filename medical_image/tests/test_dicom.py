@@ -5,6 +5,7 @@ from scipy import ndimage
 from skimage._shared.filters import gaussian
 from skimage.filters import difference_of_gaussians, threshold_otsu
 
+from medical_image import RegionOfInterest
 from medical_image.utils.logging import logger
 from medical_image.algorithms.FEBDS import FebdsAlgorithm
 from medical_image.algorithms.sbrg import SbrgAlgorithm
@@ -239,11 +240,14 @@ class TestDicom:
     @pytest.mark.parametrize("dicom_image", mock_dicom_image())
     def test_sbrg(self, dicom_image):
         # --- Reference implementation (pure numpy/skimage/scipy, no framework) ---
+        coordinates = [1958, 1177, 2165, 1310]
+        region_of_interest = RegionOfInterest(dicom_image, coordinates).load()
+        roi_np = region_of_interest.pixel_data.detach().numpy()
         image_np = (
-            dicom_image.pixel_data.detach().cpu().numpy()
-            if isinstance(dicom_image.pixel_data, torch.Tensor)
-            else dicom_image.pixel_data
-        ).reshape(dicom_image.height, dicom_image.width)
+            region_of_interest.pixel_data.detach().numpy()
+            if isinstance(region_of_interest.pixel_data, torch.Tensor)
+            else region_of_interest.pixel_data
+        ).reshape(region_of_interest.height, region_of_interest.width)
 
         # Stage 1: Seed-based region growing reference
         from skimage.morphology import local_maxima
@@ -263,26 +267,31 @@ class TestDicom:
         fill = region_fill(I)
 
         # --- Framework call ---
-        if not isinstance(dicom_image.pixel_data, torch.Tensor):
-            dicom_image.pixel_data = torch.from_numpy(dicom_image.pixel_data).float()
+        if not isinstance(region_of_interest.pixel_data, torch.Tensor):
+            region_of_interest.pixel_data = torch.from_numpy(
+                region_of_interest.pixel_data
+            ).float()
 
-        output = dicom_image.clone()
+        output = region_of_interest.clone()
         if not isinstance(output.pixel_data, torch.Tensor):
             output.pixel_data = torch.from_numpy(output.pixel_data).float()
 
         algorithm = SbrgAlgorithm()
-        algorithm(image=dicom_image, output=output)
+        algorithm(image=region_of_interest, output=output)
 
         image_output = (
             output.pixel_data.detach()
             .cpu()
             .numpy()
-            .reshape((dicom_image.height, dicom_image.width))
+            .reshape((region_of_interest.height, region_of_interest.width))
         )
 
         # Output must be a valid binary segmentation mask
         assert image_output is not None
-        assert image_output.shape == (dicom_image.height, dicom_image.width)
+        assert image_output.shape == (
+            region_of_interest.height,
+            region_of_interest.width,
+        )
         unique_vals = np.unique(image_output)
         assert len(unique_vals) <= 2, "Output should be binary (0 and 1 only)"
 
@@ -296,5 +305,6 @@ class TestDicom:
 
         # Framework result should not be identical to the raw reference
         assert not np.allclose(
-            image_output, fill.reshape(dicom_image.height, dicom_image.width)
+            image_output,
+            fill.reshape(region_of_interest.height, region_of_interest.width),
         ), "Framework output is identical to naive reference — boundary post-processing had no effect"
