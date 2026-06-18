@@ -11,6 +11,7 @@ from medical_image.algorithms.dicom_window import (
 )
 from medical_image.algorithms.bit_depth_norm import BitDepthNormAlgorithm
 from medical_image.algorithms.sbrg import SbrgAlgorithm
+from medical_image.algorithms.deep_segmentation import DeepSegmentationAlgorithm
 
 __all__ = [
     "Algorithm",
@@ -24,4 +25,5 @@ __all__ = [
     "GrailWindowAlgorithm",
     "BitDepthNormAlgorithm",
     "SbrgAlgorithm",
+    "DeepSegmentationAlgorithm",
 ]
