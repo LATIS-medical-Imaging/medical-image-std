@@ -1,3 +1,5 @@
+import math
+
 import torch
 import torch.nn.functional as F
 
@@ -43,6 +45,200 @@ class Filters:
         output.pixel_data = convolved.squeeze(0).squeeze(0).to(device)
         return output
 
+    @staticmethod
+    @requires_loaded
+    def gabor_orientation(
+            image: Image,
+            output: Image,
+            orientations=(0.0, 45.0, 90.0, 135.0),
+            frequency: float = 0.25,
+            sigma: float = None,
+            gamma: float = 1.0,
+            device=None,
+    ) -> Image:
+        """
+        Apply a bank of real-valued Gabor filters at multiple orientations.
+
+        The spatial resolution is preserved.
+
+        Output shape:
+
+            [num_orientations, H, W]
+
+        Args:
+            image:
+                Input 2D image.
+
+            output:
+                Output Image.
+
+            orientations:
+                Gabor orientations in degrees.
+
+            frequency:
+                Carrier frequency.
+
+            sigma:
+                Gaussian envelope sigma. If None:
+
+                    sigma = 1 / (2 * frequency)
+
+            gamma:
+                Spatial aspect ratio.
+
+            device:
+                Computation device.
+        """
+
+        device = resolve_device(
+            image,
+            explicit=device,
+        )
+
+        img = image.pixel_data.to(
+            device
+        ).float()
+
+        while img.ndim > 2:
+            img = img.squeeze(0)
+
+        if img.ndim != 2:
+            raise ValueError(
+                f"Expected 2D image, got {img.shape}"
+            )
+
+        H, W = img.shape
+
+        if sigma is None:
+            sigma = 1.0 / (2.0 * frequency)
+
+        # ----------------------------------------------------------
+        # Kernel size
+        # ----------------------------------------------------------
+
+        kernel_size = int(
+            math.ceil(6.0 * sigma)
+        )
+
+        if kernel_size % 2 == 0:
+            kernel_size += 1
+
+        half = kernel_size // 2
+
+        y, x = torch.meshgrid(
+            torch.arange(
+                -half,
+                half + 1,
+                device=device,
+                dtype=img.dtype,
+            ),
+            torch.arange(
+                -half,
+                half + 1,
+                device=device,
+                dtype=img.dtype,
+            ),
+            indexing="ij",
+        )
+
+        kernels = []
+
+        for angle in orientations:
+            theta = math.radians(angle)
+
+            # Rotate coordinate system
+            x_theta = (
+                    x * math.cos(theta)
+                    + y * math.sin(theta)
+            )
+
+            y_theta = (
+                    -x * math.sin(theta)
+                    + y * math.cos(theta)
+            )
+
+            # Gaussian envelope
+            gaussian = torch.exp(
+                -(
+                        x_theta.square()
+                        + (gamma ** 2) * y_theta.square()
+                )
+                / (2.0 * sigma ** 2)
+            )
+
+            # Real Gabor carrier
+            carrier = torch.cos(
+                2.0
+                * math.pi
+                * frequency
+                * x_theta
+            )
+
+            kernel = gaussian * carrier
+
+            # Remove DC component.
+            #
+            # This is important because otherwise a slowly
+            # varying mammographic background can produce
+            # a substantial response.
+            kernel = kernel - kernel.mean()
+
+            # Normalize kernel energy.
+            kernel = kernel / (
+                    torch.sqrt(
+                        kernel.square().sum()
+                    )
+                    + 1e-12
+            )
+
+            kernels.append(kernel)
+
+        kernels = torch.stack(
+            kernels,
+            dim=0,
+        ).unsqueeze(1)
+
+        # ----------------------------------------------------------
+        # Apply all orientations simultaneously
+        # ----------------------------------------------------------
+
+        img4d = img.unsqueeze(0).unsqueeze(0)
+
+        padded = F.pad(
+            img4d,
+            (
+                half,
+                half,
+                half,
+                half,
+            ),
+            mode="replicate",
+        )
+
+        responses = F.conv2d(
+            padded,
+            kernels,
+            stride=1,
+            padding=0,
+        )
+
+        # Magnitude because phase/sign is not important for
+        # orientation evidence.
+        responses = responses.abs()
+
+        # [num_orientations, H, W]
+        responses = responses.squeeze(0)
+
+        # Defensive spatial-size guarantee.
+        responses = responses[
+            :,
+            :H,
+            :W,
+        ]
+
+        output.pixel_data = responses
+
+        return output
     @staticmethod
     @requires_loaded
     def gaussian_filter(

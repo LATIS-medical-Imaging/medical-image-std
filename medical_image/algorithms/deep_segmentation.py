@@ -62,7 +62,7 @@ class DeepSegmentationAlgorithm(Algorithm):
         use_clahe: bool = False,
         patch_size: int = 512,
         stride: Optional[int] = None,
-        threshold: float = 0.5,
+        threshold: float = 0.75,
         min_lesion_area: int = 4,
         device: str = None,
         precision: Precision = Precision.FULL,

@@ -13,6 +13,7 @@ def mock_dicom_image():
     mock_dicom()
 
     primary = DUMMY_DIR / "20587054.dcm"
+    # primary = Path("/home/bobmarley/PycharmProjects/medical-image-std/data/Inbreast/images/22670511.dcm")
     fallback = DUMMY_DIR / "sample.dcm"
 
     path = primary if primary.exists() else fallback

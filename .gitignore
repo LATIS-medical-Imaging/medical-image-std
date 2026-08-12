@@ -16,3 +16,5 @@ __pycache__
 /ddsm_new_annotation/
 /exportToHTML/
 /medical-image-baseline/.venv/
+/medical-image-baseline/results_cbis/
+/synthetic_microcalcification_dataset/.venv/

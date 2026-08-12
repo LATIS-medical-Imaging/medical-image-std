@@ -173,7 +173,191 @@ class MammographyPreprocessing:
         else:
             output.pixel_data = result
         return output
+    # ------------------------------------------------------------------
+    # 2. Robust Intensity Normalization
+    # ------------------------------------------------------------------
 
+    @staticmethod
+    @requires_loaded
+    def robust_intensity_normalization(
+        image: Image,
+        breast_mask: Image,
+        output_raw: Image = None,
+        output_norm: Image = None,
+        lower_percentile: float = 1.0,
+        upper_percentile: float = 99.0,
+        device=None,
+    ) -> Tuple[Image, Image]:
+        """
+        Robust intensity normalization using percentiles computed
+        exclusively inside the breast mask.
+
+        Two representations are produced:
+
+            I_raw  -> original intensity representation,
+                      used for measurements.
+
+            I_norm -> robustly normalized representation in [0, 1],
+                      used for feature computation.
+
+        The normalization is:
+
+            I_norm = clip(
+                (I_raw - P_low) / (P_high - P_low),
+                0, 1
+            )
+
+        where P_low and P_high are computed only from pixels
+        inside the breast mask.
+
+        Background pixels are set to zero in I_norm.
+
+        Args:
+            image:
+                Original mammogram image.
+
+            breast_mask:
+                Binary breast mask (0/1).
+
+            output_raw:
+                Optional output Image for I_raw.
+
+            output_norm:
+                Optional output Image for I_norm.
+
+            lower_percentile:
+                Lower percentile used for normalization.
+                Default: 1.0.
+
+            upper_percentile:
+                Upper percentile used for normalization.
+                Default: 99.0.
+
+            device:
+                Computation device (None = infer from image).
+
+        Returns:
+            Tuple[Image, Image]:
+                raw_image:
+                    Original image as float32.
+
+                normalized_image:
+                    Normalized image in [0, 1], with background
+                    pixels set to zero.
+
+        Notes:
+            I_raw must be used for quantitative intensity measurements.
+            I_norm must be used for feature computation and image
+            processing algorithms.
+        """
+
+        if not 0.0 <= lower_percentile < upper_percentile <= 100.0:
+            raise ValueError(
+                "Percentiles must satisfy "
+                "0 <= lower_percentile < upper_percentile <= 100."
+            )
+
+        # --------------------------------------------------------------
+        # 1. Resolve device
+        # --------------------------------------------------------------
+
+        device = resolve_device(image, explicit=device)
+
+        # --------------------------------------------------------------
+        # 2. Preserve original image
+        # --------------------------------------------------------------
+
+        I_raw = image.pixel_data.to(device).float()
+
+        # --------------------------------------------------------------
+        # 3. Load breast mask
+        # --------------------------------------------------------------
+
+        mask = breast_mask.pixel_data.to(device).bool()
+
+        if I_raw.shape != mask.shape:
+            raise ValueError(
+                f"Image shape {I_raw.shape} and breast mask shape "
+                f"{mask.shape} must match."
+            )
+
+        if not torch.any(mask):
+            raise ValueError("Breast mask is empty.")
+
+        # --------------------------------------------------------------
+        # 4. Extract intensities ONLY inside the breast
+        # --------------------------------------------------------------
+
+        breast_pixels = I_raw[mask]
+
+        # --------------------------------------------------------------
+        # 5. Robust percentile estimation
+        # --------------------------------------------------------------
+
+        p_low = torch.quantile(
+            breast_pixels,
+            lower_percentile / 100.0,
+        )
+
+        p_high = torch.quantile(
+            breast_pixels,
+            upper_percentile / 100.0,
+        )
+
+        # --------------------------------------------------------------
+        # 6. Numerical stability
+        # --------------------------------------------------------------
+
+        denominator = p_high - p_low
+
+        if denominator <= 1e-8:
+            raise ValueError(
+                "Invalid intensity range inside breast mask: "
+                f"P{lower_percentile}={p_low.item():.6g}, "
+                f"P{upper_percentile}={p_high.item():.6g}."
+            )
+
+        # --------------------------------------------------------------
+        # 7. Normalize
+        # --------------------------------------------------------------
+
+        I_norm = (I_raw - p_low) / denominator
+
+        # --------------------------------------------------------------
+        # 8. Clip only the computational representation
+        # --------------------------------------------------------------
+
+        I_norm = I_norm.clamp(0.0, 1.0)
+
+        # --------------------------------------------------------------
+        # 9. Remove background from normalized representation
+        # --------------------------------------------------------------
+
+        I_norm = torch.where(
+            mask,
+            I_norm,
+            torch.zeros_like(I_norm),
+        )
+
+        # --------------------------------------------------------------
+        # 10. Create output images
+        # --------------------------------------------------------------
+
+        if output_raw is None:
+            output_raw = InMemoryImage(array=I_raw)
+        else:
+            output_raw.pixel_data = I_raw
+
+        if output_norm is None:
+            output_norm = InMemoryImage(array=I_norm)
+        else:
+            output_norm.pixel_data = I_norm
+
+        # Keep normalization parameters for reproducibility.
+        output_norm.normalization_p_low = p_low.item()
+        output_norm.normalization_p_high = p_high.item()
+
+        return output_raw, output_norm
     @staticmethod
     @requires_loaded
     def grail_window(

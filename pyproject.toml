@@ -48,3 +48,8 @@ medical_image = ["py.typed"]
 name = "pytorch-cu124"
 url = "https://download.pytorch.org/whl/cu124"
 explicit = true
+
+[tool.uv.workspace]
+members = [
+    "csar-net",
+]

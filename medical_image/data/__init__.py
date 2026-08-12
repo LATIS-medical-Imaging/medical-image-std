@@ -5,6 +5,8 @@ from medical_image.data.png_image import PNGImage
 from medical_image.data.in_memory_image import InMemoryImage
 from medical_image.data.patch import PatchGrid, Patch
 from medical_image.data.region_of_interest import RegionOfInterest
+from medical_image.data.physical_features import CandidatePhysicalFeatures, Particle, SpatialParticleFeatures
+from medical_image.data.mammogram_feature import GlobalMammogramFeatures
 
 __all__ = [
     "Annotation",
@@ -13,6 +15,10 @@ __all__ = [
     "DicomImage",
     "PNGImage",
     "InMemoryImage",
+    "CandidatePhysicalFeatures",
+    "SpatialParticleFeatures",
+    "GlobalMammogramFeatures",
+    "Particle",
     "PatchGrid",
     "Patch",
     "RegionOfInterest",
