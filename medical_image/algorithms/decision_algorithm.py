@@ -237,16 +237,7 @@ class FinalMCDecisionAlgorithm(Algorithm):
             return 0.0
 
         if not cluster.is_cluster:
-            return (
-                0.25
-                * float(
-                    np.clip(
-                        cluster.cluster_score,
-                        0.0,
-                        1.0,
-                    )
-                )
-            )
+            return 0.0
 
         return float(
             np.clip(

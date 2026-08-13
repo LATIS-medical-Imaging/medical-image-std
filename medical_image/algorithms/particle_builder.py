@@ -1,5 +1,6 @@
 # TODO: change this from here
 import torch
+import numpy as np
 
 from medical_image.algorithms.candidate_scale_signature import CandidateScaleSignature
 from medical_image.algorithms.local_physical_analysis_algorithm import CandidatePhysicalFeatures
@@ -37,10 +38,26 @@ class ParticleBuilder:
         top_hat_maps: torch.Tensor,
         log_maps: torch.Tensor,
         hf_maps: torch.Tensor,
-    ) -> list[Particle]:
+    ) -> tuple[
+        list[Particle],
+        list[CandidatePhysicalFeatures],
+    ]:
+        """
+        Build particles from physical candidates.
+
+        Returns
+        -------
+        particles:
+            Filtered list of Particle objects.
+
+        filtered_candidates:
+            The corresponding CandidatePhysicalFeatures
+            for each accepted particle (same length,
+            same order).
+        """
 
         if not physical_candidates:
-            return []
+            return [], []
 
         # ==================================================
         # 1. Extract scale signatures
@@ -72,6 +89,8 @@ class ParticleBuilder:
         # ==================================================
 
         particles = []
+        filtered_candidates = []
+        accepted_count = 0
 
         for index, candidate in enumerate(
             physical_candidates
@@ -167,9 +186,56 @@ class ParticleBuilder:
                 )
             )
 
+            # ------ Particle Filtering Gates ------
+            # Reject candidates that are clearly not microcalcifications
+            if candidate.area < 2 or candidate.area > 150:
+                continue
+            if candidate.circularity < 0.3:
+                continue
+            if candidate.eccentricity > 0.9:
+                continue
+            if candidate.solidity < 0.4:
+                continue
+            if candidate.robust_peak_z < 2.0:
+                continue
+
+            # ---- Compute particle_score ----
+            # Normalize peak prominence via logistic
+            peak_prominence_norm = 1.0 / (1.0 + np.exp(-candidate.robust_peak_z))
+
+            # Normalize center-ring contrast
+            contrast_norm = float(min(1.0, max(0.0, candidate.center_ring_contrast / (candidate.neighborhood_mad + 1e-8))))
+
+            # Normalize top-hat max from signature
+            tophat_max_norm = float(max(top_hat)) if top_hat else 0.0
+
+            # Normalize high-frequency max
+            hf_max_norm = float(max(hf)) if hf else 0.0
+
+            # Shape score from circularity, solidity, eccentricity
+            shape_score = (
+                0.4 * candidate.circularity
+                + 0.3 * candidate.solidity
+                + 0.3 * (1.0 - candidate.eccentricity)
+            )
+
+            particle_score = (
+                0.25 * peak_prominence_norm
+                + 0.20 * radial_score
+                + 0.15 * shape_score
+                + 0.15 * scale_score
+                + 0.10 * contrast_norm
+                + 0.10 * tophat_max_norm
+                + 0.05 * hf_max_norm
+            )
+
+            particle_score = float(min(1.0, max(0.0, particle_score)))
+
             particle = Particle(
 
-                id=index,
+                id=accepted_count,
+
+                particle_score=particle_score,
 
                 label=candidate.label,
 
@@ -264,8 +330,18 @@ class ParticleBuilder:
             particles.append(
                 particle
             )
+            filtered_candidates.append(
+                candidate
+            )
+            accepted_count += 1
 
-        return particles
+        print(
+            f"ParticleBuilder: {len(physical_candidates)} candidates -> "
+            f"{len(particles)} particles "
+            f"({len(physical_candidates) - len(particles)} filtered)"
+        )
+
+        return particles, filtered_candidates
 
     @staticmethod
     def _normalize_radial_decay(

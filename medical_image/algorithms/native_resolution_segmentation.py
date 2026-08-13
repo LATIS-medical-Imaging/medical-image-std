@@ -538,15 +538,9 @@ class NativeResolutionSegmentationAlgorithm(Algorithm):
                 .is_microcalcification
             ):
 
-                if (
-                    cluster_decision is None
-                    or cluster_decision
-                    .is_microcalcification_cluster
-                ):
-
-                    mc_mask[
-                        pixels
-                    ] = True
+                mc_mask[
+                    pixels
+                ] = True
 
         # ======================================================
         # 6. Convert to tensors

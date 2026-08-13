@@ -65,6 +65,7 @@ class LocalPhysicalAnalysisAlgorithm(Algorithm):
         radial_radius: int | None = None,
         shape_threshold_k: float = 2.0,
         min_area: int = 1,
+        max_area: int = 200,
         connectivity: int = 2,
         batch_size: int = 512,
         device: str = "cpu",
@@ -109,6 +110,11 @@ class LocalPhysicalAnalysisAlgorithm(Algorithm):
                 "min_area must be >= 1."
             )
 
+        if max_area < min_area:
+            raise ValueError(
+                "max_area must be >= min_area."
+            )
+
         if connectivity not in (1, 2):
             raise ValueError(
                 "connectivity must be either 1 or 2."
@@ -129,6 +135,7 @@ class LocalPhysicalAnalysisAlgorithm(Algorithm):
 
         self.shape_threshold_k = shape_threshold_k
         self.min_area = min_area
+        self.max_area = max_area
         self.connectivity = connectivity
         self.batch_size = batch_size
 
@@ -286,7 +293,10 @@ class LocalPhysicalAnalysisAlgorithm(Algorithm):
             index=component_ids,
         )
 
-        keep = areas >= self.min_area
+        keep = (
+            (areas >= self.min_area)
+            & (areas <= self.max_area)
+        )
 
         if not np.any(keep):
             return [], [], []

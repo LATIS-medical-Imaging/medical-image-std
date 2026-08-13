@@ -55,7 +55,7 @@ class CandidateEvidenceAlgorithm(Algorithm):
             torch.abs(values - median)
         )
 
-        denominator = 3.0 * mad
+        denominator = 5.0 * mad
 
         # ------------------------------------------------------
         # Degenerate case

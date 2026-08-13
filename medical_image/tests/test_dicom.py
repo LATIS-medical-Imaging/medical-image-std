@@ -607,7 +607,7 @@ class TestDicom:
             scale_neighborhood_radius=1,
         )
 
-        particles = particle_builder.build(
+        particles, filtered_physical = particle_builder.build(
             physical_candidates=physical_candidates,
 
             top_hat_maps=top_hat_out.pixel_data,
@@ -1050,7 +1050,7 @@ class TestDicom:
             scale_neighborhood_radius=1,
         )
 
-        particles = particle_builder.build(
+        particles, filtered_physical = particle_builder.build(
             physical_candidates=physical_candidates,
 
             top_hat_maps=top_hat_out.pixel_data,
@@ -1117,7 +1117,7 @@ class TestDicom:
         final_decision = final_algorithm.apply(
             particles=particles,
 
-            physical_features=physical_candidates,
+            physical_features=filtered_physical,
 
             clusters=clusters,
 
@@ -1133,7 +1133,7 @@ class TestDicom:
         final_output = (
             segmentation_algorithm.apply(
                 candidates=candidates,
-                physical_features=physical_candidates,
+                physical_features=filtered_physical,
                 clusters=clusters,
                 final_decision=final_decision,
             )
@@ -1526,7 +1526,7 @@ class TestDicom:
             scale_neighborhood_radius=1,
         )
 
-        particles = particle_builder.build(
+        particles, filtered_physical = particle_builder.build(
             physical_candidates=physical_candidates,
 
             top_hat_maps=top_hat_out.pixel_data,
@@ -1593,7 +1593,7 @@ class TestDicom:
         final_decision = final_algorithm.apply(
             particles=particles,
 
-            physical_features=physical_candidates,
+            physical_features=filtered_physical,
 
             clusters=clusters,
 
@@ -1986,7 +1986,7 @@ class TestDicom:
             scale_neighborhood_radius=1,
         )
 
-        particles = particle_builder.build(
+        particles, filtered_physical = particle_builder.build(
             physical_candidates=physical_candidates,
 
             top_hat_maps=top_hat_out.pixel_data,
@@ -2409,7 +2409,7 @@ class TestDicom:
             scale_neighborhood_radius=1,
         )
 
-        particles = particle_builder.build(
+        particles, filtered_physical = particle_builder.build(
             physical_candidates=physical_candidates,
 
             top_hat_maps=top_hat_out.pixel_data,
@@ -2819,7 +2819,7 @@ class TestDicom:
             scale_neighborhood_radius=1,
         )
 
-        particles = particle_builder.build(
+        particles, filtered_physical = particle_builder.build(
             physical_candidates=physical_candidates,
 
             top_hat_maps=top_hat_out.pixel_data,
