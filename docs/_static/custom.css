@@ -1,0 +1,123 @@
+/* Medical Image Standard — Custom Sphinx Theme Overrides */
+
+:root {
+    --mis-primary: #D81B60;
+    --mis-primary-hover: #AD144D;
+    --mis-background: #FCE4EC;
+    --mis-surface: #FFFFFF;
+    --mis-text: #2A1B20;
+    --mis-muted: #6D5A61;
+}
+
+/* Logo sizing */
+.sidebar-logo img {
+    max-width: 200px;
+    height: auto;
+}
+
+/* Hero section on landing page */
+.hero-tagline {
+    font-size: 1.2em;
+    color: var(--mis-muted);
+    margin-bottom: 1.5em;
+}
+
+/* Feature grid */
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.feature-card {
+    padding: 1.2rem;
+    border: 1px solid #e0d0d5;
+    border-radius: 8px;
+    background: var(--mis-surface);
+    transition: border-color 0.2s;
+}
+
+.feature-card:hover {
+    border-color: var(--mis-primary);
+}
+
+.feature-card strong {
+    display: block;
+    margin-bottom: 0.4rem;
+    color: var(--mis-text);
+}
+
+.feature-card p {
+    margin: 0;
+    font-size: 0.9em;
+    color: var(--mis-muted);
+}
+
+/* Quick-nav buttons */
+.quick-nav {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    margin: 1.5rem 0;
+}
+
+.quick-nav a {
+    display: inline-block;
+    padding: 0.6rem 1.4rem;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+}
+
+.quick-nav a.primary {
+    background: var(--mis-primary);
+    color: #fff;
+}
+
+.quick-nav a.primary:hover {
+    background: var(--mis-primary-hover);
+}
+
+.quick-nav a.secondary {
+    border: 2px solid var(--mis-primary);
+    color: var(--mis-primary);
+    background: transparent;
+}
+
+.quick-nav a.secondary:hover {
+    background: var(--mis-background);
+}
+
+/* Section dividers */
+.section-divider {
+    border: none;
+    border-top: 2px solid var(--mis-background);
+    margin: 2rem 0;
+}
+
+/* Admonition accent tweaks */
+.admonition.tip > .admonition-title,
+.admonition.hint > .admonition-title {
+    background-color: #FCE4EC;
+}
+
+/* Install command highlight */
+.install-cmd {
+    background: #f8f0f2;
+    border-left: 4px solid var(--mis-primary);
+    padding: 0.8rem 1rem;
+    border-radius: 0 6px 6px 0;
+    margin: 1rem 0;
+}
+
+/* Architecture diagram container */
+.arch-diagram {
+    text-align: center;
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #fafafa;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
