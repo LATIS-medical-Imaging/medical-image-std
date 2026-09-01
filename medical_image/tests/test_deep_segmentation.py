@@ -24,9 +24,7 @@ from medical_image.data.in_memory_image import InMemoryImage
 from medical_image.tests.mock_sample import mock_dicom_image
 
 # Path to trained checkpoints
-RESULTS_DIR = (
-    Path(__file__).resolve().parents[2] / "medical-image-baseline" / "results"
-)
+RESULTS_DIR = Path(__file__).resolve().parents[2] / "medical-image-baseline" / "results"
 
 
 # =========================================================================
@@ -250,9 +248,7 @@ class TestRealCheckpoint:
 
     def test_load_checkpoint_clahe(self):
         """CLAHE variant checkpoint sets use_clahe=True."""
-        algo = DeepSegmentationAlgorithm(
-            checkpoint_path=str(_CKPT_CLAHE), device="cpu"
-        )
+        algo = DeepSegmentationAlgorithm(checkpoint_path=str(_CKPT_CLAHE), device="cpu")
 
         assert algo.use_clahe is True
         assert algo.patch_size == 128
@@ -306,9 +302,7 @@ class TestRealCheckpoint:
     @pytest.mark.parametrize("dicom_image", mock_dicom_image())
     def test_dicom_inference_clahe(self, dicom_image):
         """Real U-Net (CLAHE) on real DICOM — CLAHE applied before patching."""
-        algo = DeepSegmentationAlgorithm(
-            checkpoint_path=str(_CKPT_CLAHE), device="cpu"
-        )
+        algo = DeepSegmentationAlgorithm(checkpoint_path=str(_CKPT_CLAHE), device="cpu")
         assert algo.use_clahe is True
         assert algo.patch_size == 128
 

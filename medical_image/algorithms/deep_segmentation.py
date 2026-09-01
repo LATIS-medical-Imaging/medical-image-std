@@ -337,9 +337,7 @@ class DeepSegmentationAlgorithm(Algorithm):
         pred_patches = []
         for i in range(0, len(patches), batch_size):
             batch = (
-                torch.stack(patches[i : i + batch_size])
-                .unsqueeze(1)
-                .to(self.device)
+                torch.stack(patches[i : i + batch_size]).unsqueeze(1).to(self.device)
             )
             logits = self.model(batch)
             probs = torch.sigmoid(logits).squeeze(1).cpu()
@@ -447,7 +445,9 @@ class DeepSegmentationAlgorithm(Algorithm):
         # Use 0.02 as a reasonable equivalent for clipLimit=2.0
         enhanced = equalize_adapthist(
             img_norm,
-            kernel_size=(grid_size, grid_size) if min(img_np.shape) >= grid_size else None,
+            kernel_size=(
+                (grid_size, grid_size) if min(img_np.shape) >= grid_size else None
+            ),
             clip_limit=0.02,
         )
         return torch.from_numpy(enhanced.astype(np.float32))
