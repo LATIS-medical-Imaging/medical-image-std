@@ -22,6 +22,7 @@ dependencies = [
     "torchvision",
     "transformers",
     "pandas",
+    "segmentation-models-pytorch",
 ]
 
 [project.optional-dependencies]

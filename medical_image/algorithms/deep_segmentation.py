@@ -6,18 +6,55 @@ Output follows Option 2: binary mask on ``output.pixel_data`` + per-lesion
 :class:`Annotation` objects on ``output.annotations``.
 """
 
+import logging
+import re
+from pathlib import Path
 from typing import Optional
 
-import cv2
 import numpy as np
+import requests
 import torch
 import torch.nn as nn
 from scipy import ndimage
+from skimage.exposure import equalize_adapthist
+from skimage.measure import find_contours
 
 from medical_image.algorithms.algorithm import Algorithm
 from medical_image.data.annotation import Annotation, GeometryType
 from medical_image.data.image import Image
 from medical_image.utils.device import Precision
+
+logger = logging.getLogger(__name__)
+
+DEFAULT_MODEL_SERVER_URL = "http://mcdmodels.ptm.tn:555/"
+DEFAULT_CACHE_DIR = Path.home() / ".cache" / "medical-std" / "models"
+
+KNOWN_ARCHITECTURES = {"unet", "attention_unet", "unetpp", "deeplabv3p"}
+KNOWN_LOSSES = {"bce_dice", "focal_dice", "topk_bce_dice", "focal_tversky"}
+KNOWN_DATASETS = {"inbreast", "cbis_ddsm_new"}
+
+_MODEL_NAME_PATTERN = re.compile(
+    r"^(attention_unet|deeplabv3p|unetpp|unet)"
+    r"_(bce_dice|focal_dice|topk_bce_dice|focal_tversky)"
+    r"_(\d+)"
+    r"_(inbreast|cbis_ddsm_new)"
+    r"(_clahe)?$"
+)
+
+
+def _parse_model_name(name: str) -> Optional[dict]:
+    """Parse a model directory name into metadata dict, or None if invalid."""
+    m = _MODEL_NAME_PATTERN.match(name)
+    if not m:
+        return None
+    return {
+        "name": name,
+        "architecture": m.group(1),
+        "loss": m.group(2),
+        "patch_size": int(m.group(3)),
+        "dataset": m.group(4),
+        "uses_clahe": m.group(5) is not None,
+    }
 
 
 class DeepSegmentationAlgorithm(Algorithm):
@@ -78,6 +115,8 @@ class DeepSegmentationAlgorithm(Algorithm):
         self.min_lesion_area = min_lesion_area
         self.use_clahe = use_clahe
 
+        self._model_name: Optional[str] = None
+
         if checkpoint_path is not None:
             self._load_from_checkpoint(checkpoint_path)
         else:
@@ -87,6 +126,77 @@ class DeepSegmentationAlgorithm(Algorithm):
         # Populated after apply()
         self.probability_map: Optional[torch.Tensor] = None
         self.lesion_count: int = 0
+
+    # ------------------------------------------------------------------
+    # Remote model support
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def list_available_models(cls, server_url: str = None) -> list[dict]:
+        """Query the model server and return metadata for each available model.
+
+        Returns a list of dicts with keys: name, architecture, loss,
+        patch_size, dataset, uses_clahe, url.
+        """
+        url = (server_url or DEFAULT_MODEL_SERVER_URL).rstrip("/") + "/"
+        resp = requests.get(url, timeout=30)
+        resp.raise_for_status()
+        html = resp.text
+
+        # Extract href links ending with /
+        dirs = re.findall(r'href="([^"]+/)"', html)
+        models = []
+        for d in dirs:
+            dirname = d.rstrip("/")
+            if dirname in (".", "..") or dirname.startswith("?"):
+                continue
+            info = _parse_model_name(dirname)
+            if info is not None:
+                info["url"] = url + dirname + "/"
+                models.append(info)
+        return models
+
+    @classmethod
+    def from_pretrained(
+        cls,
+        model_name: str,
+        server_url: str = None,
+        cache_dir: str = None,
+        device: str = None,
+        precision: Precision = Precision.FULL,
+        force_download: bool = False,
+    ) -> "DeepSegmentationAlgorithm":
+        """Download a pretrained model from the server and return a ready-to-use algorithm."""
+        base_url = (server_url or DEFAULT_MODEL_SERVER_URL).rstrip("/")
+        checkpoint_url = f"{base_url}/{model_name}/best_model.pt"
+
+        cache = Path(cache_dir) if cache_dir else DEFAULT_CACHE_DIR
+        local_path = cache / model_name / "best_model.pt"
+
+        if not local_path.exists() or force_download:
+            local_path.parent.mkdir(parents=True, exist_ok=True)
+            logger.info("Downloading %s -> %s", checkpoint_url, local_path)
+            resp = requests.get(checkpoint_url, stream=True, timeout=120)
+            resp.raise_for_status()
+            with open(local_path, "wb") as f:
+                for chunk in resp.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            logger.info("Download complete: %s", local_path)
+
+        algo = cls(
+            checkpoint_path=str(local_path),
+            device=device,
+            precision=precision,
+        )
+        algo._model_name = model_name
+        return algo
+
+    @property
+    def model_info(self) -> Optional[dict]:
+        """Return metadata about the loaded model, or None if name unknown."""
+        if self._model_name is None:
+            return None
+        return _parse_model_name(self._model_name)
 
     def _load_from_checkpoint(self, checkpoint_path: str) -> None:
         """Load model architecture + weights from a training checkpoint.
@@ -269,15 +379,15 @@ class DeepSegmentationAlgorithm(Algorithm):
             if area < min_lesion_area:
                 continue
 
-            # Find contour for polygon
-            contours, _ = cv2.findContours(
-                component, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-            )
+            # Find contour for polygon using skimage
+            contours = find_contours(component, level=0.5)
             if not contours:
                 continue
 
-            contour = max(contours, key=cv2.contourArea)
-            contour_pts = [(int(p[0][0]), int(p[0][1])) for p in contour]
+            # Pick the longest contour
+            contour = max(contours, key=len)
+            # find_contours returns (row, col) — convert to (x, y)
+            contour_pts = [(int(round(c[1])), int(round(c[0]))) for c in contour]
 
             # Need >= 3 points for a polygon
             if len(contour_pts) < 3:
@@ -325,16 +435,19 @@ class DeepSegmentationAlgorithm(Algorithm):
     ) -> torch.Tensor:
         """Apply CLAHE preprocessing. Returns float tensor in [0, 1]."""
         img_np = image.numpy()
+        # equalize_adapthist expects input in [0, 1]
         img_min, img_max = img_np.min(), img_np.max()
         if img_max - img_min > 0:
-            img_u8 = ((img_np - img_min) / (img_max - img_min) * 255).astype(
-                np.uint8
-            )
+            img_norm = (img_np - img_min) / (img_max - img_min)
         else:
-            img_u8 = np.zeros_like(img_np, dtype=np.uint8)
+            img_norm = np.zeros_like(img_np)
 
-        clahe = cv2.createCLAHE(
-            clipLimit=clip_limit, tileGridSize=(grid_size, grid_size)
+        # clip_limit for skimage is in [0, 1] range (fraction of normalized CDF)
+        # cv2 clipLimit=2.0 with 8x8 grid ≈ skimage clip_limit=0.01–0.03
+        # Use 0.02 as a reasonable equivalent for clipLimit=2.0
+        enhanced = equalize_adapthist(
+            img_norm,
+            kernel_size=(grid_size, grid_size) if min(img_np.shape) >= grid_size else None,
+            clip_limit=0.02,
         )
-        enhanced = clahe.apply(img_u8)
-        return torch.from_numpy(enhanced.astype(np.float32) / 255.0)
+        return torch.from_numpy(enhanced.astype(np.float32))
