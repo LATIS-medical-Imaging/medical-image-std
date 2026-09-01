@@ -11,15 +11,14 @@ class FCMAlgorithm(Algorithm):
     """
     Fuzzy C-Means (FCM) clustering algorithm for microcalcification segmentation.
 
-    References:
+    References::
+
         @article{quintanilla2011image,
-          title={Image segmentation by fuzzy and possibilistic clustering algorithms for the identification of microcalcifications},
-          author={Quintanilla-Dom{\\'i}nguez, Joel and Ojeda-Maga{\\~n}a, Benjam{\\'i}n and Cortina-Januchs, Maria Guadalupe and Ruelas, Rub{\\'e}n and Vega-Corona, Antonio and Andina, Diego},
+          title={Image segmentation by fuzzy and possibilistic clustering algorithms
+                 for the identification of microcalcifications},
+          author={Quintanilla-Dominguez, Joel and others},
           journal={Scientia Iranica},
-          volume={18},
-          number={3},
-          pages={580--589},
-          year={2011},
+          volume={18}, number={3}, pages={580--589}, year={2011},
           publisher={Elsevier}
         }
 
@@ -34,11 +33,11 @@ class FCMAlgorithm(Algorithm):
         3. Iteratively compute distances, update membership probabilities, and update cluster centroids.
         4. Build a quantized output image and isolate the brightest cluster as the mask.
 
-    Attributes after apply():
-        centroids:    (c, d) cluster centroids.
-        membership:   (c, N) fuzzy membership matrix U.
-        labels:       (H, W) int hard cluster assignments.
-        quantized:    (H, W) float quantized image.
+    Attributes (populated after ``apply()``):
+        centroids:    ``(c, d)`` cluster centroids.
+        membership:   ``(c, N)`` fuzzy membership matrix U.
+        labels:       ``(H, W)`` int hard cluster assignments.
+        quantized:    ``(H, W)`` float quantized image.
         stats:        List of dicts with cluster statistics.
     """
 

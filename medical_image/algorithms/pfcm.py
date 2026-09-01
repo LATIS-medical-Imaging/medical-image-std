@@ -12,15 +12,14 @@ class PFCMAlgorithm(Algorithm):
     """
     Possibilistic Fuzzy C-Means (PFCM) algorithm for microcalcification detection.
 
-    References:
+    References::
+
         @article{quintanilla2011image,
-          title={Image segmentation by fuzzy and possibilistic clustering algorithms for the identification of microcalcifications},
-          author={Quintanilla-Dom{\\'i}nguez, Joel and Ojeda-Maga{\\~n}a, Benjam{\\'i}n and Cortina-Januchs, Maria Guadalupe and Ruelas, Rub{\\'e}n and Vega-Corona, Antonio and Andina, Diego},
+          title={Image segmentation by fuzzy and possibilistic clustering algorithms
+                 for the identification of microcalcifications},
+          author={Quintanilla-Dominguez, Joel and others},
           journal={Scientia Iranica},
-          volume={18},
-          number={3},
-          pages={580--589},
-          year={2011},
+          volume={18}, number={3}, pages={580--589}, year={2011},
           publisher={Elsevier}
         }
 
@@ -36,14 +35,14 @@ class PFCMAlgorithm(Algorithm):
         4. Detect MCs by thresholding the maximum typicality map (atypical pixels).
         5. Exclude the darkest background cluster.
 
-    Attributes after apply():
-        typicality:   (c, N) typicality matrix T.
-        T_max_map:    (H, W) max typicality per pixel.
-        centroids:    (c, d) cluster centroids.
-        membership:   (c, N) fuzzy membership matrix.
-        labels:       (H, W) int hard cluster assignments.
-        quantized:    (H, W) float quantized image.
-        gamma:        (c,) gamma values per cluster.
+    Attributes (populated after ``apply()``):
+        typicality:   ``(c, N)`` typicality matrix T.
+        T_max_map:    ``(H, W)`` max typicality per pixel.
+        centroids:    ``(c, d)`` cluster centroids.
+        membership:   ``(c, N)`` fuzzy membership matrix.
+        labels:       ``(H, W)`` int hard cluster assignments.
+        quantized:    ``(H, W)`` float quantized image.
+        gamma:        ``(c,)`` gamma values per cluster.
     """
 
     def __init__(

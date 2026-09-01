@@ -13,14 +13,15 @@ class FebdsAlgorithm(Algorithm):
     """
     Fourier Enhancement and Band-pass Filtering Algorithm for Microcalcification Segmentation.
 
-    References:
+    References::
+
         @article{article,
-        author = {Lopez, Elizabeth and Urcid, Gonzalo},
-        year = {2016},
-        month = {05},
-        pages = {},
-        title = {Mammograms calcifications segmentation based on band-pass Fourier filtering and adaptive statistical thresholding},
-        volume = {5}
+            author = {Lopez, Elizabeth and Urcid, Gonzalo},
+            year = {2016},
+            month = {05},
+            pages = {},
+            title = {Mammograms calcifications segmentation based on band-pass Fourier filtering and adaptive statistical thresholding},
+            volume = {5}
         }
 
     Math and Logic:
@@ -34,14 +35,14 @@ class FebdsAlgorithm(Algorithm):
         (like Otsu's) or binarization, and morphological closing to reconstruct regions.
 
     Pipeline:
-        1. Apply base enhancement filter depending on the method ('dog', 'log', 'fft').
+        1. Apply base enhancement filter depending on the method (``dog``, ``log``, ``fft``).
         2. Denoise and smooth by taking the absolute value and applying a median filter.
         3. Apply gamma correction to increase the contrast of microcalcifications.
-        4. Apply global thresholding (binarize for 'fft', Otsu for 'dog'/'log').
+        4. Apply global thresholding (binarize for ``fft``, Otsu for ``dog``/``log``).
         5. Apply morphological closing and region filling to restore shape and connectivity.
 
-    Example Usage:
-        ```python
+    Example::
+
         from medical_image.algorithms.FEBDS import FebdsAlgorithm
         from medical_image.data.dicom_image import DicomImage
 
@@ -51,7 +52,6 @@ class FebdsAlgorithm(Algorithm):
         algo = FebdsAlgorithm(method="dog", device="cpu")
         output = img.clone()
         algo(img, output)
-        ```
     """
 
     def __init__(self, method: str, device: str = "cpu"):

@@ -27,7 +27,7 @@ class Annotation:
 
     Represents a geometric region (rectangle, ellipse, or polygon) with a
     label and optional metadata.  The centroid is computed automatically in
-    the constructor and exposed as :pyattr:`center`.
+    the constructor and exposed as ``center``.
 
     Attributes:
         shape (GeometryType): Geometry type of the annotation.
@@ -147,11 +147,11 @@ class Annotation:
 
         Args:
             padding: Extra pixels added on **each** side of the bounding box.
-            roi_type: Output shape format:
-                - ``"bbox"`` or ``"rectangle"``: returns
-                  ``{"type": ..., "coordinates": [x_min, y_min, x_max, y_max]}``
-                - ``"ellipse"``: returns
-                  ``{"type": "ellipse", "coordinates": {"center": (cx, cy), "radii": (rx, ry)}}``
+            roi_type: Output shape format.
+                ``"bbox"`` or ``"rectangle"`` returns
+                ``{"type": ..., "coordinates": [x_min, y_min, x_max, y_max]}``.
+                ``"ellipse"`` returns
+                ``{"type": "ellipse", "coordinates": {"center": (cx, cy), "radii": (rx, ry)}}``.
             image_shape: ``(height, width)`` used to clamp coordinates so the
                 ROI stays within image bounds.  ``None`` means no clamping.
 
