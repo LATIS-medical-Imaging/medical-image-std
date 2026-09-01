@@ -16,3 +16,4 @@ __pycache__
 /ddsm_new_annotation/
 /exportToHTML/
 /medical-image-baseline/.venv/
+/docs/_build/
