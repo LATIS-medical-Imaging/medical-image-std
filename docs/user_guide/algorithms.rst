@@ -123,6 +123,70 @@ Run pretrained deep learning models with automatic download and caching:
 
 Models are cached in ``~/.cache/medical-std/models/``.
 
+Visualizing Inference Results
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After running inference, the model produces a probability map. To obtain a clean
+binary mask, threshold the probability map --- a threshold of **0.7** reduces
+false positives compared to the default 0.5:
+
+.. code-block:: python
+
+   import matplotlib.pyplot as plt
+   import numpy as np
+   import torch
+   from medical_image import DicomImage
+   from medical_image.algorithms.deep_segmentation import DeepSegmentationAlgorithm
+
+   # Load DICOM
+   image = DicomImage("mammogram.dcm")
+   image.load()
+   if not isinstance(image.pixel_data, torch.Tensor):
+       image.pixel_data = torch.from_numpy(image.pixel_data).float()
+
+   # Run inference
+   algo = DeepSegmentationAlgorithm.from_pretrained(
+       "unetpp_bce_dice_32_inbreast", device="cuda"
+   )
+   output = image.clone()
+   algo(image=image, output=output)
+
+   # Extract arrays
+   image_np = image.pixel_data.detach().cpu().numpy()
+   if image_np.max() > 1.0:
+       image_np = image_np / image_np.max()
+
+   # Threshold probability map at 0.7
+   prob_np = algo.probability_map.detach().cpu().numpy()
+   mask_np = (prob_np >= 0.7).astype(np.float32)
+
+   # Visualize
+   fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+
+   axes[0].imshow(image_np, cmap="gray")
+   axes[0].set_title("DICOM Image")
+   axes[0].axis("off")
+
+   axes[1].imshow(mask_np, cmap="gray", vmin=0, vmax=1)
+   axes[1].set_title("Predicted Mask (threshold = 0.7)")
+   axes[1].axis("off")
+
+   axes[2].imshow(image_np, cmap="gray")
+   axes[2].imshow(mask_np, cmap="Reds", alpha=0.4, vmin=0, vmax=1)
+   axes[2].set_title("Segmentation Overlay")
+   axes[2].axis("off")
+
+   plt.tight_layout()
+   plt.show()
+
+.. image:: /_static/example_deep_seg.png
+   :alt: Deep segmentation inference: DICOM image, predicted mask, and overlay
+   :align: center
+
+The three panels show: (1) the original DICOM mammogram, (2) the binary mask
+after thresholding the model output at 0.7, and (3) the mask overlaid on the
+original image in red to highlight detected regions.
+
 Loading from Local Checkpoint
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -133,6 +197,67 @@ Loading from Local Checkpoint
        device="cpu"
    )
    # Config (patch_size, clahe, threshold) auto-read from checkpoint
+
+ROI Pipeline: TopHat and FEBDS
+------------------------------
+
+A common workflow extracts a region of interest, then applies classical
+algorithms for microcalcification enhancement:
+
+.. code-block:: python
+
+   from medical_image import (
+       DicomImage, RegionOfInterest,
+       TopHatAlgorithm, FebdsAlgorithm,
+   )
+   import matplotlib.pyplot as plt
+
+   # Load DICOM and extract ROI around a suspicious region
+   image = DicomImage("mammogram.dcm")
+   image.load()
+
+   roi = RegionOfInterest.from_center(image, cx=1250, cy=2000, half_size=127)
+   roi_img = roi.load()
+   RegionOfInterest.normalize(roi_img, divisor=4095.0)
+
+   # TopHat on the ROI (enhances small bright structures)
+   th_out = roi_img.clone()
+   TopHatAlgorithm(radius=3, device="cpu")(roi_img, th_out)
+
+   # FEBDS on the full image, then extract same ROI
+   febds = FebdsAlgorithm("dog", device="cpu")
+   full_out = image.clone()
+   febds(image=image, output=full_out)
+
+   roi_febds = RegionOfInterest.from_center(full_out, cx=1250, cy=2000, half_size=127)
+   roi_febds_img = roi_febds.load()
+
+   # Visualize
+   fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+   axes[0].imshow(roi_img.pixel_data.cpu().numpy(), cmap="gray")
+   axes[0].set_title("ROI (normalized)")
+   axes[0].axis("off")
+
+   axes[1].imshow(th_out.pixel_data.cpu().numpy(), cmap="gray")
+   axes[1].set_title("TopHat (radius=3)")
+   axes[1].axis("off")
+
+   axes[2].imshow(roi_febds_img.pixel_data.cpu().numpy(), cmap="gray")
+   axes[2].set_title("FEBDS (DoG)")
+   axes[2].axis("off")
+
+   plt.tight_layout()
+   plt.show()
+
+.. image:: /_static/example_roi_pipeline.png
+   :alt: ROI pipeline: normalized ROI, TopHat enhancement, and FEBDS output
+   :align: center
+
+The three panels show: (1) the extracted and normalized ROI from the mammogram,
+(2) the TopHat-enhanced output that highlights small bright structures like
+microcalcifications, and (3) the FEBDS algorithm output using Difference of
+Gaussians for band-pass enhancement.
 
 Breast Mask Extraction
 ----------------------

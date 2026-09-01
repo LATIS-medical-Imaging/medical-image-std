@@ -9,10 +9,9 @@ sys.path.insert(0, os.path.abspath(".."))
 # -- Project information -----------------------------------------------------
 
 project = "Medical Image Standard"
-copyright = "2024, Hamza Gbada"
+copyright = "2026, Hamza Gbada"
 author = "Hamza Gbada"
 release = "0.7.0"
-
 # -- General configuration ---------------------------------------------------
 
 extensions = [
@@ -20,6 +19,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
     "sphinx.ext.intersphinx",
     "sphinx_copybutton",
 ]
@@ -61,6 +61,7 @@ html_css_files = ["custom.css"]
 
 html_title = "Medical Image Standard"
 html_logo = "_static/logo.png"
+html_favicon = "_static/logo.png"
 
 html_theme_options = {
     "sidebar_hide_name": False,

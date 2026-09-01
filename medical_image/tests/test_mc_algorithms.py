@@ -15,7 +15,9 @@ Tests use synthetic data (no DICOM dependency) to validate:
 import numpy as np
 import pytest
 import torch
+from black import output
 
+from medical_image import FebdsAlgorithm
 from medical_image.algorithms.fcm import FCMAlgorithm
 from medical_image.algorithms.kmeans import KMeansAlgorithm
 from medical_image.algorithms.pfcm import PFCMAlgorithm
@@ -395,6 +397,18 @@ class TestFullPipeline:
 
         fcm_out = th_out.clone()
         fcm = FCMAlgorithm(c=3, device="cpu")
-        fcm(th_out, fcm_out)
 
+        fcm(th_out, fcm_out)
+        algorithm = FebdsAlgorithm("dog")
+        output = dicom_image.clone()
+        algorithm(image=dicom_image, output=output)
+
+        roi_fedbs_out = RegionOfInterest.from_center(
+            output, cx=1250, cy=2000, half_size=127
+        )
+        roi_fedbs = roi_fedbs_out.load()
+        roi_fedbs_final = roi_fedbs.pixel_data.cpu().detach().numpy()
+        fcm_out = th_out.pixel_data.cpu().detach().numpy()
+        roi_out = roi_img.pixel_data.cpu().detach().numpy()
+        print(f"FCM output sum: {fcm_out.pixel_data.sum()}")
         assert float(fcm_out.pixel_data.sum()) > 0
