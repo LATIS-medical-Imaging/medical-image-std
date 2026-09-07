@@ -43,7 +43,7 @@ def mock_dicom_image():
 
 
 def mock_png_image():
-    download_png()
+    make_png()
 
     png_path = DUMMY_DIR / "sample.png"
 
@@ -92,7 +92,8 @@ def mock_dicom():
         print("Error downloading the DICOM file:", e)
 
 
-def download_png():
+def make_png():
+    """Generate the PNG fixture locally so tests do not depend on the network."""
     DUMMY_DIR.mkdir(exist_ok=True)
 
     png_path = DUMMY_DIR / "sample.png"
@@ -101,26 +102,13 @@ def download_png():
         print("PNG file already exists at:", png_path)
         return
 
-    png_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Steuben_-_Bataille_de_Poitiers.png/1280px-Steuben_-_Bataille_de_Poitiers.png"
+    import numpy as np
+    from PIL import Image as PILImage
 
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/120.0.0.0 Safari/537.36"
-    }
+    arr = np.random.RandomState(0).randint(0, 256, (960, 1280, 3), dtype=np.uint8)
+    PILImage.fromarray(arr).save(png_path)
 
-    try:
-        response = requests.get(png_url, headers=headers)
-        response.raise_for_status()  # Raise an error for bad response status codes
-
-        with open(str(png_path), "wb") as f:
-            f.write(response.content)
-
-        print("PNG file downloaded successfully.")
-        print("Saved at:", png_path)
-
-    except requests.exceptions.RequestException as e:
-        print("Error downloading the PNG file:", e)
+    print("PNG file generated at:", png_path)
 
 
 def mock_kernel_sizes():
