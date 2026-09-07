@@ -1,3 +1,23 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# Copyright (C) 2024-2026 [YOUR NAME / ORGANIZATION]
+#
+# This file is part of medical-image-std.
+#
+# medical-image-std is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License
+# as published by the Free Software Foundation, either version 3 of
+# the License, or (at your option) any later version.
+#
+# medical-image-std is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with medical-image-std. If not, see
+# <https://www.gnu.org/licenses/>.
+
 """
 Mask utilities for medical image datasets.
 
@@ -9,19 +29,16 @@ import plistlib
 import re
 from pathlib import Path
 from typing import List, Tuple, Optional, Dict, Any
-
 import numpy as np
 import torch
 from PIL import Image as PILImage
 from skimage.draw import polygon as draw_polygon, disk as draw_disk
-
 from medical_image.utils.logging import logger
+
 
 # ---------------------------------------------------------------------------
 # INbreast XML (Apple plist) parsing
 # ---------------------------------------------------------------------------
-
-
 def parse_inbreast_xml(xml_path: str) -> List[Dict[str, Any]]:
     """
     Parse an INbreast XML annotation file (Apple plist format).

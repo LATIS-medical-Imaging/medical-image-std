@@ -622,17 +622,23 @@ black --check .        # CI check
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) file
+Medical Image Standard `medical-image-std` is free and open-source software released under the **GNU Affero General Public License v3.0 (AGPL-3.0-only)**.
 
----
+You are free to use, study, modify, and redistribute this software under the terms of the AGPL-3.0-only license.
 
-## Links
+The AGPL permits both non-commercial and commercial use. However, when the conditions of the AGPL apply, users and organizations must comply with its requirements, including the applicable obligations concerning source code and network use.
 
-- **Repository**: https://github.com/LATIS-DocumentAI-Group/medical-image-std
-- **Documentation**: [docs/INDEX.md](docs/INDEX.md)
+The complete license is available in the `LICENSE` file.
 
----
+## Commercial licensing
 
-## Version
+Organizations that wish to use `medical-image-std` in proprietary or closed-source products, services, or commercial platforms without accepting the obligations of the AGPL-3.0-only license may contact the copyright holder regarding a separate commercial license.
 
-**Current**: 0.4.1
+A commercial license may provide alternative licensing terms and may include additional commercial services, support, integration assistance, proprietary extensions, or other offerings.
+
+For commercial licensing inquiries, please contact:
+
+Hamza Gbada
+[Email](hamza.gbada@gmail.com)
+
+Copyright © 2026 Hamza Gbada.
