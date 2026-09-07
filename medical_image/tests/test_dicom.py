@@ -260,7 +260,11 @@ class TestDicom:
     @pytest.mark.parametrize("dicom_image", mock_dicom_image())
     def test_sbrg(self, dicom_image):
         # --- Reference implementation (pure numpy/skimage/scipy, no framework) ---
-        coordinates = [1958, 1177, 2165, 1310]
+        # ROI sized to fit whatever sample DICOM is available (CI uses a 512x512 one)
+        img_h, img_w = dicom_image.pixel_data.shape[:2]
+        roi_w, roi_h = min(207, img_w), min(133, img_h)
+        x_min, y_min = (img_w - roi_w) // 2, (img_h - roi_h) // 2
+        coordinates = [x_min, y_min, x_min + roi_w, y_min + roi_h]
         region_of_interest = RegionOfInterest(dicom_image, coordinates).load()
         roi_np = region_of_interest.pixel_data.detach().numpy()
         image_np = (
