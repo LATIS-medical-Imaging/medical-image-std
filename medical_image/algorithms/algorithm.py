@@ -32,10 +32,15 @@ class Algorithm(ABC):
         pass
 
     def __call__(self, image: Image, output: Image) -> Image:
-        if self.precision != Precision.FULL and self.device != "cpu":
-            with torch.cuda.amp.autocast(dtype=self.precision.value):
-                self.apply(image, output)
-        else:
+        if self.precision == Precision.FULL:
+            self.apply(image, output)
+            return output
+
+        # torch.autocast, not the torch.cuda.amp alias: the latter is deprecated
+        # and CUDA-only, while bf16 on CPU is exactly where this is worth having
+        # when there is no GPU to fall back on.
+        device_type = torch.device(self.device).type
+        with torch.autocast(device_type=device_type, dtype=self.precision.value):
             self.apply(image, output)
         return output
 
