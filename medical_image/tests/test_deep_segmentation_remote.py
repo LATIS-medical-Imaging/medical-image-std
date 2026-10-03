@@ -61,7 +61,7 @@ class TestDeepSegmentationRemote:
     def test_list_available_models_custom_url(self):
         """list_available_models() accepts a custom server URL."""
         models = DeepSegmentationAlgorithm.list_available_models(
-            server_url="http://mcdmodels.ptm.tn:555/"
+            server_url="https://mcdmodels.ptm.tn/"
         )
         assert len(models) > 0
 
@@ -170,7 +170,7 @@ class TestDeepSegmentationRemote:
         """Server URL can be overridden in from_pretrained()."""
         algo = DeepSegmentationAlgorithm.from_pretrained(
             "unetpp_bce_dice_32_inbreast",
-            server_url="http://mcdmodels.ptm.tn:555/",
+            server_url="https://mcdmodels.ptm.tn/",
             device="cpu",
         )
         assert algo.model is not None

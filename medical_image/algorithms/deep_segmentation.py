@@ -59,7 +59,7 @@ logger = logging.getLogger(__name__)
 # per-call overhead dwarfs the arithmetic.
 DEFAULT_BATCH_PIXELS = 8 * 512 * 512
 
-DEFAULT_MODEL_SERVER_URL = "http://mcdmodels.ptm.tn:555/"
+DEFAULT_MODEL_SERVER_URL = "https://mcdmodels.ptm.tn/"
 DEFAULT_CACHE_DIR = Path.home() / ".cache" / "medical-std" / "models"
 
 KNOWN_ARCHITECTURES = {"unet", "attention_unet", "unetpp", "deeplabv3p"}
