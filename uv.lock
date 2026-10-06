@@ -922,7 +922,7 @@ wheels = [
 
 [[package]]
 name = "medical-image-std"
-version = "0.8.1"
+version = "0.8.2"
 source = { editable = "." }
 dependencies = [
     { name = "matplotlib" },
